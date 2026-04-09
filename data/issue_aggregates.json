@@ -76,5 +76,102 @@
         "source_row": 3
       }
     ]
+  },
+  "973908b0-bda5-47d2-9213-c77177bbb66f": {
+    "run_id": "973908b0-bda5-47d2-9213-c77177bbb66f",
+    "issues": []
+  },
+  "72b82093-eaba-42a9-8e7a-4f0e9e3bdd69": {
+    "run_id": "72b82093-eaba-42a9-8e7a-4f0e9e3bdd69",
+    "issues": [
+      {
+        "issue_id": "e7632159-04b8-4a06-87c8-84ce90b803fb",
+        "message": "Rule R1 (field_equals) failed on status: Expected 'active', got 'offline'",
+        "evidence": {
+          "rule_id": "R1",
+          "item_data": {
+            "fact_type": "DeviceFact",
+            "device_name": "SW-02",
+            "device_type": "Switch",
+            "status": "offline",
+            "_source_sheet": "Devices"
+          }
+        },
+        "expected": "active",
+        "actual": "offline",
+        "details": {
+          "target_field": "status",
+          "rule_type": "field_equals",
+          "target_type": "devices"
+        },
+        "source_row": 2
+      },
+      {
+        "issue_id": "880210e7-7189-4fb9-a715-9f2888cf4cd7",
+        "message": "Rule R2 (regex_match) failed on device_name: 'RTR-ABC' does not match regex '^SW-\\d{2}$'",
+        "evidence": {
+          "rule_id": "R2",
+          "item_data": {
+            "fact_type": "DeviceFact",
+            "device_name": "RTR-ABC",
+            "device_type": "Router",
+            "status": "active",
+            "_source_sheet": "Devices"
+          }
+        },
+        "expected": "^SW-\\d{2}$",
+        "actual": "RTR-ABC",
+        "details": {
+          "target_field": "device_name",
+          "rule_type": "regex_match",
+          "target_type": "devices"
+        },
+        "source_row": 3
+      },
+      {
+        "issue_id": "0fe3e69d-c317-44de-9008-dccff4fa3976",
+        "message": "Rule R2 (regex_match) failed on device_name: 'None' does not match regex '^SW-\\d{2}$'",
+        "evidence": {
+          "rule_id": "R2",
+          "item_data": {
+            "fact_type": "DeviceFact",
+            "device_name": null,
+            "device_type": "Switch",
+            "status": "active",
+            "_source_sheet": "Devices"
+          }
+        },
+        "expected": "^SW-\\d{2}$",
+        "actual": null,
+        "details": {
+          "target_field": "device_name",
+          "rule_type": "regex_match",
+          "target_type": "devices"
+        },
+        "source_row": 4
+      },
+      {
+        "issue_id": "a559aed0-081c-421a-8699-8322a9a2e6e7",
+        "message": "Rule R3 (missing_value) failed: Required field 'device_name' is missing or empty",
+        "evidence": {
+          "rule_id": "R3",
+          "item_data": {
+            "fact_type": "DeviceFact",
+            "device_name": null,
+            "device_type": "Switch",
+            "status": "active",
+            "_source_sheet": "Devices"
+          }
+        },
+        "expected": null,
+        "actual": null,
+        "details": {
+          "target_field": "device_name",
+          "rule_type": "missing_value",
+          "target_type": "devices"
+        },
+        "source_row": 4
+      }
+    ]
   }
 }

@@ -59,6 +59,15 @@ class TaskRepository:
         _write_json("tasks.json", data)
 
 class ResultRepository:
+    def save_recognition(self, snap: RecognitionResultSnapshot):
+        d = _read_json("recognitions.json")
+        d[snap.task_id] = snap.__dict__
+        _write_json("recognitions.json", d)
+
+    def get_recognition(self, task_id: str) -> RecognitionResultSnapshot:
+        d = _read_json("recognitions.json")
+        return RecognitionResultSnapshot(**d[task_id]) if task_id in d else None
+
     def save_run_execution(self, snap: RunExecutionSnapshot):
         d = _read_json("run_executions.json")
         d[snap.run_id] = snap.__dict__

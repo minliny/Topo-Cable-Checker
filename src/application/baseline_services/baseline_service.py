@@ -15,7 +15,25 @@ class BaselineService:
                 baseline_version="v1.0",
                 recognition_profile={"strategy": "excel_basic"},
                 naming_profile={"strategy": "snake_case"},
-                rule_set={"R1": {"field": "status", "expected": "active"}},
+                rule_set={
+                    "R1": {
+                        "target_type": "devices",
+                        "field": "status",
+                        "type": "field_equals",
+                        "expected": "active"
+                    },
+                    "R2": {
+                        "target_type": "devices",
+                        "field": "device_name",
+                        "type": "regex_match",
+                        "expected": r"^SW-\d{2}$" # Starts with SW- followed by 2 digits
+                    },
+                    "R3": {
+                        "target_type": "devices",
+                        "field": "device_name",
+                        "type": "missing_value"
+                    }
+                },
                 parameter_profile={},
                 threshold_profile={},
                 baseline_version_snapshot={"B001": "v1.0"}

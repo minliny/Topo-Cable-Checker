@@ -6,5 +6,13 @@
   "57cc9a16-4d01-4b54-aa6f-d472b458748d": {
     "run_id": "57cc9a16-4d01-4b54-aa6f-d472b458748d",
     "summary": "Checked 3 rows, found 2 issues."
+  },
+  "973908b0-bda5-47d2-9213-c77177bbb66f": {
+    "run_id": "973908b0-bda5-47d2-9213-c77177bbb66f",
+    "summary": "Normalized dataset contains 4 devices, 2 ports, 1 links. Found 0 issues."
+  },
+  "72b82093-eaba-42a9-8e7a-4f0e9e3bdd69": {
+    "run_id": "72b82093-eaba-42a9-8e7a-4f0e9e3bdd69",
+    "summary": "Normalized dataset contains 4 devices, 2 ports, 1 links. Found 4 issues."
   }
 }

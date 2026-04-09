@@ -10,8 +10,21 @@
     },
     "rule_set": {
       "R1": {
+        "target_type": "devices",
         "field": "status",
+        "type": "field_equals",
         "expected": "active"
+      },
+      "R2": {
+        "target_type": "devices",
+        "field": "device_name",
+        "type": "regex_match",
+        "expected": "^SW-\\d{2}$"
+      },
+      "R3": {
+        "target_type": "devices",
+        "field": "device_name",
+        "type": "missing_value"
       }
     },
     "parameter_profile": {},
