@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Detail</title>
+</head>
+<body>
+    <h1>Task: {{ task.task_name }}</h1>
+    <p>Status: {{ task.task_status }}</p>
+    {% if task.latest_run_id %}
+    <p><a href="/run/{{ task.latest_run_id }}">View Run Overview</a></p>
+    {% endif %}
+    {% if recognition %}
+    <h3>Recognition Summary</h3>
+    <p>Status: {{ recognition.confirmation_status }}</p>
+    <p>Sheets: {{ recognition.recognized_sheets | join(", ") }}</p>
+    <p>Warnings: {{ recognition.warnings | length }}</p>
+    <p>Errors: {{ recognition.errors | length }}</p>
+    
+    {% if task.task_status == 'recognized' %}
+    <form action="/task/{{ task.task_id }}/confirm" method="POST">
+        <button type="submit">Confirm Recognition</button>
+    </form>
+    {% endif %}
+    
+    {% endif %}
+    <a href="/">Back to Tasks</a>
+</body>
+</html>

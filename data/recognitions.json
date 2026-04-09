@@ -1,0 +1,900 @@
+{
+  "bec415bd-e39c-4f21-bc6e-6ab3d28b4ffe": {
+    "task_id": "bec415bd-e39c-4f21-bc6e-6ab3d28b4ffe",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "849efb59-486f-44c6-a9a2-eb52804a21c5": {
+    "task_id": "849efb59-486f-44c6-a9a2-eb52804a21c5",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "ad475597-82e8-4d6f-8358-becd518df32f": {
+    "task_id": "ad475597-82e8-4d6f-8358-becd518df32f",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "8d0be363-e2ff-409f-ae93-bcb6b413e5c0": {
+    "task_id": "8d0be363-e2ff-409f-ae93-bcb6b413e5c0",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "316c7821-f34b-47af-8b22-725e89b8426a": {
+    "task_id": "316c7821-f34b-47af-8b22-725e89b8426a",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "bd8a88fc-e3ad-462c-bbad-542ba4052140": {
+    "task_id": "bd8a88fc-e3ad-462c-bbad-542ba4052140",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "f2970872-0098-4681-bf58-be1f98b4f1f4": {
+    "task_id": "f2970872-0098-4681-bf58-be1f98b4f1f4",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "28bb7500-9c58-45f1-a95b-4091931edc6e": {
+    "task_id": "28bb7500-9c58-45f1-a95b-4091931edc6e",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "ca2e6cb6-dc91-40fc-b2a5-75b4327cf5df": {
+    "task_id": "ca2e6cb6-dc91-40fc-b2a5-75b4327cf5df",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "RTR-ABC",
+            "Device Type": "Router",
+            "Status": "active"
+          },
+          {
+            "Device Name": null,
+            "Device Type": "Switch",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          },
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/2",
+            "Port Status": "down"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "43bcf845-2850-49f7-984a-d5c1f50b597d": {
+    "task_id": "43bcf845-2850-49f7-984a-d5c1f50b597d",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "ISOLATED-01",
+            "Device Type": "Router",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          },
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          },
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/2",
+            "Dest Device": "RTR-PEER",
+            "Dest Port": "Eth1/1"
+          },
+          {
+            "Source Device": "SW-02",
+            "Source Port": "Eth1/2",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/3"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "9ef4360f-5b6d-403b-9be6-0e86c2620d24": {
+    "task_id": "9ef4360f-5b6d-403b-9be6-0e86c2620d24",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "FW-01",
+            "Device Type": "Firewall",
+            "Status": "offline"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "5365aa3e-84fe-4eb1-b2fb-fa195e2af4fd": {
+    "task_id": "5365aa3e-84fe-4eb1-b2fb-fa195e2af4fd",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "FW-01",
+            "Device Type": "Firewall",
+            "Status": "offline"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "68752155-7da7-4a24-a09b-6b17c6b9a084": {
+    "task_id": "68752155-7da7-4a24-a09b-6b17c6b9a084",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "FW-01",
+            "Device Type": "Firewall",
+            "Status": "offline"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "6ba60e30-5f5b-40dd-b46e-6d4b608aa02e": {
+    "task_id": "6ba60e30-5f5b-40dd-b46e-6d4b608aa02e",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "FW-01",
+            "Device Type": "Firewall",
+            "Status": "offline"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  }
+}

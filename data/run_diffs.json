@@ -1,0 +1,50 @@
+{
+  "0713baf2-56b3-452b-8c19-7e69cd9d7e52_57cc9a16-4d01-4b54-aa6f-d472b458748d": {
+    "task_id": "1c602eb0-74fc-4591-84e4-3f9c783335f8",
+    "prev_run_id": "0713baf2-56b3-452b-8c19-7e69cd9d7e52",
+    "curr_run_id": "57cc9a16-4d01-4b54-aa6f-d472b458748d",
+    "diff_data": {
+      "resolved": 0,
+      "new_issues": 0
+    }
+  },
+  "cf7c331c-8909-4353-a23d-867f3153ce24_7dc0d03d-494e-4262-8dbe-e8c7ad151d5f": {
+    "task_id": "f2970872-0098-4681-bf58-be1f98b4f1f4",
+    "prev_run_id": "cf7c331c-8909-4353-a23d-867f3153ce24",
+    "curr_run_id": "7dc0d03d-494e-4262-8dbe-e8c7ad151d5f",
+    "diff_data": {
+      "new": 2,
+      "resolved": 3,
+      "persistent": 1,
+      "changed": 0
+    },
+    "new_issues": [
+      "IssueItem(issue_id='9bc8406f-94dc-497a-9d76-ba9f4677895a', message=\"Rule R1 (field_equals) failed on status: Expected 'active', got 'offline'\", evidence={'rule_id': 'R1', 'item_data': {'device_name': 'RTR-ABC', 'device_type': 'Router', 'status': 'offline', '_source_sheet': 'Devices'}}, expected='active', actual='offline', details={'target_field': 'status', 'rule_type': 'field_equals', 'target_type': 'devices'}, source_row=3, severity='medium')",
+      "IssueItem(issue_id='367fdd19-caeb-4338-9bef-86db7103e875', message=\"Rule R1 (field_equals) failed on status: Expected 'active', got 'offline'\", evidence={'rule_id': 'R1', 'item_data': {'device_name': 'SW-03', 'device_type': 'Switch', 'status': 'offline', '_source_sheet': 'Devices'}}, expected='active', actual='offline', details={'target_field': 'status', 'rule_type': 'field_equals', 'target_type': 'devices'}, source_row=4, severity='medium')"
+    ],
+    "resolved_issues": [
+      "IssueItem(issue_id='f7b67f97-da83-4885-89ed-4cca8ede185b', message=\"Rule R1 (field_equals) failed on status: Expected 'active', got 'offline'\", evidence={'rule_id': 'R1', 'item_data': {'device_name': 'SW-02', 'device_type': 'Switch', 'status': 'offline', '_source_sheet': 'Devices'}}, expected='active', actual='offline', details={'target_field': 'status', 'rule_type': 'field_equals', 'target_type': 'devices'}, source_row=2, severity='medium')",
+      "IssueItem(issue_id='c4fae147-d743-46a6-a4b3-dfdf2f93b216', message=\"Rule R2 (regex_match) failed on device_name: 'None' does not match regex '^SW-\\\\d{2}$'\", evidence={'rule_id': 'R2', 'item_data': {'device_name': None, 'device_type': 'Switch', 'status': 'active', '_source_sheet': 'Devices'}}, expected='^SW-\\\\d{2}$', actual=None, details={'target_field': 'device_name', 'rule_type': 'regex_match', 'target_type': 'devices'}, source_row=4, severity='medium')",
+      "IssueItem(issue_id='94af361c-b47f-4b4b-ac2e-c02b9ec9a6dc', message=\"Rule R3 (missing_value) failed: Required field 'device_name' is missing or empty\", evidence={'rule_id': 'R3', 'item_data': {'device_name': None, 'device_type': 'Switch', 'status': 'active', '_source_sheet': 'Devices'}}, expected=None, actual=None, details={'target_field': 'device_name', 'rule_type': 'missing_value', 'target_type': 'devices'}, source_row=4, severity='medium')"
+    ],
+    "persistent_issues": [
+      "IssueItem(issue_id='801e3a41-83a2-4f55-b559-d0114ee237de', message=\"Rule R2 (regex_match) failed on device_name: 'RTR-ABC' does not match regex '^SW-\\\\d{2}$'\", evidence={'rule_id': 'R2', 'item_data': {'device_name': 'RTR-ABC', 'device_type': 'Router', 'status': 'offline', '_source_sheet': 'Devices'}}, expected='^SW-\\\\d{2}$', actual='RTR-ABC', details={'target_field': 'device_name', 'rule_type': 'regex_match', 'target_type': 'devices'}, source_row=3, severity='medium')"
+    ],
+    "changed_issues": [],
+    "risk_trend": {
+      "total_issues_diff": -1,
+      "severity_diff": {
+        "medium": -1,
+        "error": 0,
+        "warning": 0,
+        "info": 0
+      },
+      "per_device_diff": {
+        "null": -2,
+        "SW-03": 1,
+        "SW-02": -1,
+        "RTR-ABC": 1
+      }
+    }
+  }
+}

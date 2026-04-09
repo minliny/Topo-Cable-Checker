@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recheck Diff</title>
+</head>
+<body>
+    <h1>Diff: {{ diff.diff_id }}</h1>
+    <p>New Issues: {{ diff.new_issue_count }}</p>
+    <p>Resolved Issues: {{ diff.resolved_issue_count }}</p>
+    <p>Persistent Issues: {{ diff.persistent_issue_count }}</p>
+    <p>Changed Issues: {{ diff.changed_issue_count }}</p>
+    <h3>Risk Trend</h3>
+    <pre>{{ diff.risk_trend_summary | tojson(indent=2) }}</pre>
+    <a href="/">Back to Tasks</a>
+</body>
+</html>

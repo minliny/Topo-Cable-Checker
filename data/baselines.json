@@ -1,0 +1,62 @@
+{
+  "B001": {
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "recognition_profile": {
+      "strategy": "excel_basic"
+    },
+    "naming_profile": {
+      "strategy": "snake_case"
+    },
+    "rule_set": {
+      "R1_scoped": {
+        "executor": "group_consistency",
+        "scope_selector": {
+          "target_type": "devices",
+          "device_type": "Switch"
+        },
+        "parameter_key": "P1",
+        "severity": "warning"
+      },
+      "R2_threshold_count": {
+        "executor": "threshold",
+        "scope_selector": {
+          "target_type": "devices"
+        },
+        "metric_type": "count",
+        "threshold_key": "T1",
+        "severity": "error"
+      },
+      "R3_threshold_distinct": {
+        "executor": "threshold",
+        "scope_selector": {
+          "target_type": "devices"
+        },
+        "metric_type": "distinct_count",
+        "metric_field": "device_type",
+        "threshold_key": "T2",
+        "severity": "error"
+      }
+    },
+    "parameter_profile": {
+      "P1": {
+        "group_key": "device_type",
+        "comparison_field": "status"
+      }
+    },
+    "threshold_profile": {
+      "T1": {
+        "operator": "between",
+        "min_value": 2,
+        "max_value": 10
+      },
+      "T2": {
+        "operator": "gte",
+        "value": 2
+      }
+    },
+    "baseline_version_snapshot": {
+      "B001": "v1.0"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+architecture_audit:
+  five_layer_status: "Aligned with strict 5-layer architecture. No cross-layer contamination."
+  application_split_status: "Services are cleanly split by responsibility (Task, Recognition, Normalization, CheckRun, Query, Export)."
+  task_model_status: "CheckTask fully implemented with all required statuses."
+  crosscutting_status: "Minimal capabilities (logging, errors, ids, config, time) implemented."
+  result_pipeline_status: "6-layer structured result models defined, populated with real Excel data, and persisted."
+  cli_status: "Full CLI implemented covering all lifecycle commands."
+  ui_status: "Local Web UI implemented using FastAPI+Jinja2, fully adhering to DTO boundaries and Query Service pattern."
+  ui_ready_decision: "System is stable and ready for UI iteration. No direct Domain/Repository access from Presentation."

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Run Overview</title>
+</head>
+<body>
+    <h1>Run: {{ overview.run_id }}</h1>
+    <p>Status: {% if overview.overall_passed %}Passed{% else %}Failed ({{ overview.overall_risk_level }} Risk){% endif %}</p>
+    <p>Summary: {{ overview.summary_message }}</p>
+    <p>Issues Total: {{ overview.total_issue_count }}</p>
+    
+    <h2>Exports</h2>
+    <ul>
+        {% for exp in exports %}
+        <li><a href="{{ exp.download_url }}">{{ exp.filename }}</a> ({{ exp.format }})</li>
+        {% else %}
+        <li>No exports available.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Issue List</h2>
+    <form method="GET" action="/run/{{ overview.run_id }}">
+        <label>Severity:</label>
+        <input type="text" name="severity" value="{{ filters.severity | default('') }}">
+        <label>Rule ID:</label>
+        <input type="text" name="rule_id" value="{{ filters.rule_id | default('') }}">
+        <label>Device Name:</label>
+        <input type="text" name="device_name" value="{{ filters.device_name | default('') }}">
+        <button type="submit">Filter</button>
+        <a href="/run/{{ overview.run_id }}">Clear</a>
+    </form>
+    <p>Showing {{ after_count }} issues (Filtered from {{ before_count }} total)</p>
+    <ul>
+        {% for issue in issues %}
+        <li>[{{ issue.severity }}] {{ issue.rule_id }} | {{ issue.device_name }} - {{ issue.message }}
+            <a href="/review/{{ overview.run_id }}/{{ issue.device_name }}">Review Device</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="/">Back to Tasks</a>
+</body>
+</html>

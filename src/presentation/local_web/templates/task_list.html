@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CheckTool Tasks</title>
+</head>
+<body>
+    <h1>Task List</h1>
+    <ul>
+        {% for task in tasks %}
+        <li><a href="/task/{{ task.task_id }}">{{ task.task_name }} ({{ task.task_status }})</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
