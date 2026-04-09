@@ -50,7 +50,7 @@ class CheckRunService:
         
         summary = RunSummaryOverview(
             run_id=run_id, 
-            summary=f"Normalized dataset contains {len(normalized_dataset['devices'])} devices, {len(normalized_dataset['ports'])} ports, {len(normalized_dataset['links'])} links. Found {len(issues)} issues."
+            summary=f"Normalized dataset contains {len(normalized_dataset.devices)} devices, {len(normalized_dataset.ports)} ports, {len(normalized_dataset.links)} links. Found {len(issues)} issues."
         )
         self.result_repo.save_summary(summary)
         

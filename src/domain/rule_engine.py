@@ -1,12 +1,14 @@
 from typing import Dict, Any, List
 from src.domain.result_model import IssueItem
+from src.domain.fact_model import NormalizedDataset
 from src.crosscutting.ids.generator import generate_id
 import re
+import dataclasses
 
 class RuleEngine:
-    def execute(self, normalized_dataset: Dict[str, List[Dict[str, Any]]], rule_set: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, normalized_dataset: NormalizedDataset, rule_set: Dict[str, Any]) -> List[IssueItem]:
         """
-        Takes normalized dataset containing Devices, Ports, Links,
+        Takes normalized dataset containing Devices, Ports, Links objects,
         applies rule_set, and produces IssueItems.
         """
         issues = []
@@ -18,11 +20,12 @@ class RuleEngine:
             rule_type = rule_def.get("type", "field_equals") # default
             expected_val = rule_def.get("expected")
             
-            if target_type not in normalized_dataset:
+            target_list = getattr(normalized_dataset, target_type, None)
+            if target_list is None:
                 continue
                 
-            for i, item in enumerate(normalized_dataset[target_type]):
-                actual_val = item.get(target_field)
+            for i, item in enumerate(target_list):
+                actual_val = getattr(item, target_field, None)
                 
                 is_failed = False
                 message = ""
@@ -49,7 +52,7 @@ class RuleEngine:
                     issues.append(IssueItem(
                         issue_id=generate_id(),
                         message=message,
-                        evidence={"rule_id": rule_id, "item_data": item},
+                        evidence={"rule_id": rule_id, "item_data": dataclasses.asdict(item)},
                         expected=expected_val,
                         actual=actual_val,
                         details={"target_field": target_field, "rule_type": rule_type, "target_type": target_type},
