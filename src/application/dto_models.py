@@ -43,6 +43,12 @@ class IssueListItemDTO:
     issue_status: str
 
 @dataclass
+class IssueListResultDTO:
+    items: List[IssueListItemDTO]
+    before_count: int
+    after_count: int
+
+@dataclass
 class DeviceReviewDTO:
     device_name: str
     related_ports: List[Dict[str, Any]]
@@ -58,3 +64,10 @@ class RecheckDiffDTO:
     persistent_issue_count: int
     changed_issue_count: int
     risk_trend_summary: Dict[str, Any]
+
+@dataclass
+class ExportArtifactDTO:
+    run_id: str
+    format: str
+    filename: str
+    download_url: str

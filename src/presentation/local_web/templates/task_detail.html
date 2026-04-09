@@ -13,6 +13,15 @@
     <h3>Recognition Summary</h3>
     <p>Status: {{ recognition.confirmation_status }}</p>
     <p>Sheets: {{ recognition.recognized_sheets | join(", ") }}</p>
+    <p>Warnings: {{ recognition.warnings | length }}</p>
+    <p>Errors: {{ recognition.errors | length }}</p>
+    
+    {% if task.task_status == 'recognized' %}
+    <form action="/task/{{ task.task_id }}/confirm" method="POST">
+        <button type="submit">Confirm Recognition</button>
+    </form>
+    {% endif %}
+    
     {% endif %}
     <a href="/">Back to Tasks</a>
 </body>

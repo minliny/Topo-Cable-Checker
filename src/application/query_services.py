@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Optional
 from src.infrastructure.repository import TaskRepository, ResultRepository
 from src.application.dto_models import (
     TaskSummaryDTO, RecognitionSummaryDTO, RunOverviewDTO, 
-    IssueListItemDTO, DeviceReviewDTO, RecheckDiffDTO
+    IssueListItemDTO, DeviceReviewDTO, RecheckDiffDTO, ExportArtifactDTO, IssueListResultDTO
 )
 
 class QueryService:
@@ -82,25 +82,40 @@ class QueryService:
             summary_message=summary.summary
         )
 
-    def list_issue_items(self, run_id: str, filters: Dict[str, Any] = None) -> List[IssueListItemDTO]:
+    def list_issue_items(self, run_id: str, filters: Dict[str, Any] = None) -> IssueListResultDTO:
         agg = self.result_repo.get_issue_aggregate(run_id)
         if not agg:
-            return []
+            return IssueListResultDTO([], 0, 0)
         
+        before_count = len(agg.issues)
+        filters = filters or {}
         dtos = []
+        
         for issue in agg.issues:
             item_data = issue.evidence.get("item_data", {})
+            dev_name = item_data.get("device_name") or item_data.get("src_device") or ""
+            rule_id = issue.evidence.get("rule_id", "")
+            
+            # Apply filters
+            if "severity" in filters and filters["severity"] and issue.severity != filters["severity"]:
+                continue
+            if "rule_id" in filters and filters["rule_id"] and rule_id != filters["rule_id"]:
+                continue
+            if "device_name" in filters and filters["device_name"] and dev_name != filters["device_name"]:
+                continue
+                
             dtos.append(IssueListItemDTO(
                 issue_id=issue.issue_id,
                 severity=issue.severity,
-                rule_id=issue.evidence.get("rule_id", ""),
-                rule_name=issue.evidence.get("rule_id", ""), # placeholder for name
-                device_name=item_data.get("device_name") or item_data.get("src_device") or "",
+                rule_id=rule_id,
+                rule_name=rule_id, # placeholder for name
+                device_name=dev_name,
                 port_name=item_data.get("port_name") or item_data.get("src_port") or "",
                 message=issue.message,
                 issue_status="Open"
             ))
-        return dtos
+            
+        return IssueListResultDTO(items=dtos, before_count=before_count, after_count=len(dtos))
 
     def get_device_review(self, run_id: str, device_name: str) -> Optional[DeviceReviewDTO]:
         review = self.result_repo.get_review(run_id, device_name)
@@ -146,3 +161,22 @@ class QueryService:
             changed_issue_count=diff.diff_data.get("changed", 0),
             risk_trend_summary=diff.risk_trend
         )
+
+    def list_export_artifacts(self, run_id: str) -> List[ExportArtifactDTO]:
+        exports = self.result_repo.get_exports(run_id)
+        dtos = []
+        for e in exports:
+            dtos.append(ExportArtifactDTO(
+                run_id=e.run_id,
+                format=e.format,
+                filename=f"export_{e.run_id}.{e.format}",
+                download_url=f"/download/{e.run_id}/{e.format}"
+            ))
+        return dtos
+
+    def get_export_artifact(self, run_id: str, fmt: str) -> Optional[ExportArtifactDTO]:
+        exports = self.list_export_artifacts(run_id)
+        for e in exports:
+            if e.format == fmt:
+                return e
+        return None

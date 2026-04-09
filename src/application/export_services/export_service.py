@@ -18,6 +18,8 @@ class ExportService:
             format=fmt,
             data=data
         )
+        self.result_repo.save_export(artifact)
+        
         # Write to disk
         with open(f"data/export_{run_id}.{fmt}", "wb") as f:
             f.write(data)

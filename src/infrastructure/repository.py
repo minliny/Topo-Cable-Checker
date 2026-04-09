@@ -132,3 +132,20 @@ class ResultRepository:
             dd["related_issues"] = [IssueItem(**i) for i in dd["related_issues"]]
             return DeviceReviewContext(**dd)
         return None
+
+    def save_export(self, snap: ExportArtifact):
+        d = _read_json("exports.json")
+        dd = snap.__dict__.copy()
+        if "data" in dd:
+            del dd["data"] # Don't store actual bytes in JSON metadata
+        d[f"{snap.run_id}_{snap.format}"] = dd
+        _write_json("exports.json", d)
+
+    def get_exports(self, run_id: str) -> List[ExportArtifact]:
+        d = _read_json("exports.json")
+        exports = []
+        for k, v in d.items():
+            if k.startswith(f"{run_id}_"):
+                v["data"] = b"" # Mock empty data for metadata retrieval
+                exports.append(ExportArtifact(**v))
+        return exports
