@@ -7,6 +7,7 @@ from src.domain.executors.topology_executor import TopologyExecutor
 from src.domain.executors.threshold_executor import ThresholdExecutor
 from src.crosscutting.logging.logger import get_logger
 from src.domain.baseline_model import BaselineProfile
+from src.domain.rule_compiler import RuleCompiler
 
 logger = get_logger(__name__)
 
@@ -62,17 +63,24 @@ class RuleEngine:
         threshold_profile = getattr(baseline, "threshold_profile", baseline.get("threshold_profile", {})) if isinstance(baseline, dict) else baseline.threshold_profile
         
         for rule_id, rule_def in rule_set.items():
-            rule_executor_type = rule_def.get("executor", "single_fact")
+            # 1. Compile Rule
+            try:
+                compiled_rule = RuleCompiler.compile(rule_id, rule_def)
+            except Exception as e:
+                logger.error(f"Error compiling rule {rule_id}: {e}")
+                continue
+
+            rule_executor_type = compiled_rule.get("executor", "single_fact")
             executor = self.executors.get(rule_executor_type)
-            
+
             if executor:
                 try:
-                    scope_def = rule_def.get("scope_selector", {})
-                    # 1. Apply Scope
+                    scope_def = compiled_rule.get("scope_selector", {})
+                    # 2. Apply Scope
                     filtered_dataset = self._apply_scope(normalized_dataset, scope_def)
-                    
-                    # 2. Dispatch
-                    issues = executor.execute(rule_id, rule_def, filtered_dataset, parameter_profile, threshold_profile)
+
+                    # 3. Dispatch
+                    issues = executor.execute(rule_id, compiled_rule, filtered_dataset, parameter_profile, threshold_profile)
                     all_issues.extend(issues)
                 except Exception as e:
                     logger.error(f"Error executing rule {rule_id}: {e}")
