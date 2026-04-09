@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Device Review</title>
+</head>
+<body>
+    <h1>Review Device: {{ review.device_name }}</h1>
+    <p>Connected Devices: {{ review.connected_devices | join(", ") }}</p>
+    <p>Related Ports: {{ review.related_ports | length }}</p>
+    
+    <h2>Related Issues</h2>
+    <ul>
+        {% for issue in review.related_issues %}
+        <li>[{{ issue.severity }}] {{ issue.message }}</li>
+        {% endfor %}
+    </ul>
+    <button onclick="history.back()">Back</button>
+</body>
+</html>
