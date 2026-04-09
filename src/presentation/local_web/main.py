@@ -162,6 +162,33 @@ async def publish_baseline(request: Request, baseline_id: str):
         rules = rule_editor.list_editor_rules(baseline_id)
         return templates.TemplateResponse(request=request, name="rule_editor_list.html", context={"baseline": baseline, "rules": rules, "publish_error": msg})
 
+# --- Baseline History & Diff Routes ---
+
+@app.get("/baselines")
+async def baselines_list(request: Request, baseline_id: str = "B001"):
+    versions = rule_editor.list_baseline_versions(baseline_id)
+    return templates.TemplateResponse(request=request, name="baselines_list.html", context={"versions": versions, "baseline_id": baseline_id})
+
+@app.post("/baselines/rollback")
+async def rollback_baseline(request: Request, baseline_id: str = Form(...), version: str = Form(...)):
+    success, new_ver, msg = rule_editor.rollback_to_version(baseline_id, version)
+    if success:
+        return RedirectResponse(url=f"/rule-editor/{baseline_id}", status_code=303)
+    return {"error": f"Rollback failed: {msg}"}
+
+@app.get("/baselines/{version}")
+async def baseline_version_detail(request: Request, version: str, baseline_id: str = "B001"):
+    # Reusing rule_governance list_rule_definitions would need adaptation to read historical versions.
+    # For MVP, we will use a quick list representation.
+    baseline = query_service.repo.get_by_id(baseline_id)
+    rules_dict = rule_editor._get_rule_set_for_version(baseline, version)
+    return templates.TemplateResponse(request=request, name="baseline_version_detail.html", context={"version": version, "rules": rules_dict, "baseline_id": baseline_id})
+
+@app.get("/baselines/{baseline_id}/diff")
+async def baseline_diff_view(request: Request, baseline_id: str, v1: str, v2: str):
+    diff = rule_editor.get_baseline_diff(baseline_id, v1, v2)
+    return templates.TemplateResponse(request=request, name="baseline_diff.html", context={"diff": diff})
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

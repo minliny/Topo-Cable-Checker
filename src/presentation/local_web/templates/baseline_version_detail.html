@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><title>Version Detail: {{ version }}</title></head>
+<body>
+    <h1>Rules in {{ baseline_id }} (Version: {{ version }})</h1>
+    <a href="/baselines?baseline_id={{ baseline_id }}">Back to Versions</a>
+    <hr>
+    <ul>
+        {% for rule_id, rule_def in rules.items() %}
+            <li><strong>{{ rule_id }}</strong>: {{ rule_def.get('rule_type', 'native') }} (Enabled: {{ rule_def.get('enabled', True) }})</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

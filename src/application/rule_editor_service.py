@@ -5,7 +5,10 @@ from src.application.dto_models import (
     RuleEditorDraftDTO, 
     RuleValidationResultDTO, 
     RuleCompilePreviewDTO,
-    CompileErrorDTO
+    CompileErrorDTO,
+    BaselineVersionDTO,
+    BaselineDiffDTO,
+    RuleDiffItemDTO
 )
 from src.infrastructure.repository import BaselineRepository
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError, TemplateRegistry
@@ -142,8 +145,17 @@ class RuleEditorService:
         if not baseline:
             return False, "", 0, "Baseline not found"
             
-        # 3. Bump version and save (simulated)
+        # 3. Bump version and save
         current_version = getattr(baseline, "baseline_version", baseline.get("baseline_version", "v1.0")) if isinstance(baseline, dict) else baseline.baseline_version
+        
+        # Snapshot the old version into the version history before updating the main record
+        # In a real db, this would be a separate table. We'll use the 'baseline_version_snapshot' field.
+        snapshots = getattr(baseline, "baseline_version_snapshot", baseline.get("baseline_version_snapshot", {})) if isinstance(baseline, dict) else baseline.baseline_version_snapshot
+        if not snapshots:
+            snapshots = {}
+            
+        old_rule_set = getattr(baseline, "rule_set", baseline.get("rule_set", {})) if isinstance(baseline, dict) else baseline.rule_set
+        snapshots[current_version] = copy.deepcopy(old_rule_set)
         
         try:
             major, minor = current_version.lstrip("v").split(".")
@@ -154,9 +166,11 @@ class RuleEditorService:
         if isinstance(baseline, dict):
             baseline["rule_set"] = copy.deepcopy(drafts)
             baseline["baseline_version"] = new_version
+            baseline["baseline_version_snapshot"] = snapshots
         else:
             baseline.rule_set = copy.deepcopy(drafts)
             baseline.baseline_version = new_version
+            baseline.baseline_version_snapshot = snapshots
             
         self.repo.save(baseline)
         
@@ -170,3 +184,100 @@ class RuleEditorService:
             "template_name": template_name,
             "supported_params": t["supported_params"]
         }
+
+    def list_baseline_versions(self, baseline_id: str) -> List[BaselineVersionDTO]:
+        baseline = self.repo.get_by_id(baseline_id)
+        if not baseline:
+            return []
+
+        snapshots = getattr(baseline, "baseline_version_snapshot", baseline.get("baseline_version_snapshot", {})) if isinstance(baseline, dict) else baseline.baseline_version_snapshot
+        
+        versions = []
+        for ver, rule_set in snapshots.items():
+            versions.append(BaselineVersionDTO(
+                baseline_id=baseline_id,
+                baseline_version=ver,
+                rule_count=len(rule_set),
+                created_at="past"
+            ))
+            
+        current_version = getattr(baseline, "baseline_version", baseline.get("baseline_version", "v1.0")) if isinstance(baseline, dict) else baseline.baseline_version
+        current_rule_set = getattr(baseline, "rule_set", baseline.get("rule_set", {})) if isinstance(baseline, dict) else baseline.rule_set
+        versions.append(BaselineVersionDTO(
+            baseline_id=baseline_id,
+            baseline_version=current_version,
+            rule_count=len(current_rule_set),
+            created_at="current"
+        ))
+        
+        return sorted(versions, key=lambda x: x.baseline_version, reverse=True)
+
+    def _get_rule_set_for_version(self, baseline, version: str) -> Dict[str, Any]:
+        current_version = getattr(baseline, "baseline_version", baseline.get("baseline_version", "v1.0")) if isinstance(baseline, dict) else baseline.baseline_version
+        if version == current_version:
+            return getattr(baseline, "rule_set", baseline.get("rule_set", {})) if isinstance(baseline, dict) else baseline.rule_set
+            
+        snapshots = getattr(baseline, "baseline_version_snapshot", baseline.get("baseline_version_snapshot", {})) if isinstance(baseline, dict) else baseline.baseline_version_snapshot
+        return snapshots.get(version, {})
+
+    def get_baseline_diff(self, baseline_id: str, version_1: str, version_2: str) -> Optional[BaselineDiffDTO]:
+        baseline = self.repo.get_by_id(baseline_id)
+        if not baseline:
+            return None
+            
+        rules_v1 = self._get_rule_set_for_version(baseline, version_1)
+        rules_v2 = self._get_rule_set_for_version(baseline, version_2)
+        
+        added = []
+        removed = []
+        modified = []
+        
+        # Check added and modified
+        for rule_id, rule_def2 in rules_v2.items():
+            if rule_id not in rules_v1:
+                added.append(RuleDiffItemDTO(rule_id=rule_id, change_type="added", changed_fields=[], before=None, after=rule_def2))
+            else:
+                rule_def1 = rules_v1[rule_id]
+                changed_fields = []
+                for k, v in rule_def2.items():
+                    if rule_def1.get(k) != v:
+                        changed_fields.append(k)
+                for k in rule_def1.keys():
+                    if k not in rule_def2:
+                        changed_fields.append(k)
+                
+                if changed_fields:
+                    modified.append(RuleDiffItemDTO(
+                        rule_id=rule_id, 
+                        change_type="modified", 
+                        changed_fields=changed_fields,
+                        before=rule_def1,
+                        after=rule_def2
+                    ))
+                    
+        # Check removed
+        for rule_id, rule_def1 in rules_v1.items():
+            if rule_id not in rules_v2:
+                removed.append(RuleDiffItemDTO(rule_id=rule_id, change_type="removed", changed_fields=[], before=rule_def1, after=None))
+                
+        return BaselineDiffDTO(
+            baseline_id=baseline_id,
+            version_1=version_1,
+            version_2=version_2,
+            added_rules=added,
+            removed_rules=removed,
+            modified_rules=modified
+        )
+
+    def rollback_to_version(self, baseline_id: str, target_version: str) -> Tuple[bool, str, str]:
+        baseline = self.repo.get_by_id(baseline_id)
+        if not baseline:
+            return False, "", "Baseline not found"
+            
+        target_rules = self._get_rule_set_for_version(baseline, target_version)
+        if not target_rules:
+            return False, "", f"Version {target_version} not found"
+            
+        self._draft_workspace[baseline_id] = copy.deepcopy(target_rules)
+        success, new_ver, _, msg = self.publish_baseline_version(baseline_id, f"Rollback to {target_version}")
+        return success, new_ver, msg

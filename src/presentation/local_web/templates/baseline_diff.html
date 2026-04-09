@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><title>Diff: {{ diff.version_1 }} -> {{ diff.version_2 }}</title></head>
+<body>
+    <h1>Diff from {{ diff.version_1 }} to {{ diff.version_2 }}</h1>
+    <a href="/baselines?baseline_id={{ diff.baseline_id }}">Back to Versions</a>
+    <hr>
+    
+    <h3 style="color:green">Added Rules ({{ diff.added_rules|length }})</h3>
+    <ul>
+        {% for r in diff.added_rules %}
+            <li>{{ r.rule_id }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3 style="color:red">Removed Rules ({{ diff.removed_rules|length }})</h3>
+    <ul>
+        {% for r in diff.removed_rules %}
+            <li>{{ r.rule_id }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3 style="color:orange">Modified Rules ({{ diff.modified_rules|length }})</h3>
+    <ul>
+        {% for r in diff.modified_rules %}
+            <li>
+                <strong>{{ r.rule_id }}</strong> (Changed: {{ r.changed_fields|join(', ') }})
+                <br>
+                <small>Before: {{ r.before }}</small><br>
+                <small>After: {{ r.after }}</small>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

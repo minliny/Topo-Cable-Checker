@@ -144,3 +144,27 @@ class RuleCompilePreviewDTO:
     compile_status: str
     compiled_rule: Optional[Dict[str, Any]]
     compile_errors: List[CompileErrorDTO]
+
+@dataclass
+class RuleDiffItemDTO:
+    rule_id: str
+    change_type: str # "added", "removed", "modified"
+    changed_fields: List[str]
+    before: Optional[Dict[str, Any]]
+    after: Optional[Dict[str, Any]]
+
+@dataclass
+class BaselineDiffDTO:
+    baseline_id: str
+    version_1: str
+    version_2: str
+    added_rules: List[RuleDiffItemDTO]
+    removed_rules: List[RuleDiffItemDTO]
+    modified_rules: List[RuleDiffItemDTO]
+
+@dataclass
+class BaselineVersionDTO:
+    baseline_id: str
+    baseline_version: str
+    rule_count: int
+    created_at: str # Placeholder for metadata

@@ -1,7 +1,7 @@
 {
   "B001": {
     "baseline_id": "B001",
-    "baseline_version": "v1.1",
+    "baseline_version": "v1.3",
     "recognition_profile": {
       "strategy": "excel_basic"
     },
@@ -65,7 +65,81 @@
       }
     },
     "baseline_version_snapshot": {
-      "B001": "v1.0"
+      "B001": "v1.0",
+      "v1.1": {
+        "R1_scoped": {
+          "rule_type": "template",
+          "template": "group_consistency",
+          "scope_selector": {
+            "target_type": "devices",
+            "device_type": "Switch"
+          },
+          "params": {
+            "parameter_key": "P1"
+          },
+          "severity": "warning"
+        },
+        "R2_threshold_count": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          },
+          "severity": "critical"
+        },
+        "R3_threshold_distinct": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "distinct_count",
+            "metric_field": "device_type",
+            "threshold_key": "T2"
+          },
+          "severity": "error"
+        }
+      },
+      "v1.2": {
+        "R1_scoped": {
+          "rule_type": "template",
+          "template": "group_consistency",
+          "scope_selector": {
+            "target_type": "devices",
+            "device_type": "Switch"
+          },
+          "params": {
+            "parameter_key": "P1"
+          },
+          "severity": "critical"
+        },
+        "R2_threshold_count": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          },
+          "severity": "critical"
+        },
+        "R_NEW_1": {
+          "rule_type": "dsl",
+          "target_type": "devices",
+          "severity": "medium",
+          "expression": {
+            "when": "device_type == \"Switch\"",
+            "assert": "status == \"active\""
+          }
+        }
+      }
     }
   }
 }
