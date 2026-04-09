@@ -54,5 +54,13 @@
   "cea71124-d3f4-4985-947a-4db3d58d5925": {
     "run_id": "cea71124-d3f4-4985-947a-4db3d58d5925",
     "summary": "Analysis complete. 4 devices, 0 ports. Found 1 issues."
+  },
+  "009d2c72-7cef-4f73-97ff-c829bf32a10a": {
+    "run_id": "009d2c72-7cef-4f73-97ff-c829bf32a10a",
+    "summary": "Analysis complete. 4 devices, 0 ports. Found 1 issues."
+  },
+  "96a448ff-9523-47af-a20d-9a3316a04d84": {
+    "run_id": "96a448ff-9523-47af-a20d-9a3316a04d84",
+    "summary": "Analysis complete. 4 devices, 0 ports. Found 3 issues."
   }
 }

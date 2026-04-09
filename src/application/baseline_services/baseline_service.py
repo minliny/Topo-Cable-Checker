@@ -24,12 +24,12 @@ class BaselineService:
                 threshold_profile={
                     "T1": {
                         "operator": "between",
-                        "min_value": 2,
+                        "min_value": 5,
                         "max_value": 10
                     },
                     "T2": {
                         "operator": "gte",
-                        "value": 2
+                        "expected_value": 3
                     }
                 },
                 rule_set={
