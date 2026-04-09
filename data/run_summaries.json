@@ -26,5 +26,13 @@
   "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba": {
     "run_id": "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba",
     "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
+  },
+  "cf7c331c-8909-4353-a23d-867f3153ce24": {
+    "run_id": "cf7c331c-8909-4353-a23d-867f3153ce24",
+    "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
+  },
+  "7dc0d03d-494e-4262-8dbe-e8c7ad151d5f": {
+    "run_id": "7dc0d03d-494e-4262-8dbe-e8c7ad151d5f",
+    "summary": "Analysis complete. 4 devices, 1 ports. Found 3 issues."
   }
 }

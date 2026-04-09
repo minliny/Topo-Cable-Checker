@@ -148,7 +148,15 @@ def main():
         elif args.command == "diff":
             svc = RecheckService()
             diff = svc.generate_diff(args.task, args.prev, args.curr)
-            print(f"Diff created: {diff.diff_data}")
+            print(f"Diff Summary:")
+            print(f"  new: {diff.diff_data['new']}")
+            print(f"  resolved: {diff.diff_data['resolved']}")
+            print(f"  persistent: {diff.diff_data['persistent']}")
+            print(f"  changed: {diff.diff_data['changed']}")
+            print(f"\nRisk Trend:")
+            print(f"  total_issues_diff: {diff.risk_trend['total_issues_diff']}")
+            print(f"  severity_diff: {diff.risk_trend['severity_diff']}")
+            print(f"  per_device_diff: {diff.risk_trend['per_device_diff']}")
 
         elif args.command == "export":
             svc = ExportService()

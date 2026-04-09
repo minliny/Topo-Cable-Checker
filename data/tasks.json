@@ -70,5 +70,29 @@
     "created_at": "2026-04-09 13:58:52.323114",
     "latest_run_id": "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba",
     "parent_task_id": null
+  },
+  "bd8a88fc-e3ad-462c-bbad-542ba4052140": {
+    "task_id": "bd8a88fc-e3ad-462c-bbad-542ba4052140",
+    "task_name": "Task_test_network_data.xlsx",
+    "source_file_ref": "test_network_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "task_status": "check_completed",
+    "created_at": "2026-04-09 14:02:09.109124",
+    "latest_run_id": "cf7c331c-8909-4353-a23d-867f3153ce24",
+    "parent_task_id": null
+  },
+  "f2970872-0098-4681-bf58-be1f98b4f1f4": {
+    "task_id": "f2970872-0098-4681-bf58-be1f98b4f1f4",
+    "task_name": "Task_test_network_data_v2.xlsx",
+    "source_file_ref": "test_network_data_v2.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "task_status": "check_completed",
+    "created_at": "2026-04-09 14:02:12.770563",
+    "latest_run_id": "7dc0d03d-494e-4262-8dbe-e8c7ad151d5f",
+    "parent_task_id": null
   }
 }

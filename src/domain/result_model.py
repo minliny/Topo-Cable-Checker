@@ -65,6 +65,11 @@ class RecheckDiffSnapshot:
     prev_run_id: str
     curr_run_id: str
     diff_data: Dict[str, Any]
+    new_issues: List[IssueItem] = field(default_factory=list)
+    resolved_issues: List[IssueItem] = field(default_factory=list)
+    persistent_issues: List[IssueItem] = field(default_factory=list)
+    changed_issues: List[Dict[str, Any]] = field(default_factory=list)
+    risk_trend: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class ExportArtifact:
