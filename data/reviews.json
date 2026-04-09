@@ -1,0 +1,10 @@
+{
+  "0713baf2-56b3-452b-8c19-7e69cd9d7e52_Device_A": {
+    "run_id": "0713baf2-56b3-452b-8c19-7e69cd9d7e52",
+    "device_name": "Device_A",
+    "context_data": {
+      "device": "Device_A",
+      "issues_count": 2
+    }
+  }
+}

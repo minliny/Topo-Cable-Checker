@@ -1,0 +1,14 @@
+{
+  "1c602eb0-74fc-4591-84e4-3f9c783335f8": {
+    "task_id": "1c602eb0-74fc-4591-84e4-3f9c783335f8",
+    "task_name": "Task_test.xlsx",
+    "source_file_ref": "test.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "task_status": "check_completed",
+    "created_at": "2026-04-09 13:40:07.872017",
+    "latest_run_id": "57cc9a16-4d01-4b54-aa6f-d472b458748d",
+    "parent_task_id": null
+  }
+}

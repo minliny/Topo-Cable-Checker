@@ -1,0 +1,23 @@
+{
+  "B001": {
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "recognition_profile": {
+      "strategy": "excel_basic"
+    },
+    "naming_profile": {
+      "strategy": "snake_case"
+    },
+    "rule_set": {
+      "R1": {
+        "field": "status",
+        "expected": "active"
+      }
+    },
+    "parameter_profile": {},
+    "threshold_profile": {},
+    "baseline_version_snapshot": {
+      "B001": "v1.0"
+    }
+  }
+}

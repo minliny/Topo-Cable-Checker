@@ -1,5 +1,17 @@
 import argparse
 import sys
+import json
+
+from src.application.baseline_services.baseline_service import BaselineService
+from src.application.task_services.task_service import TaskService
+from src.application.recognition_services.recognition_service import RecognitionService
+from src.application.check_run_services.check_run_service import CheckRunService
+from src.application.result_query_services.result_query_service import ResultQueryService
+from src.application.review_services.review_service import ReviewService
+from src.application.recheck_services.recheck_service import RecheckService
+from src.application.export_services.export_service import ExportService
+from src.crosscutting.errors.exceptions import CheckToolBaseError
+from src.infrastructure.repository import TaskRepository
 
 def main():
     parser = argparse.ArgumentParser(prog="checktool", description="CheckTool CLI")
@@ -50,6 +62,10 @@ def main():
     export_parser = subparsers.add_parser("export", help="Export results")
     export_parser.add_argument("--run", required=True, help="Run ID")
     export_parser.add_argument("--format", default="json", help="Export format")
+    
+    # task status helper (not explicitly required but useful for testing)
+    status_parser = subparsers.add_parser("status", help="Get task status")
+    status_parser.add_argument("--task", required=True, help="Task ID")
 
     args = parser.parse_args()
 
@@ -57,7 +73,81 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    print(f"Executing command: {args.command}")
+    try:
+        if args.command == "baseline":
+            svc = BaselineService()
+            res = svc.list_baselines()
+            print("Baselines:")
+            for b in res:
+                print(f" - {b.baseline_id} (version: {b.baseline_version})")
+
+        elif args.command == "task":
+            svc = TaskService()
+            task_id = svc.create_task(args.baseline, args.file)
+            print(f"Task created: {task_id}")
+
+        elif args.command == "recognize":
+            svc = RecognitionService()
+            res = svc.recognize_data(args.task)
+            print(f"Recognized: {res}")
+
+        elif args.command == "confirm-recognition":
+            svc = RecognitionService()
+            res = svc.confirm_recognition(args.task)
+            print(f"Confirmed: {res}")
+
+        elif args.command == "run":
+            svc = CheckRunService()
+            run_id = svc.run_checks(args.task)
+            print(f"Run completed. Run ID: {run_id}")
+
+        elif args.command == "summary":
+            svc = ResultQueryService()
+            summary = svc.get_summary(args.run)
+            if summary:
+                print(f"Summary for {args.run}: {summary.summary}")
+            else:
+                print("Summary not found.")
+
+        elif args.command == "issues":
+            svc = ResultQueryService()
+            issues = svc.get_issues(args.run)
+            if issues:
+                print(f"Issues for {args.run}: {len(issues.issues)}")
+                for i in issues.issues:
+                    print(f" - {i.message}")
+            else:
+                print("Issues not found.")
+
+        elif args.command == "review":
+            svc = ReviewService()
+            ctx = svc.review_issues(args.run, args.device)
+            print(f"Review created: {ctx.context_data}")
+
+        elif args.command == "diff":
+            svc = RecheckService()
+            diff = svc.generate_diff(args.task, args.prev, args.curr)
+            print(f"Diff created: {diff.diff_data}")
+
+        elif args.command == "export":
+            svc = ExportService()
+            art = svc.export(args.run, args.format)
+            print(f"Exported artifact for {args.run}, format {art.format}")
+            
+        elif args.command == "status":
+            repo = TaskRepository()
+            task = repo.get_by_id(args.task)
+            if task:
+                print(f"Task {args.task} status: {task.task_status.value}")
+            else:
+                print(f"Task {args.task} not found")
+
+    except CheckToolBaseError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
