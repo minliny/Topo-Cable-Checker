@@ -130,5 +130,53 @@
     "created_at": "2026-04-09 14:30:29.551614",
     "latest_run_id": "759c1b6f-052e-41ff-9e0b-8da03c8d85a2",
     "parent_task_id": null
+  },
+  "9ef4360f-5b6d-403b-9be6-0e86c2620d24": {
+    "task_id": "9ef4360f-5b6d-403b-9be6-0e86c2620d24",
+    "task_name": "Task_test_config_driven_data.xlsx",
+    "source_file_ref": "test_config_driven_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "task_status": "checking",
+    "created_at": "2026-04-09 14:34:34.204460",
+    "latest_run_id": null,
+    "parent_task_id": null
+  },
+  "5365aa3e-84fe-4eb1-b2fb-fa195e2af4fd": {
+    "task_id": "5365aa3e-84fe-4eb1-b2fb-fa195e2af4fd",
+    "task_name": "Task_test_config_driven_data.xlsx",
+    "source_file_ref": "test_config_driven_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "task_status": "check_completed",
+    "created_at": "2026-04-09 14:35:03.318538",
+    "latest_run_id": "44091ceb-34f7-438f-ab3a-b7324acaacc0",
+    "parent_task_id": null
+  },
+  "68752155-7da7-4a24-a09b-6b17c6b9a084": {
+    "task_id": "68752155-7da7-4a24-a09b-6b17c6b9a084",
+    "task_name": "Task_test_config_driven_data.xlsx",
+    "source_file_ref": "test_config_driven_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "task_status": "check_completed",
+    "created_at": "2026-04-09 14:35:55.903441",
+    "latest_run_id": "d22945b1-5a14-4365-9fdf-4e16f866d6a7",
+    "parent_task_id": null
+  },
+  "6ba60e30-5f5b-40dd-b46e-6d4b608aa02e": {
+    "task_id": "6ba60e30-5f5b-40dd-b46e-6d4b608aa02e",
+    "task_name": "Task_test_config_driven_data.xlsx",
+    "source_file_ref": "test_config_driven_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.0",
+    "task_status": "check_completed",
+    "created_at": "2026-04-09 14:36:15.329850",
+    "latest_run_id": "cea71124-d3f4-4985-947a-4db3d58d5925",
+    "parent_task_id": null
   }
 }

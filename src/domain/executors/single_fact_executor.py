@@ -1,23 +1,22 @@
 from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
-from src.domain.fact_model import NormalizedDataset
 from src.crosscutting.ids.generator import generate_id
 import dataclasses
 import re
 
 class SingleFactExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], dataset: NormalizedDataset) -> List[IssueItem]:
+    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
+                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
         issues = []
-        target_type = rule_def.get("target_type")
+        
+        target_type = rule_def.get("scope_selector", {}).get("target_type")
         target_field = rule_def.get("field")
         rule_subtype = rule_def.get("type", "field_equals")
         expected_val = rule_def.get("expected")
         severity = rule_def.get("severity", "medium")
         
-        target_list = getattr(dataset, target_type, None)
-        if target_list is None:
-            return issues
+        target_list = filtered_dataset.get(target_type, [])
             
         for i, item in enumerate(target_list):
             actual_val = getattr(item, target_field, None)

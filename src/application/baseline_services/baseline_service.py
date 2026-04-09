@@ -15,46 +15,53 @@ class BaselineService:
                 baseline_version="v1.0",
                 recognition_profile={"strategy": "excel_basic"},
                 naming_profile={"strategy": "snake_case"},
-                rule_set={
-                    "R1": {
-                        "executor": "single_fact",
-                        "target_type": "devices",
-                        "field": "status",
-                        "type": "field_equals",
-                        "expected": "active"
-                    },
-                    "R2": {
-                        "executor": "topology",
-                        "type": "duplicate_link",
-                        "severity": "error"
-                    },
-                    "R3": {
-                        "executor": "topology",
-                        "type": "missing_peer",
-                        "severity": "error"
-                    },
-                    "R4": {
-                        "executor": "group_consistency",
-                        "target_type": "devices",
+                parameter_profile={
+                    "P1": {
                         "group_key": "device_type",
-                        "comparison_field": "status",
-                        "severity": "warning"
-                    },
-                    "R5": {
-                        "executor": "topology",
-                        "type": "topology_assertion",
-                        "assertion_type": "self_loop",
-                        "severity": "error"
-                    },
-                    "R6": {
-                        "executor": "topology",
-                        "type": "topology_assertion",
-                        "assertion_type": "isolated_device",
-                        "severity": "info"
+                        "comparison_field": "status"
                     }
                 },
-                parameter_profile={},
-                threshold_profile={},
+                threshold_profile={
+                    "T1": {
+                        "operator": "between",
+                        "min_value": 2,
+                        "max_value": 10
+                    },
+                    "T2": {
+                        "operator": "gte",
+                        "value": 2
+                    }
+                },
+                rule_set={
+                    "R1_scoped": {
+                        "executor": "group_consistency",
+                        "scope_selector": {
+                            "target_type": "devices",
+                            "device_type": "Switch"
+                        },
+                        "parameter_key": "P1",
+                        "severity": "warning"
+                    },
+                    "R2_threshold_count": {
+                        "executor": "threshold",
+                        "scope_selector": {
+                            "target_type": "devices"
+                        },
+                        "metric_type": "count",
+                        "threshold_key": "T1",
+                        "severity": "error"
+                    },
+                    "R3_threshold_distinct": {
+                        "executor": "threshold",
+                        "scope_selector": {
+                            "target_type": "devices"
+                        },
+                        "metric_type": "distinct_count",
+                        "metric_field": "device_type",
+                        "threshold_key": "T2",
+                        "severity": "error"
+                    }
+                },
                 baseline_version_snapshot={"B001": "v1.0"}
             )
             self.repo.save(profile)

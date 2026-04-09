@@ -1,19 +1,28 @@
 from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
-from src.domain.fact_model import NormalizedDataset
 from src.crosscutting.ids.generator import generate_id
 import dataclasses
 
 class GroupConsistencyExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], dataset: NormalizedDataset) -> List[IssueItem]:
+    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
+                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
         issues = []
-        target_type = rule_def.get("target_type")
-        group_key_field = rule_def.get("group_key")
-        comparison_field = rule_def.get("comparison_field")
+        
+        target_type = rule_def.get("scope_selector", {}).get("target_type")
+        
+        # Resolve parameters either from rule_def or parameter_profile
+        param_key = rule_def.get("parameter_key")
+        if param_key and param_key in parameter_profile:
+            group_key_field = parameter_profile[param_key].get("group_key")
+            comparison_field = parameter_profile[param_key].get("comparison_field")
+        else:
+            group_key_field = rule_def.get("group_key")
+            comparison_field = rule_def.get("comparison_field")
+            
         severity = rule_def.get("severity", "medium")
         
-        target_list = getattr(dataset, target_type, None)
+        target_list = filtered_dataset.get(target_type, [])
         if not target_list:
             return issues
             
@@ -30,16 +39,14 @@ class GroupConsistencyExecutor(RuleExecutor):
             if len(items) <= 1:
                 continue
                 
-            # Find the dominant value
             val_counts = {}
             for _, item in items:
                 val = getattr(item, comparison_field, None)
                 val_counts[val] = val_counts.get(val, 0) + 1
                 
             if len(val_counts) <= 1:
-                continue # Consistent
+                continue
                 
-            # Inconsistent! Let's pick expected as the most frequent one
             dominant_val = max(val_counts, key=val_counts.get)
             
             for i, item in items:
@@ -52,7 +59,8 @@ class GroupConsistencyExecutor(RuleExecutor):
                             "rule_id": rule_id, 
                             "group_key": g_key,
                             "comparison_field": comparison_field,
-                            "item_data": dataclasses.asdict(item)
+                            "item_data": dataclasses.asdict(item),
+                            "parameter_source": "parameter_profile" if param_key else "inline"
                         },
                         expected=dominant_val,
                         actual=actual_val,

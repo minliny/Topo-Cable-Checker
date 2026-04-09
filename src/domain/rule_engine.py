@@ -6,6 +6,7 @@ from src.domain.executors.group_consistency_executor import GroupConsistencyExec
 from src.domain.executors.topology_executor import TopologyExecutor
 from src.domain.executors.threshold_executor import ThresholdExecutor
 from src.crosscutting.logging.logger import get_logger
+from src.domain.baseline_model import BaselineProfile
 
 logger = get_logger(__name__)
 
@@ -18,11 +19,47 @@ class RuleEngine:
             "threshold": ThresholdExecutor()
         }
 
-    def execute(self, normalized_dataset: NormalizedDataset, rule_set: Dict[str, Any]) -> List[IssueItem]:
+    def _apply_scope(self, dataset: NormalizedDataset, scope_def: Dict[str, Any]) -> Dict[str, List[Any]]:
         """
-        Dispatches rules to appropriate executors based on rule configuration.
+        Filters the dataset based on the scope_selector.
+        scope_def examples:
+        {"target_type": "devices"} -> all devices
+        {"target_type": "devices", "device_type": "Switch"} -> only switch devices
+        {"target_type": "links", "source_sheet": "Links_v2"} -> specific links
         """
+        filtered_dataset = {}
+        
+        for t_type in ["devices", "ports", "links"]:
+            target_list = getattr(dataset, t_type, [])
+            # 1. Filter by target_type
+            if scope_def and "target_type" in scope_def:
+                if t_type != scope_def["target_type"]:
+                    continue
+                    
+            # 2. Filter individual facts by attribute matching
+            filtered_facts = []
+            for item in target_list:
+                match = True
+                for s_key, s_val in scope_def.items():
+                    if s_key == "target_type":
+                        continue
+                    actual_val = getattr(item, s_key, None)
+                    if actual_val != s_val:
+                        match = False
+                        break
+                if match:
+                    filtered_facts.append(item)
+                    
+            if filtered_facts:
+                filtered_dataset[t_type] = filtered_facts
+                
+        return filtered_dataset
+
+    def execute(self, normalized_dataset: NormalizedDataset, baseline: BaselineProfile) -> List[IssueItem]:
         all_issues = []
+        rule_set = getattr(baseline, "rule_set", baseline.get("rule_set", {})) if isinstance(baseline, dict) else baseline.rule_set
+        parameter_profile = getattr(baseline, "parameter_profile", baseline.get("parameter_profile", {})) if isinstance(baseline, dict) else baseline.parameter_profile
+        threshold_profile = getattr(baseline, "threshold_profile", baseline.get("threshold_profile", {})) if isinstance(baseline, dict) else baseline.threshold_profile
         
         for rule_id, rule_def in rule_set.items():
             rule_executor_type = rule_def.get("executor", "single_fact")
@@ -30,7 +67,12 @@ class RuleEngine:
             
             if executor:
                 try:
-                    issues = executor.execute(rule_id, rule_def, normalized_dataset)
+                    scope_def = rule_def.get("scope_selector", {})
+                    # 1. Apply Scope
+                    filtered_dataset = self._apply_scope(normalized_dataset, scope_def)
+                    
+                    # 2. Dispatch
+                    issues = executor.execute(rule_id, rule_def, filtered_dataset, parameter_profile, threshold_profile)
                     all_issues.extend(issues)
                 except Exception as e:
                     logger.error(f"Error executing rule {rule_id}: {e}")

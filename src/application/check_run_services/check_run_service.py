@@ -56,7 +56,7 @@ class CheckRunService:
         
         # 5. Rule Engine Execution
         baseline = self.baseline_repo.get_by_id(task.baseline_id)
-        issues = rule_engine.execute(normalized_dataset, baseline.rule_set)
+        issues = rule_engine.execute(normalized_dataset, baseline)
         
         # 6. Aggregate Layer (NEW)
         by_device = {}

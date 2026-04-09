@@ -1,20 +1,22 @@
 from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
-from src.domain.fact_model import NormalizedDataset
 from src.crosscutting.ids.generator import generate_id
 import dataclasses
 
 class TopologyExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], dataset: NormalizedDataset) -> List[IssueItem]:
+    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
+                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
         rule_subtype = rule_def.get("type")
         severity = rule_def.get("severity", "medium")
         issues = []
         
+        links = filtered_dataset.get("links", [])
+        devices = filtered_dataset.get("devices", [])
+        
         if rule_subtype == "duplicate_link":
-            # 识别重复连线
             seen_links = {}
-            for i, link in enumerate(dataset.links):
+            for i, link in enumerate(links):
                 key = f"{link.src_device}:{link.src_port}->{link.dst_device}:{link.dst_port}"
                 if key in seen_links:
                     issues.append(IssueItem(
@@ -37,9 +39,8 @@ class TopologyExecutor(RuleExecutor):
                     seen_links[key] = i
                     
         elif rule_subtype == "missing_peer":
-            # 识别缺失对端
-            devices_map = {d.device_name for d in dataset.devices if d.device_name}
-            for i, link in enumerate(dataset.links):
+            devices_map = {d.device_name for d in devices if d.device_name}
+            for i, link in enumerate(links):
                 missing_src = link.src_device not in devices_map
                 missing_dst = link.dst_device not in devices_map
                 
@@ -65,7 +66,7 @@ class TopologyExecutor(RuleExecutor):
             assertion_type = rule_def.get("assertion_type")
             
             if assertion_type == "self_loop":
-                for i, link in enumerate(dataset.links):
+                for i, link in enumerate(links):
                     if link.src_device == link.dst_device:
                         issues.append(IssueItem(
                             issue_id=generate_id(),
@@ -86,11 +87,11 @@ class TopologyExecutor(RuleExecutor):
                         
             elif assertion_type == "isolated_device":
                 linked_devices = set()
-                for link in dataset.links:
+                for link in links:
                     linked_devices.add(link.src_device)
                     linked_devices.add(link.dst_device)
                     
-                for i, dev in enumerate(dataset.devices):
+                for i, dev in enumerate(devices):
                     if dev.device_name and dev.device_name not in linked_devices:
                         issues.append(IssueItem(
                             issue_id=generate_id(),
