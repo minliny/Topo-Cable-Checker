@@ -41,6 +41,7 @@ class IssueListItemDTO:
     port_name: str
     message: str
     issue_status: str
+    category: str
 
 @dataclass
 class IssueListResultDTO:

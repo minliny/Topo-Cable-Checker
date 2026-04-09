@@ -650,5 +650,91 @@
       },
       "warnings": []
     }
+  },
+  "43bcf845-2850-49f7-984a-d5c1f50b597d": {
+    "task_id": "43bcf845-2850-49f7-984a-d5c1f50b597d",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices",
+        "Ports",
+        "Links"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "Ports": [
+          "Device Name",
+          "Port Name",
+          "Port Status"
+        ],
+        "Links": [
+          "Source Device",
+          "Source Port",
+          "Dest Device",
+          "Dest Port"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "ISOLATED-01",
+            "Device Type": "Router",
+            "Status": "active"
+          }
+        ],
+        "Ports": [
+          {
+            "Device Name": "SW-01",
+            "Port Name": "Eth1/1",
+            "Port Status": "up"
+          }
+        ],
+        "Links": [
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          },
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/1",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/1"
+          },
+          {
+            "Source Device": "SW-01",
+            "Source Port": "Eth1/2",
+            "Dest Device": "RTR-PEER",
+            "Dest Port": "Eth1/1"
+          },
+          {
+            "Source Device": "SW-02",
+            "Source Port": "Eth1/2",
+            "Dest Device": "SW-02",
+            "Dest Port": "Eth1/3"
+          }
+        ]
+      },
+      "warnings": []
+    }
   }
 }

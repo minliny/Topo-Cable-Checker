@@ -35,6 +35,7 @@ class IssueItem:
     details: Dict[str, Any]
     source_row: int
     severity: str = "medium"
+    category: str = "general"
 
 @dataclass
 class IssueAggregateSnapshot:

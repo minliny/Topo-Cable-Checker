@@ -112,7 +112,8 @@ class QueryService:
                 device_name=dev_name,
                 port_name=item_data.get("port_name") or item_data.get("src_port") or "",
                 message=issue.message,
-                issue_status="Open"
+                issue_status="Open",
+                category=issue.category
             ))
             
         return IssueListResultDTO(items=dtos, before_count=before_count, after_count=len(dtos))
@@ -133,7 +134,8 @@ class QueryService:
                 device_name=item_data.get("device_name") or item_data.get("src_device") or "",
                 port_name=item_data.get("port_name") or item_data.get("src_port") or "",
                 message=issue.message,
-                issue_status="Open"
+                issue_status="Open",
+                category=issue.category
             ))
 
         return DeviceReviewDTO(

@@ -768,5 +768,214 @@
     "by_severity": {
       "medium": 4
     }
+  },
+  "759c1b6f-052e-41ff-9e0b-8da03c8d85a2": {
+    "run_id": "759c1b6f-052e-41ff-9e0b-8da03c8d85a2",
+    "issues": [
+      {
+        "issue_id": "60b864af-692f-400d-946f-33659c4f8c52",
+        "message": "Rule R1 (field_equals) failed on status: Expected 'active', got 'offline'",
+        "evidence": {
+          "rule_id": "R1",
+          "item_data": {
+            "device_name": "SW-03",
+            "device_type": "Switch",
+            "status": "offline",
+            "_source_sheet": "Devices"
+          }
+        },
+        "expected": "active",
+        "actual": "offline",
+        "details": {
+          "target_field": "status",
+          "rule_type": "field_equals",
+          "target_type": "devices"
+        },
+        "source_row": 3,
+        "severity": "medium",
+        "category": "single_fact"
+      },
+      {
+        "issue_id": "41ee3a57-7799-4f1e-ba2f-53371f9ac064",
+        "message": "Rule R2 (duplicate_link) failed: Link SW-01:Eth1/1->SW-02:Eth1/1 already exists.",
+        "evidence": {
+          "rule_id": "R2",
+          "item_data": {
+            "src_device": "SW-01",
+            "src_port": "Eth1/1",
+            "dst_device": "SW-02",
+            "dst_port": "Eth1/1",
+            "_source_sheet": "Links"
+          },
+          "source_device": "SW-01",
+          "target_device": "SW-02"
+        },
+        "expected": "Unique Link",
+        "actual": "SW-01:Eth1/1->SW-02:Eth1/1",
+        "details": {
+          "target_type": "links"
+        },
+        "source_row": 2,
+        "severity": "error",
+        "category": "duplicate_link"
+      },
+      {
+        "issue_id": "48ec6f62-0f61-4578-873a-4e187eb2d264",
+        "message": "Rule R3 (missing_peer) failed: Missing peer device in link SW-01->RTR-PEER.",
+        "evidence": {
+          "rule_id": "R3",
+          "item_data": {
+            "src_device": "SW-01",
+            "src_port": "Eth1/2",
+            "dst_device": "RTR-PEER",
+            "dst_port": "Eth1/1",
+            "_source_sheet": "Links"
+          },
+          "source_device": "SW-01",
+          "target_device": "RTR-PEER"
+        },
+        "expected": "Both peers exist",
+        "actual": "Src missing: False, Dst missing: True",
+        "details": {
+          "target_type": "links"
+        },
+        "source_row": 3,
+        "severity": "error",
+        "category": "missing_peer"
+      },
+      {
+        "issue_id": "e735d956-d6bc-4629-b37a-2a18dd16ddb5",
+        "message": "Rule R4 (group_consistency) failed: Group 'Switch' has inconsistent 'status'. Expected 'active', got 'offline'.",
+        "evidence": {
+          "rule_id": "R4",
+          "group_key": "Switch",
+          "comparison_field": "status",
+          "item_data": {
+            "device_name": "SW-03",
+            "device_type": "Switch",
+            "status": "offline",
+            "_source_sheet": "Devices"
+          }
+        },
+        "expected": "active",
+        "actual": "offline",
+        "details": {
+          "target_type": "devices",
+          "affected_items": [
+            {
+              "device_name": "SW-01",
+              "device_type": "Switch",
+              "status": "active",
+              "_source_sheet": "Devices"
+            },
+            {
+              "device_name": "SW-02",
+              "device_type": "Switch",
+              "status": "active",
+              "_source_sheet": "Devices"
+            },
+            {
+              "device_name": "SW-03",
+              "device_type": "Switch",
+              "status": "offline",
+              "_source_sheet": "Devices"
+            }
+          ]
+        },
+        "source_row": 3,
+        "severity": "warning",
+        "category": "group_consistency"
+      },
+      {
+        "issue_id": "cea0b1b3-8a8d-40f2-89df-9dc9c0cb0001",
+        "message": "Rule R5 (topology_assertion) failed: Self-loop detected on SW-02.",
+        "evidence": {
+          "rule_id": "R5",
+          "item_data": {
+            "src_device": "SW-02",
+            "src_port": "Eth1/2",
+            "dst_device": "SW-02",
+            "dst_port": "Eth1/3",
+            "_source_sheet": "Links"
+          },
+          "source_device": "SW-02",
+          "target_device": "SW-02"
+        },
+        "expected": "Different source and target devices",
+        "actual": "Same source and target device",
+        "details": {
+          "target_type": "links",
+          "assertion_type": "self_loop"
+        },
+        "source_row": 4,
+        "severity": "error",
+        "category": "topology_assertion"
+      },
+      {
+        "issue_id": "65d14fbe-ce9f-4933-8b3c-abe3b8dc5e83",
+        "message": "Rule R6 (topology_assertion) failed: Device SW-03 is isolated.",
+        "evidence": {
+          "rule_id": "R6",
+          "item_data": {
+            "device_name": "SW-03",
+            "device_type": "Switch",
+            "status": "offline",
+            "_source_sheet": "Devices"
+          },
+          "device_name": "SW-03"
+        },
+        "expected": "Device has at least one link",
+        "actual": "No links found",
+        "details": {
+          "target_type": "devices",
+          "assertion_type": "isolated_device"
+        },
+        "source_row": 3,
+        "severity": "info",
+        "category": "topology_assertion"
+      },
+      {
+        "issue_id": "aada39c7-79d0-4fa8-929c-557d236fe4cf",
+        "message": "Rule R6 (topology_assertion) failed: Device ISOLATED-01 is isolated.",
+        "evidence": {
+          "rule_id": "R6",
+          "item_data": {
+            "device_name": "ISOLATED-01",
+            "device_type": "Router",
+            "status": "active",
+            "_source_sheet": "Devices"
+          },
+          "device_name": "ISOLATED-01"
+        },
+        "expected": "Device has at least one link",
+        "actual": "No links found",
+        "details": {
+          "target_type": "devices",
+          "assertion_type": "isolated_device"
+        },
+        "source_row": 4,
+        "severity": "info",
+        "category": "topology_assertion"
+      }
+    ],
+    "by_device": {
+      "SW-03": 3,
+      "Unknown": 3,
+      "ISOLATED-01": 1
+    },
+    "by_rule": {
+      "R1": 1,
+      "R2": 1,
+      "R3": 1,
+      "R4": 1,
+      "R5": 1,
+      "R6": 2
+    },
+    "by_severity": {
+      "medium": 1,
+      "error": 3,
+      "warning": 1,
+      "info": 2
+    }
   }
 }

@@ -17,21 +17,40 @@ class BaselineService:
                 naming_profile={"strategy": "snake_case"},
                 rule_set={
                     "R1": {
+                        "executor": "single_fact",
                         "target_type": "devices",
                         "field": "status",
                         "type": "field_equals",
                         "expected": "active"
                     },
                     "R2": {
-                        "target_type": "devices",
-                        "field": "device_name",
-                        "type": "regex_match",
-                        "expected": r"^SW-\d{2}$" # Starts with SW- followed by 2 digits
+                        "executor": "topology",
+                        "type": "duplicate_link",
+                        "severity": "error"
                     },
                     "R3": {
+                        "executor": "topology",
+                        "type": "missing_peer",
+                        "severity": "error"
+                    },
+                    "R4": {
+                        "executor": "group_consistency",
                         "target_type": "devices",
-                        "field": "device_name",
-                        "type": "missing_value"
+                        "group_key": "device_type",
+                        "comparison_field": "status",
+                        "severity": "warning"
+                    },
+                    "R5": {
+                        "executor": "topology",
+                        "type": "topology_assertion",
+                        "assertion_type": "self_loop",
+                        "severity": "error"
+                    },
+                    "R6": {
+                        "executor": "topology",
+                        "type": "topology_assertion",
+                        "assertion_type": "isolated_device",
+                        "severity": "info"
                     }
                 },
                 parameter_profile={},
