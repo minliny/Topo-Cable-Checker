@@ -72,3 +72,39 @@ class ExportArtifactDTO:
     format: str
     filename: str
     download_url: str
+
+@dataclass
+class RuleDefinitionDTO:
+    rule_id: str
+    rule_type: str
+    language_version: str
+    target_type: str
+    source_form: str
+    severity: str
+    enabled: bool
+    baseline_version: str
+    raw_definition: Dict[str, Any]
+
+@dataclass
+class CompiledRuleDTO:
+    rule_id: str
+    compiled_executor: str
+    compiled_type: str
+    scope_selector: Dict[str, Any]
+    parameter_source: str
+    threshold_source: str
+    compiled_config: Dict[str, Any]
+
+@dataclass
+class CompileErrorDTO:
+    rule_id: str
+    error_type: str
+    message: str
+    language_version: str
+
+@dataclass
+class TemplateRegistryDTO:
+    template_name: str
+    target_executor: str
+    supported_params: List[str]
+    validation_rules: List[str]

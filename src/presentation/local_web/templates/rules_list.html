@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head><title>Rules Governance</title></head>
+<body>
+    <h1>Rules for Baseline: {{ baseline_id }}</h1>
+    <a href="/templates">View Template Registry</a>
+    <hr>
+    <table border="1">
+        <tr>
+            <th>Rule ID</th>
+            <th>Type</th>
+            <th>Source Form</th>
+            <th>Language Version</th>
+            <th>Enabled</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        {% for r in rules %}
+        <tr>
+            <td>{{ r.rule_id }}</td>
+            <td>{{ r.rule_type }}</td>
+            <td>{{ r.source_form }}</td>
+            <td>{{ r.language_version }}</td>
+            <td>{{ r.enabled }}</td>
+            <td>
+                {% if r.rule_id in errors %}
+                    <span style="color:red">Compile Failed</span>
+                {% else %}
+                    <span style="color:green">Compiled</span>
+                {% endif %}
+            </td>
+            <td><a href="/rules/{{ baseline_id }}/{{ r.rule_id }}">Details</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
