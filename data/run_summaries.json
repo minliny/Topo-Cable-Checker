@@ -18,5 +18,13 @@
   "0ffac297-983c-43d5-8361-92a1092409b3": {
     "run_id": "0ffac297-983c-43d5-8361-92a1092409b3",
     "summary": "Normalized dataset contains 4 devices, 2 ports, 1 links. Found 4 issues."
+  },
+  "8b7c504c-c58e-4fe9-9f31-5169f7cd0545": {
+    "run_id": "8b7c504c-c58e-4fe9-9f31-5169f7cd0545",
+    "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
+  },
+  "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba": {
+    "run_id": "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba",
+    "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
   }
 }

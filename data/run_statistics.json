@@ -1,0 +1,22 @@
+{
+  "8b7c504c-c58e-4fe9-9f31-5169f7cd0545": {
+    "run_id": "8b7c504c-c58e-4fe9-9f31-5169f7cd0545",
+    "total_devices": 4,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Router": 1
+    }
+  },
+  "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba": {
+    "run_id": "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba",
+    "total_devices": 4,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Router": 1
+    }
+  }
+}

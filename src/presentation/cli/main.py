@@ -43,6 +43,10 @@ def main():
     summary_parser = subparsers.add_parser("summary", help="View summary")
     summary_parser.add_argument("--run", required=True, help="Run ID")
 
+    # statistics
+    stats_parser = subparsers.add_parser("statistics", help="View statistics")
+    stats_parser.add_argument("--run", required=True, help="Run ID")
+
     # issues
     issues_parser = subparsers.add_parser("issues", help="View issues")
     issues_parser.add_argument("--run", required=True, help="Run ID")
@@ -109,20 +113,37 @@ def main():
             else:
                 print("Summary not found.")
 
+        elif args.command == "statistics":
+            svc = ResultQueryService()
+            stats = svc.get_statistics(args.run)
+            if stats:
+                print(f"Statistics for {args.run}:")
+                print(f"  total_devices: {stats.total_devices}")
+                print(f"  total_ports: {stats.total_ports}")
+                print(f"  total_links: {stats.total_links}")
+                print(f"  device_type_distribution: {stats.device_type_distribution}")
+            else:
+                print("Statistics not found.")
+
         elif args.command == "issues":
             svc = ResultQueryService()
             issues = svc.get_issues(args.run)
             if issues:
                 print(f"Issues for {args.run}: {len(issues.issues)}")
-                for i in issues.issues:
-                    print(f" - {i.message}")
+                print(f"  by_device: {issues.by_device}")
+                print(f"  by_rule: {issues.by_rule}")
+                print(f"  by_severity: {issues.by_severity}")
             else:
                 print("Issues not found.")
 
         elif args.command == "review":
             svc = ReviewService()
             ctx = svc.review_issues(args.run, args.device)
-            print(f"Review created: {ctx.context_data}")
+            print(f"Review context for {args.device}:")
+            print(f"  connected_devices: {ctx.connected_devices}")
+            print(f"  related_ports: {len(ctx.related_ports)}")
+            print(f"  related_links: {len(ctx.related_links)}")
+            print(f"  related_issues: {len(ctx.related_issues)}")
 
         elif args.command == "diff":
             svc = RecheckService()

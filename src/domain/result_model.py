@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
 @dataclass
@@ -20,7 +20,10 @@ class RunSummaryOverview:
 @dataclass
 class RunStatisticsSnapshot:
     run_id: str
-    stats: Dict[str, Any]
+    total_devices: int
+    total_ports: int
+    total_links: int
+    device_type_distribution: Dict[str, int]
 
 @dataclass
 class IssueItem:
@@ -31,17 +34,30 @@ class IssueItem:
     actual: Any
     details: Dict[str, Any]
     source_row: int
+    severity: str = "medium"
 
 @dataclass
 class IssueAggregateSnapshot:
     run_id: str
     issues: List[IssueItem]
+    by_device: Dict[str, int] = field(default_factory=dict)
+    by_rule: Dict[str, int] = field(default_factory=dict)
+    by_severity: Dict[str, int] = field(default_factory=dict)
 
 @dataclass
 class ReviewContext:
     run_id: str
     device_name: str
     context_data: Dict[str, Any]
+
+@dataclass
+class DeviceReviewContext:
+    run_id: str
+    device_name: str
+    related_ports: List[Dict[str, Any]]
+    connected_devices: List[str]
+    related_links: List[Dict[str, Any]]
+    related_issues: List[IssueItem]
 
 @dataclass
 class RecheckDiffSnapshot:

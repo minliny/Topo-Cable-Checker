@@ -1,11 +1,12 @@
 import json
 import os
+import dataclasses
 from typing import Any, Dict, List
 from src.domain.task_model import CheckTask, TaskStatus
 from src.domain.baseline_model import BaselineProfile
 from src.domain.result_model import (
     RecognitionResultSnapshot, RunExecutionSnapshot, RunSummaryOverview,
-    RunStatisticsSnapshot, IssueItem, IssueAggregateSnapshot, ReviewContext, RecheckDiffSnapshot, ExportArtifact
+    RunStatisticsSnapshot, IssueItem, IssueAggregateSnapshot, DeviceReviewContext, RecheckDiffSnapshot, ExportArtifact
 )
 from src.crosscutting.config.settings import settings
 import datetime
@@ -73,21 +74,21 @@ class ResultRepository:
         d[snap.run_id] = snap.__dict__
         _write_json("run_executions.json", d)
 
+    def save_statistics(self, snap: RunStatisticsSnapshot):
+        d = _read_json("run_statistics.json")
+        d[snap.run_id] = snap.__dict__
+        _write_json("run_statistics.json", d)
+
+    def get_statistics(self, run_id: str) -> RunStatisticsSnapshot:
+        d = _read_json("run_statistics.json")
+        return RunStatisticsSnapshot(**d[run_id]) if run_id in d else None
+
     def save_issue_aggregate(self, snap: IssueAggregateSnapshot):
         d = _read_json("issue_aggregates.json")
         dd = snap.__dict__.copy()
         dd["issues"] = [i.__dict__ for i in dd["issues"]]
         d[snap.run_id] = dd
         _write_json("issue_aggregates.json", d)
-        
-    def save_summary(self, summary: RunSummaryOverview):
-        d = _read_json("run_summaries.json")
-        d[summary.run_id] = summary.__dict__
-        _write_json("run_summaries.json", d)
-        
-    def get_summary(self, run_id: str) -> RunSummaryOverview:
-        d = _read_json("run_summaries.json")
-        return RunSummaryOverview(**d[run_id]) if run_id in d else None
         
     def get_issue_aggregate(self, run_id: str) -> IssueAggregateSnapshot:
         d = _read_json("issue_aggregates.json")
@@ -97,14 +98,25 @@ class ResultRepository:
             return IssueAggregateSnapshot(**dd)
         return None
 
+    def save_summary(self, summary: RunSummaryOverview):
+        d = _read_json("run_summaries.json")
+        d[summary.run_id] = summary.__dict__
+        _write_json("run_summaries.json", d)
+        
+    def get_summary(self, run_id: str) -> RunSummaryOverview:
+        d = _read_json("run_summaries.json")
+        return RunSummaryOverview(**d[run_id]) if run_id in d else None
+
     def save_diff(self, snap: RecheckDiffSnapshot):
         d = _read_json("run_diffs.json")
         d[f"{snap.prev_run_id}_{snap.curr_run_id}"] = snap.__dict__
         _write_json("run_diffs.json", d)
 
-    def save_review(self, snap: ReviewContext):
+    def save_review(self, snap: DeviceReviewContext):
         d = _read_json("reviews.json")
-        d[f"{snap.run_id}_{snap.device_name}"] = snap.__dict__
+        dd = snap.__dict__.copy()
+        dd["related_issues"] = [i.__dict__ for i in dd["related_issues"]]
+        d[f"{snap.run_id}_{snap.device_name}"] = dd
         _write_json("reviews.json", d)
         
     def get_diff(self, prev_run_id: str, curr_run_id: str) -> RecheckDiffSnapshot:
@@ -112,7 +124,11 @@ class ResultRepository:
         k = f"{prev_run_id}_{curr_run_id}"
         return RecheckDiffSnapshot(**d[k]) if k in d else None
         
-    def get_review(self, run_id: str, device_name: str) -> ReviewContext:
+    def get_review(self, run_id: str, device_name: str) -> DeviceReviewContext:
         d = _read_json("reviews.json")
         k = f"{run_id}_{device_name}"
-        return ReviewContext(**d[k]) if k in d else None
+        if k in d:
+            dd = d[k]
+            dd["related_issues"] = [IssueItem(**i) for i in dd["related_issues"]]
+            return DeviceReviewContext(**dd)
+        return None
