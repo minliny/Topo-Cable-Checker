@@ -34,31 +34,40 @@ class BaselineService:
                 },
                 rule_set={
                     "R1_scoped": {
-                        "executor": "group_consistency",
+                        "rule_type": "template",
+                        "template": "group_consistency",
                         "scope_selector": {
                             "target_type": "devices",
                             "device_type": "Switch"
                         },
-                        "parameter_key": "P1",
+                        "params": {
+                            "parameter_key": "P1"
+                        },
                         "severity": "warning"
                     },
                     "R2_threshold_count": {
-                        "executor": "threshold",
+                        "rule_type": "template",
+                        "template": "threshold_check",
                         "scope_selector": {
                             "target_type": "devices"
                         },
-                        "metric_type": "count",
-                        "threshold_key": "T1",
+                        "params": {
+                            "metric_type": "count",
+                            "threshold_key": "T1"
+                        },
                         "severity": "error"
                     },
                     "R3_threshold_distinct": {
-                        "executor": "threshold",
+                        "rule_type": "template",
+                        "template": "threshold_check",
                         "scope_selector": {
                             "target_type": "devices"
                         },
-                        "metric_type": "distinct_count",
-                        "metric_field": "device_type",
-                        "threshold_key": "T2",
+                        "params": {
+                            "metric_type": "distinct_count",
+                            "metric_field": "device_type",
+                            "threshold_key": "T2"
+                        },
                         "severity": "error"
                     }
                 },

@@ -6,11 +6,15 @@ from src.application.query_services import QueryService
 from src.application.recognition_services.recognition_service import RecognitionService
 from src.application.rule_governance_service import RuleGovernanceService
 
+from src.application.rule_editor_service import RuleEditorService
+import json
+
 app = FastAPI(title="CheckTool Local UI")
 templates = Jinja2Templates(directory="src/presentation/local_web/templates")
 query_service = QueryService()
 recognition_service = RecognitionService()
 rule_governance = RuleGovernanceService()
+rule_editor = RuleEditorService()
 
 @app.get("/")
 async def task_list(request: Request):
@@ -99,6 +103,64 @@ async def rule_detail(request: Request, baseline_id: str, rule_id: str):
 async def templates_list(request: Request):
     registry = rule_governance.list_template_registry()
     return templates.TemplateResponse(request=request, name="templates_list.html", context={"registry": registry})
+
+# --- Rule Editor Routes ---
+
+@app.get("/rule-editor/{baseline_id}")
+async def rule_editor_list(request: Request, baseline_id: str):
+    baseline = rule_editor.get_editor_baseline(baseline_id)
+    rules = rule_editor.list_editor_rules(baseline_id)
+    return templates.TemplateResponse(request=request, name="rule_editor_list.html", context={"baseline": baseline, "rules": rules})
+
+@app.get("/rule-editor/{baseline_id}/{rule_id}")
+async def rule_editor_detail(request: Request, baseline_id: str, rule_id: str):
+    draft = rule_editor.get_editor_rule(baseline_id, rule_id)
+    if not draft:
+        return {"error": "Draft not found"}
+    raw_json = json.dumps(draft.raw_definition, indent=2)
+    return templates.TemplateResponse(request=request, name="rule_editor_detail.html", context={"draft": draft, "baseline_id": baseline_id, "raw_json": raw_json})
+
+@app.post("/rule-editor/{baseline_id}/save-draft")
+async def save_rule_draft(request: Request, baseline_id: str):
+    form_data = await request.form()
+    action = form_data.get("action")
+    rule_id = form_data.get("rule_id")
+    raw_json = form_data.get("raw_definition_json")
+    
+    try:
+        rule_def = json.loads(raw_json)
+    except json.JSONDecodeError:
+        return {"error": "Invalid JSON format"}
+        
+    rule_def["language_version"] = form_data.get("language_version")
+    rule_def["target_type"] = form_data.get("target_type")
+    rule_def["severity"] = form_data.get("severity")
+    rule_def["enabled"] = form_data.get("enabled") == "on"
+
+    rule_editor.save_rule_draft(baseline_id, rule_id, rule_def)
+    
+    draft = rule_editor.get_editor_rule(baseline_id, rule_id)
+    context = {"draft": draft, "baseline_id": baseline_id, "raw_json": json.dumps(rule_def, indent=2)}
+
+    if action == "validate":
+        validation = rule_editor.validate_rule_draft(rule_id, rule_def)
+        context["validation_result"] = validation
+    elif action == "preview":
+        preview = rule_editor.compile_rule_preview(rule_id, rule_def)
+        context["compile_preview"] = preview
+
+    return templates.TemplateResponse(request=request, name="rule_editor_detail.html", context=context)
+
+@app.post("/rule-editor/{baseline_id}/publish")
+async def publish_baseline(request: Request, baseline_id: str):
+    success, new_version, count, msg = rule_editor.publish_baseline_version(baseline_id, "Publish from UI")
+    
+    if success:
+        return RedirectResponse(url=f"/rule-editor/{baseline_id}", status_code=303)
+    else:
+        baseline = rule_editor.get_editor_baseline(baseline_id)
+        rules = rule_editor.list_editor_rules(baseline_id)
+        return templates.TemplateResponse(request=request, name="rule_editor_list.html", context={"baseline": baseline, "rules": rules, "publish_error": msg})
 
 if __name__ == "__main__":
     import uvicorn

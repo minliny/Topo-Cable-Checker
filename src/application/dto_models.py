@@ -108,3 +108,39 @@ class TemplateRegistryDTO:
     target_executor: str
     supported_params: List[str]
     validation_rules: List[str]
+
+@dataclass
+class RuleEditorBaselineDTO:
+    baseline_id: str
+    baseline_name: str
+    baseline_version: str
+    baseline_status: str
+    language_version: str
+    draft_rule_count: int
+    published_rule_count: int
+
+@dataclass
+class RuleEditorDraftDTO:
+    rule_id: str
+    source_form: str
+    language_version: str
+    target_type: str
+    severity: str
+    enabled: bool
+    raw_definition: Dict[str, Any]
+    draft_status: str
+    is_dirty: bool
+    compile_status: str
+
+@dataclass
+class RuleValidationResultDTO:
+    rule_id: str
+    is_valid: bool
+    compile_errors: List[CompileErrorDTO]
+
+@dataclass
+class RuleCompilePreviewDTO:
+    rule_id: str
+    compile_status: str
+    compiled_rule: Optional[Dict[str, Any]]
+    compile_errors: List[CompileErrorDTO]

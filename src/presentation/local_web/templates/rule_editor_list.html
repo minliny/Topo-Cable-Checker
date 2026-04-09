@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head><title>Rule Editor - Baseline {{ baseline.baseline_id }}</title></head>
+<body>
+    <h1>Rule Editor: {{ baseline.baseline_name }} (Version: {{ baseline.baseline_version }})</h1>
+    <p>Status: {{ baseline.baseline_status }} | Draft Rules: {{ baseline.draft_rule_count }} | Published Rules: {{ baseline.published_rule_count }}</p>
+    
+    <form action="/rule-editor/{{ baseline.baseline_id }}/publish" method="post">
+        <button type="submit" style="background-color:green;color:white;padding:10px;">Publish New Baseline Version</button>
+    </form>
+    
+    {% if publish_error %}
+        <p style="color:red">Publish Error: {{ publish_error }}</p>
+    {% endif %}
+
+    <hr>
+    <h3>Draft Rules</h3>
+    <table border="1">
+        <tr>
+            <th>Rule ID</th>
+            <th>Source Form</th>
+            <th>Target Type</th>
+            <th>Enabled</th>
+            <th>Compile Status</th>
+            <th>Action</th>
+        </tr>
+        {% for r in rules %}
+        <tr>
+            <td>{{ r.rule_id }}</td>
+            <td>{{ r.source_form }}</td>
+            <td>{{ r.target_type }}</td>
+            <td>{{ r.enabled }}</td>
+            <td>
+                {% if r.compile_status == "error" %}
+                    <span style="color:red">Error</span>
+                {% else %}
+                    <span style="color:green">Success</span>
+                {% endif %}
+            </td>
+            <td><a href="/rule-editor/{{ baseline.baseline_id }}/{{ r.rule_id }}">Edit</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
