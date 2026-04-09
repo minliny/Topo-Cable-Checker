@@ -44,6 +44,18 @@ class RuleEngine:
                 for s_key, s_val in scope_def.items():
                     if s_key == "target_type":
                         continue
+                    
+                    if s_key == "_exists":
+                        # s_val is a list of fields that must exist
+                        for exist_field in s_val:
+                            val = getattr(item, exist_field, None)
+                            if val is None or str(val).strip() == "":
+                                match = False
+                                break
+                        if not match:
+                            break
+                        continue
+
                     actual_val = getattr(item, s_key, None)
                     if actual_val != s_val:
                         match = False

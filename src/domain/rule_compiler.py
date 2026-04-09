@@ -101,11 +101,25 @@ class RuleCompiler:
                     raise RuleCompileError(rule_id, "invalid_dsl_expression", f"Unsupported 'when' string expression: {when_expr}")
             elif isinstance(when_expr, dict) and "all" in when_expr:
                 for cond in when_expr["all"]:
-                    match = re.match(r'^\s*(\w+)\s*==\s*"([^"]+)"\s*$', cond)
-                    if match:
-                        scope_selector[match.group(1)] = match.group(2)
-                    else:
-                        raise RuleCompileError(rule_id, "invalid_dsl_expression", f"Unsupported 'when.all' condition: {cond}")
+                    # Match standard equality: key == "value"
+                    match_eq = re.match(r'^\s*(\w+)\s*==\s*"([^"]+)"\s*$', cond)
+                    if match_eq:
+                        scope_selector[match_eq.group(1)] = match_eq.group(2)
+                        continue
+                    
+                    # Match exists shorthand in when clause: key exists
+                    match_exists = re.match(r'^\s*(\w+)\s+exists\s*$', cond)
+                    if match_exists:
+                        # In the scope_selector, how should we handle "exists"? 
+                        # Usually scope_selector is a direct equality match.
+                        # For the sake of this DSL expansion, we'll mark a special _exists scope parameter
+                        # which the apply_scope function can handle.
+                        if "_exists" not in scope_selector:
+                            scope_selector["_exists"] = []
+                        scope_selector["_exists"].append(match_exists.group(1))
+                        continue
+                        
+                    raise RuleCompileError(rule_id, "invalid_dsl_expression", f"Unsupported 'when.all' condition: {cond}")
             else:
                 raise RuleCompileError(rule_id, "invalid_dsl_expression", "Invalid 'when' clause format")
                 

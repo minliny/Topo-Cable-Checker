@@ -1,13 +1,14 @@
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError, TemplateRegistry
 
 rule_definitions = {
-    "rule_success_dsl_regex": {
+    "rule_success_dsl_regex_with_and": {
         "rule_type": "dsl",
         "target_type": "devices",
         "expression": {
             "when": {
                 "all": [
-                    'device_type == "Switch"'
+                    'device_type == "Switch"',
+                    'status exists'
                 ]
             },
             "assert": {
