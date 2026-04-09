@@ -66,9 +66,19 @@ class RuleCompiler:
     """
     Compiles Rule Definitions (DSL or Templates) into executable Rule Engine configuration objects.
     """
-    
+
+    SUPPORTED_VERSIONS = ["v1", "v1.0"]
+
     @classmethod
     def compile(cls, rule_id: str, rule_def: Dict[str, Any]) -> Dict[str, Any]:
+        language_version = rule_def.get("language_version", "v1.0")
+        if language_version not in cls.SUPPORTED_VERSIONS:
+            raise RuleCompileError(
+                rule_id, 
+                "unsupported_language_version", 
+                f"Language version '{language_version}' is not supported. Supported versions: {cls.SUPPORTED_VERSIONS}"
+            )
+
         rule_type = rule_def.get("rule_type")
         if not rule_type:
             raise RuleCompileError(rule_id, "unknown_rule_type", "Missing rule_type")

@@ -1,0 +1,102 @@
+# Rule Language Test Matrix
+
+dsl_success_cases:
+  - case_id: "dsl_basic_eq"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "dsl"
+      target_type: "devices"
+      expression:
+        when: 'device_type == "Switch"'
+        assert: 'status == "active"'
+    expected_executor: "single_fact"
+    expected_target_type: "devices"
+  
+  - case_id: "dsl_regex_and"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "dsl"
+      target_type: "devices"
+      expression:
+        when:
+          all:
+            - 'device_type == "Router"'
+        assert:
+          regex:
+            field: "device_name"
+            pattern: "^R-\\d{2}$"
+    expected_executor: "single_fact"
+    expected_target_type: "devices"
+    
+  - case_id: "dsl_exists_ports"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "dsl"
+      target_type: "ports"
+      expression:
+        assert:
+          exists: "port_status"
+    expected_executor: "single_fact"
+    expected_target_type: "ports"
+
+template_success_cases:
+  - case_id: "template_group_consistency"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "template"
+      target_type: "devices"
+      template: "group_consistency"
+      params:
+        group_key: "device_type"
+        comparison_field: "status"
+    expected_executor: "group_consistency"
+    expected_target_type: "devices"
+    
+  - case_id: "template_threshold_check"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "template"
+      target_type: "devices"
+      template: "threshold_check"
+      params:
+        metric_type: "count"
+        threshold_key: "T1"
+    expected_executor: "threshold"
+    expected_target_type: "devices"
+
+compile_error_cases:
+  - case_id: "err_unsupported_language_version"
+    input_rule:
+      language_version: "v2.0"
+      rule_type: "dsl"
+      target_type: "devices"
+      expression:
+        assert: 'status == "active"'
+    expected_error: "unsupported_language_version"
+    
+  - case_id: "err_invalid_dsl_expression"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "dsl"
+      target_type: "devices"
+      expression:
+        when: "unknown_format"
+        assert: 'status == "active"'
+    expected_error: "invalid_dsl_expression"
+    
+  - case_id: "err_unknown_template"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "template"
+      target_type: "devices"
+      template: "magic_template"
+    expected_error: "unknown_template"
+    
+  - case_id: "err_missing_required_param"
+    input_rule:
+      language_version: "v1.0"
+      rule_type: "template"
+      target_type: "devices"
+      template: "threshold_check"
+      params: {}
+    expected_error: "missing_required_param"
