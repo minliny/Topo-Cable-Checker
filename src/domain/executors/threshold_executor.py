@@ -2,32 +2,34 @@ from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
 from src.crosscutting.ids.generator import generate_id
+from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.rule_engine.compiled_rule import CompiledRule
 import dataclasses
 
 class ThresholdExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
-                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, rule_id: str, compiled_rule: CompiledRule, filtered_dataset: Dict[str, List[Any]], 
+                context: ExecutionContext) -> List[IssueItem]:
         issues = []
 
-        target_type = rule_def.get("scope_selector", {}).get("target_type") or rule_def.get("target_type")
-        metric_type = rule_def.get("metric_type", "count") # count, distinct_count
-        metric_field = rule_def.get("metric_field")
+        target_type = compiled_rule.target.get("type")
+        metric_type = compiled_rule.get("metric_type", "count") # count, distinct_count
+        metric_field = compiled_rule.get("metric_field")
         
         # Read threshold definitions
-        thresh_key = rule_def.get("threshold_key")
-        if thresh_key and thresh_key in threshold_profile:
-            t_def = threshold_profile[thresh_key]
+        thresh_key = compiled_rule.get("threshold_key")
+        if thresh_key and thresh_key in context.threshold_profile:
+            t_def = context.threshold_profile[thresh_key]
             compare_operator = t_def.get("operator", "eq")
             expected_val = t_def.get("expected_value", t_def.get("value"))
             min_val = t_def.get("min_value")
             max_val = t_def.get("max_value")
         else:
-            compare_operator = rule_def.get("operator", "eq")
-            expected_val = rule_def.get("expected_value", rule_def.get("expected"))
-            min_val = rule_def.get("min_value")
-            max_val = rule_def.get("max_value")
+            compare_operator = compiled_rule.get("operator", "eq")
+            expected_val = compiled_rule.get("expected_value", compiled_rule.get("expected"))
+            min_val = compiled_rule.get("min_value")
+            max_val = compiled_rule.get("max_value")
             
-        severity = rule_def.get("severity", "medium")
+        severity = compiled_rule.severity
         target_list = filtered_dataset.get(target_type, [])
         
         # 1. Calculate metric

@@ -2,25 +2,27 @@ from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
 from src.crosscutting.ids.generator import generate_id
+from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.rule_engine.compiled_rule import CompiledRule
 import dataclasses
 
 class GroupConsistencyExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
-                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, rule_id: str, compiled_rule: CompiledRule, filtered_dataset: Dict[str, List[Any]], 
+                context: ExecutionContext) -> List[IssueItem]:
         issues = []
 
-        target_type = rule_def.get("scope_selector", {}).get("target_type") or rule_def.get("target_type")
+        target_type = compiled_rule.target.get("type")
 
         # Resolve parameters either from rule_def or parameter_profile
-        param_key = rule_def.get("parameter_key")
-        if param_key and param_key in parameter_profile:
-            group_key_field = parameter_profile[param_key].get("group_key")
-            comparison_field = parameter_profile[param_key].get("comparison_field")
+        param_key = compiled_rule.get("parameter_key")
+        if param_key and param_key in context.parameter_profile:
+            group_key_field = context.parameter_profile[param_key].get("group_key")
+            comparison_field = context.parameter_profile[param_key].get("comparison_field")
         else:
-            group_key_field = rule_def.get("group_key")
-            comparison_field = rule_def.get("comparison_field")
+            group_key_field = compiled_rule.get("group_key")
+            comparison_field = compiled_rule.get("comparison_field")
             
-        severity = rule_def.get("severity", "medium")
+        severity = compiled_rule.severity
         
         target_list = filtered_dataset.get(target_type, [])
         if not target_list:
