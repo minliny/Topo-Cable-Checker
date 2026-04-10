@@ -2,11 +2,12 @@ from typing import Dict, Any, List
 
 from src.application.recognition_services.rule_definition_model import RuleDefinition
 from src.application.recognition_services.rule_definition_registry import RuleDefinitionRegistry
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
 
 
 class SingleFactRuleCompiler:
     @staticmethod
-    def compile(definition: RuleDefinition) -> Dict[str, Any]:
+    def compile(definition: RuleDefinition) -> CompiledRule:
         if definition.engine_scope != "rule_engine_single_fact":
             raise ValueError(f"Invalid engine_scope for single_fact: {definition.engine_scope}")
 
@@ -32,25 +33,23 @@ class SingleFactRuleCompiler:
         if not field:
             raise ValueError("Missing parameters.target_field for single_fact rule")
 
-        compiled_rule = {
-            "executor": "single_fact",
-            "scope_selector": {"target_type": target_type},
-            "severity": definition.severity,
-            "field": field,
-            "expected": expected,
-            "type": rule_type,
-        }
-        
-        if definition.message_template:
-            compiled_rule["message_template"] = definition.message_template
-        elif definition.error_message:
-            compiled_rule["message_template"] = definition.error_message
-            
-        return compiled_rule
+        msg_template = definition.message_template or definition.error_message or ""
+
+        return CompiledRule(
+            rule_id=definition.rule_id,
+            rule_type=rule_type,
+            target=RuleTarget(type=target_type),
+            executor="single_fact",
+            params={
+                "field": field,
+                "expected": expected
+            },
+            message=RuleMessage(template=msg_template, severity=definition.severity)
+        )
 
     @staticmethod
-    def compile_registry(registry: RuleDefinitionRegistry, enabled_only: bool = True) -> Dict[str, Dict[str, Any]]:
-        compiled: Dict[str, Dict[str, Any]] = {}
+    def compile_registry(registry: RuleDefinitionRegistry, enabled_only: bool = True) -> Dict[str, CompiledRule]:
+        compiled: Dict[str, CompiledRule] = {}
         definitions: List[RuleDefinition] = registry.get_by_scope("rule_engine_single_fact", enabled_only=enabled_only)
         for d in definitions:
             compiled[d.rule_id] = SingleFactRuleCompiler.compile(d)

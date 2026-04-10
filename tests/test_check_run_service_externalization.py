@@ -176,7 +176,7 @@ def test_check_run_service_executes_external_threshold_rule(setup_task_and_data)
         
         ext_issues = [i for i in issues if i.evidence.get("rule_id") == "RE_TH_EXT_01"]
         assert len(ext_issues) == 1
-        assert "Rule RE_TH_EXT_01 (threshold) failed" in ext_issues[0].message
+        assert "Too many firewalls!" in ext_issues[0].message
         
     finally:
         os.remove(rule_path)

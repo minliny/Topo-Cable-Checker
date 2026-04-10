@@ -8,6 +8,7 @@ from src.domain.executors.threshold_executor import ThresholdExecutor
 from src.crosscutting.logging.logger import get_logger
 from src.domain.baseline_model import BaselineProfile
 from src.domain.rule_compiler import RuleCompiler
+from src.domain.compiled_rule_schema import CompiledRule
 
 logger = get_logger(__name__)
 
@@ -72,12 +73,17 @@ class RuleEngine:
         self,
         normalized_dataset: NormalizedDataset,
         baseline: BaselineProfile,
-        external_compiled_rules: Dict[str, Dict[str, Any]] | None = None,
+        external_compiled_rules: Dict[str, CompiledRule] | None = None,
     ) -> List[IssueItem]:
         all_issues = []
         rule_set = getattr(baseline, "rule_set", baseline.get("rule_set", {})) if isinstance(baseline, dict) else baseline.rule_set
         parameter_profile = getattr(baseline, "parameter_profile", baseline.get("parameter_profile", {})) if isinstance(baseline, dict) else baseline.parameter_profile
         threshold_profile = getattr(baseline, "threshold_profile", baseline.get("threshold_profile", {})) if isinstance(baseline, dict) else baseline.threshold_profile
+
+        context = {
+            "parameter_profile": parameter_profile,
+            "threshold_profile": threshold_profile
+        }
 
         executed_rule_ids = set()
         
@@ -89,17 +95,17 @@ class RuleEngine:
                 logger.error(f"Error compiling rule {rule_id}: {e}")
                 continue
 
-            rule_executor_type = compiled_rule.get("executor", "single_fact")
+            rule_executor_type = compiled_rule.executor
             executor = self.executors.get(rule_executor_type)
 
             if executor:
                 try:
-                    scope_def = compiled_rule.get("scope_selector", {})
+                    scope_def = compiled_rule.target.filter
                     # 2. Apply Scope
                     filtered_dataset = self._apply_scope(normalized_dataset, scope_def)
 
                     # 3. Dispatch
-                    issues = executor.execute(rule_id, compiled_rule, filtered_dataset, parameter_profile, threshold_profile)
+                    issues = executor.execute(compiled_rule, filtered_dataset, context)
                     all_issues.extend(issues)
                 except Exception as e:
                     logger.error(f"Error executing rule {rule_id}: {e}")
@@ -114,13 +120,13 @@ class RuleEngine:
                     logger.warning(f"External rule_id '{rule_id}' conflicts with baseline rule_set. Skipping external rule.")
                     continue
 
-                rule_executor_type = compiled_rule.get("executor", "single_fact")
+                rule_executor_type = compiled_rule.executor
                 executor = self.executors.get(rule_executor_type)
                 if executor:
                     try:
-                        scope_def = compiled_rule.get("scope_selector", {})
+                        scope_def = compiled_rule.target.filter
                         filtered_dataset = self._apply_scope(normalized_dataset, scope_def)
-                        issues = executor.execute(rule_id, compiled_rule, filtered_dataset, parameter_profile, threshold_profile)
+                        issues = executor.execute(compiled_rule, filtered_dataset, context)
                         all_issues.extend(issues)
                     except Exception as e:
                         logger.error(f"Error executing external rule {rule_id}: {e}")

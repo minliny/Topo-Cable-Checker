@@ -3185,5 +3185,1274 @@
       ],
       "warnings": []
     }
+  },
+  "f7a5b9b5-933e-4310-aff0-0dcb96b72523": {
+    "task_id": "f7a5b9b5-933e-4310-aff0-0dcb96b72523",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "2a192e1c-1bbc-4d6c-add3-36129ad8b453",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "bd0f428f-ac23-4543-b21c-6830446ae863": {
+    "task_id": "bd0f428f-ac23-4543-b21c-6830446ae863",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "5441a65f-537b-4ed3-95f0-45b3662f39e1",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "504aa94f-656b-498f-8422-18d9cc76703a": {
+    "task_id": "504aa94f-656b-498f-8422-18d9cc76703a",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "0e97d312-1b12-448c-bf87-1c469d4d6312",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "0030c533-f399-4093-89ba-41d1cc9c472f": {
+    "task_id": "0030c533-f399-4093-89ba-41d1cc9c472f",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "ad1ade6f-783b-4587-b746-08fda57a3bbb",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "102e9676-1c63-408f-a0a2-5a66ccfe1493": {
+    "task_id": "102e9676-1c63-408f-a0a2-5a66ccfe1493",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "6a2d4640-2072-42e9-8984-0d153f8883fc",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "3c1ec5c6-d237-4e02-8940-3a65b64e4a66": {
+    "task_id": "3c1ec5c6-d237-4e02-8940-3a65b64e4a66",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "device_dup",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type"
+        ],
+        "device_dup": [
+          "Device Name",
+          "Device Type"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001",
+          "Extra Column"
+        ]
+      },
+      "row_data": {
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "a47ba06a-5d02-4834-b9b1-6439dc84dbbb",
+          "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
+          "evidence": {
+            "sheet_type": "device",
+            "conflicting_sheets": [
+              "device",
+              "device_dup"
+            ]
+          },
+          "expected": "1 sheet per type",
+          "actual": "2 sheets",
+          "details": {
+            "sheet_names": [
+              "device",
+              "device_dup"
+            ]
+          },
+          "source_row": 0,
+          "severity": "critical",
+          "category": "sheet_conflict",
+          "stage": "recognition"
+        },
+        {
+          "issue_id": "b40cc7f0-cb3c-4848-989a-e80d7d631a78",
+          "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
+          "evidence": {
+            "sheet": "ports",
+            "unmapped_headers": [
+              "Extra Column"
+            ]
+          },
+          "expected": "All headers mapped",
+          "actual": "1 unmapped headers",
+          "details": {
+            "unmapped_headers": [
+              "Extra Column"
+            ]
+          },
+          "source_row": 0,
+          "severity": "warning",
+          "category": "unmapped_header",
+          "stage": "recognition"
+        },
+        {
+          "issue_id": "006f9923-8b55-4eb8-8dc3-0910ece84e68",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "3f937a54-5fbe-40cb-9894-90ee99f81143": {
+    "task_id": "3f937a54-5fbe-40cb-9894-90ee99f81143",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "7fe320b0-f645-452c-bf2a-bd1ff36b5521",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "95c1024f-0c4c-49ce-a6f3-87e7db42b916": {
+    "task_id": "95c1024f-0c4c-49ce-a6f3-87e7db42b916",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "cefbc260-ae32-476b-98a4-0b26e4e644a6",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "27e1ddbe-ecd7-4dc9-8f92-7ace1657aef6": {
+    "task_id": "27e1ddbe-ecd7-4dc9-8f92-7ace1657aef6",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "af9fcbad-be35-4d95-b47d-17561fb265a4",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "f5f73dfa-f2e3-42c1-b6a9-4ff66529237d": {
+    "task_id": "f5f73dfa-f2e3-42c1-b6a9-4ff66529237d",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "b55d667a-0970-4293-8c8d-cab88089aca7",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "81d5d51a-4120-475c-afbe-2e91c975938b": {
+    "task_id": "81d5d51a-4120-475c-afbe-2e91c975938b",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "4f95759d-6a1c-412e-8c41-cb579fb77f1c",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "72201bc4-d5d7-4b80-bf4b-7087ea0768f8": {
+    "task_id": "72201bc4-d5d7-4b80-bf4b-7087ea0768f8",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "device_dup",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type"
+        ],
+        "device_dup": [
+          "Device Name",
+          "Device Type"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001",
+          "Extra Column"
+        ]
+      },
+      "row_data": {
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "cd3cf21d-6978-4097-b071-cf3b539086e8",
+          "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
+          "evidence": {
+            "sheet_type": "device",
+            "conflicting_sheets": [
+              "device",
+              "device_dup"
+            ]
+          },
+          "expected": "1 sheet per type",
+          "actual": "2 sheets",
+          "details": {
+            "sheet_names": [
+              "device",
+              "device_dup"
+            ]
+          },
+          "source_row": 0,
+          "severity": "critical",
+          "category": "sheet_conflict",
+          "stage": "recognition"
+        },
+        {
+          "issue_id": "3e7b1af3-1cf1-4cd9-8817-d55dc8da1c31",
+          "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
+          "evidence": {
+            "sheet": "ports",
+            "unmapped_headers": [
+              "Extra Column"
+            ]
+          },
+          "expected": "All headers mapped",
+          "actual": "1 unmapped headers",
+          "details": {
+            "unmapped_headers": [
+              "Extra Column"
+            ]
+          },
+          "source_row": 0,
+          "severity": "warning",
+          "category": "unmapped_header",
+          "stage": "recognition"
+        },
+        {
+          "issue_id": "b895f92e-d637-4252-8119-2caa0cdffa35",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "9864145f-3529-48c0-9a70-dce138b0fb7a": {
+    "task_id": "9864145f-3529-48c0-9a70-dce138b0fb7a",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "718ab1ed-6553-491e-9f06-bff14e3526fd",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "0af3491e-20e5-47a7-a5a5-3dca39a12b70": {
+    "task_id": "0af3491e-20e5-47a7-a5a5-3dca39a12b70",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "25b66f7c-9d23-4ba4-9ecd-ddfe1c989aaa",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "1077c66f-0963-40f3-bc13-f64710cbb373": {
+    "task_id": "1077c66f-0963-40f3-bc13-f64710cbb373",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "6aeda3c6-8ece-4542-88f2-4ca1966327cc",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "b707120f-5a66-4a39-8e76-ff54734d9298": {
+    "task_id": "b707120f-5a66-4a39-8e76-ff54734d9298",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "b4b545c4-3c13-434a-97af-5f593689afa1",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "99109943-9afe-4ef6-beac-54cc51a24640": {
+    "task_id": "99109943-9afe-4ef6-beac-54cc51a24640",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline"
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": "SW-01",
+            "device_type": "Switch",
+            "status": "Online"
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "568353f4-15bc-4db2-a329-afb700ab3335",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
+  },
+  "cc921939-c9a6-4c06-a7b1-a398961ab454": {
+    "task_id": "cc921939-c9a6-4c06-a7b1-a398961ab454",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "device_dup",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type"
+        ],
+        "device_dup": [
+          "Device Name",
+          "Device Type"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001",
+          "Extra Column"
+        ]
+      },
+      "row_data": {
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "b92cd6fe-4694-4016-9c94-b2184ea4ee20",
+          "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
+          "evidence": {
+            "sheet_type": "device",
+            "conflicting_sheets": [
+              "device",
+              "device_dup"
+            ]
+          },
+          "expected": "1 sheet per type",
+          "actual": "2 sheets",
+          "details": {
+            "sheet_names": [
+              "device",
+              "device_dup"
+            ]
+          },
+          "source_row": 0,
+          "severity": "critical",
+          "category": "sheet_conflict",
+          "stage": "recognition"
+        },
+        {
+          "issue_id": "ea05c843-3e90-4307-8bfb-cbf52724db39",
+          "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
+          "evidence": {
+            "sheet": "ports",
+            "unmapped_headers": [
+              "Extra Column"
+            ]
+          },
+          "expected": "All headers mapped",
+          "actual": "1 unmapped headers",
+          "details": {
+            "unmapped_headers": [
+              "Extra Column"
+            ]
+          },
+          "source_row": 0,
+          "severity": "warning",
+          "category": "unmapped_header",
+          "stage": "recognition"
+        },
+        {
+          "issue_id": "ab422643-6be4-446c-826d-b64d38da03a6",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
   }
 }

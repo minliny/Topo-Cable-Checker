@@ -100,12 +100,13 @@ class RuleEditorService:
             return RuleValidationResultDTO(rule_id=rule_id, is_valid=False, compile_errors=[error_dto])
 
     def compile_rule_preview(self, rule_id: str, rule_definition: Dict[str, Any]) -> RuleCompilePreviewDTO:
+        import dataclasses
         try:
             compiled = RuleCompiler.compile(rule_id, rule_definition)
             return RuleCompilePreviewDTO(
                 rule_id=rule_id,
                 compile_status="success",
-                compiled_rule=compiled,
+                compiled_rule=dataclasses.asdict(compiled),
                 compile_errors=[]
             )
         except RuleCompileError as e:

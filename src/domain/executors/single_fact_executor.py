@@ -1,22 +1,23 @@
 from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
+from src.domain.compiled_rule_schema import CompiledRule
 from src.crosscutting.ids.generator import generate_id
 import dataclasses
 import re
 
 class SingleFactExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
-                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
         issues = []
         
-        target_type = rule_def.get("scope_selector", {}).get("target_type")
-        target_field = rule_def.get("field")
-        rule_subtype = rule_def.get("type", "field_equals")
-        expected_val = rule_def.get("expected")
-        severity = rule_def.get("severity", "medium")
+        rule_id = compiled_rule.rule_id
+        target_type = compiled_rule.target.type
+        target_field = compiled_rule.params.get("field")
+        rule_subtype = compiled_rule.rule_type
+        expected_val = compiled_rule.params.get("expected")
+        severity = compiled_rule.message.severity
         
-        target_list = filtered_dataset.get(target_type, [])
+        target_list = dataset.get(target_type, [])
             
         for i, item in enumerate(target_list):
             actual_val = getattr(item, target_field, None)
@@ -26,19 +27,19 @@ class SingleFactExecutor(RuleExecutor):
             if rule_subtype == "field_equals":
                 if actual_val != expected_val:
                     is_failed = True
-                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected '{expected_val}', got '{actual_val}'"
+                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected '{expected_val}', got '{actual_val}'"
             elif rule_subtype == "field_not_equals":
                 if actual_val == expected_val:
                     is_failed = True
-                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected anything but '{expected_val}', got '{actual_val}'"
+                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected anything but '{expected_val}', got '{actual_val}'"
             elif rule_subtype == "regex_match":
                 if not actual_val or not re.match(str(expected_val), str(actual_val)):
                     is_failed = True
-                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: '{actual_val}' does not match regex '{expected_val}'"
+                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: '{actual_val}' does not match regex '{expected_val}'"
             elif rule_subtype == "missing_value":
                 if actual_val is None or str(actual_val).strip() == "":
                     is_failed = True
-                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed: Required field '{target_field}' is missing or empty"
+                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed: Required field '{target_field}' is missing or empty"
             
             if is_failed:
                 issues.append(IssueItem(

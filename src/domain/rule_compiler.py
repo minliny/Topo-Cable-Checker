@@ -1,5 +1,6 @@
-import re
 from typing import Dict, Any, List
+import re
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
 
 class RuleCompileError(Exception):
     """
@@ -70,7 +71,7 @@ class RuleCompiler:
     SUPPORTED_VERSIONS = ["v1", "v1.0"]
 
     @classmethod
-    def compile(cls, rule_id: str, rule_def: Dict[str, Any]) -> Dict[str, Any]:
+    def compile(cls, rule_id: str, rule_def: Dict[str, Any]) -> CompiledRule:
         language_version = rule_def.get("language_version", "v1.0")
         if language_version not in cls.SUPPORTED_VERSIONS:
             raise RuleCompileError(
@@ -95,7 +96,7 @@ class RuleCompiler:
             raise RuleCompileError(rule_id, "unknown_rule_type", f"Unsupported rule_type: '{rule_type}'")
             
     @classmethod
-    def _compile_dsl(cls, rule_id: str, rule_def: Dict[str, Any]) -> Dict[str, Any]:
+    def _compile_dsl(cls, rule_id: str, rule_def: Dict[str, Any]) -> CompiledRule:
         expression = rule_def.get("expression", {})
         when_expr = expression.get("when")
         assert_expr = expression.get("assert")
@@ -120,10 +121,6 @@ class RuleCompiler:
                     # Match exists shorthand in when clause: key exists
                     match_exists = re.match(r'^\s*(\w+)\s+exists\s*$', cond)
                     if match_exists:
-                        # In the scope_selector, how should we handle "exists"? 
-                        # Usually scope_selector is a direct equality match.
-                        # For the sake of this DSL expansion, we'll mark a special _exists scope parameter
-                        # which the apply_scope function can handle.
                         if "_exists" not in scope_selector:
                             scope_selector["_exists"] = []
                         scope_selector["_exists"].append(match_exists.group(1))
@@ -136,41 +133,49 @@ class RuleCompiler:
         if not assert_expr:
             raise RuleCompileError(rule_id, "invalid_dsl_expression", "DSL expression must contain an 'assert' clause")
             
-        compiled_rule = {
-            "executor": "single_fact",
-            "scope_selector": scope_selector,
-            "severity": rule_def.get("severity", "medium")
-        }
+        target_type = scope_selector.pop("target_type", "devices")
+        target = RuleTarget(type=target_type, filter=scope_selector)
+        
+        params = {}
+        rule_type = ""
         
         if isinstance(assert_expr, str):
             match = re.match(r'^\s*(\w+)\s*==\s*"([^"]+)"\s*$', assert_expr)
             if match:
-                compiled_rule["field"] = match.group(1)
-                compiled_rule["expected"] = match.group(2)
-                compiled_rule["type"] = "field_equals"
+                params["field"] = match.group(1)
+                params["expected"] = match.group(2)
+                rule_type = "field_equals"
             else:
                 raise RuleCompileError(rule_id, "invalid_dsl_expression", f"Unsupported 'assert' string: {assert_expr}")
         elif isinstance(assert_expr, dict):
             if "regex" in assert_expr:
-                compiled_rule["field"] = assert_expr["regex"].get("field")
-                compiled_rule["expected"] = assert_expr["regex"].get("pattern")
-                compiled_rule["type"] = "regex_match"
-                if not compiled_rule["field"] or not compiled_rule["expected"]:
+                params["field"] = assert_expr["regex"].get("field")
+                params["expected"] = assert_expr["regex"].get("pattern")
+                rule_type = "regex_match"
+                if not params["field"] or not params["expected"]:
                     raise RuleCompileError(rule_id, "missing_required_param", "regex assert requires 'field' and 'pattern'")
             elif "exists" in assert_expr:
-                compiled_rule["field"] = assert_expr["exists"]
-                compiled_rule["type"] = "missing_value" 
-                # Note: The missing_value executor natively fails if missing. This precisely implements 'exists'
-                compiled_rule["expected"] = None
+                params["field"] = assert_expr["exists"]
+                rule_type = "missing_value" 
+                params["expected"] = None
             else:
                 raise RuleCompileError(rule_id, "invalid_dsl_expression", "Unsupported 'assert' dict keys")
         else:
             raise RuleCompileError(rule_id, "invalid_dsl_expression", "Invalid 'assert' clause format")
             
-        return compiled_rule
+        msg_template = rule_def.get("message_template") or rule_def.get("error_message") or ""
+        
+        return CompiledRule(
+            rule_id=rule_id,
+            rule_type=rule_type,
+            target=target,
+            executor="single_fact",
+            params=params,
+            message=RuleMessage(template=msg_template, severity=rule_def.get("severity", "medium"))
+        )
         
     @classmethod
-    def _compile_template(cls, rule_id: str, rule_def: Dict[str, Any]) -> Dict[str, Any]:
+    def _compile_template(cls, rule_id: str, rule_def: Dict[str, Any]) -> CompiledRule:
         template_name = rule_def.get("template")
         if not template_name:
             raise RuleCompileError(rule_id, "unknown_template", "Missing template name")
@@ -188,14 +193,22 @@ class RuleCompiler:
                 
         template_info = TemplateRegistry.get_template(template_name)
         
-        compiled_rule = {
-            "executor": template_info["target_executor"],
-            "scope_selector": rule_def.get("scope_selector", {"target_type": rule_def.get("target_type", "devices")}),
-            "severity": rule_def.get("severity", "medium")
-        }
+        scope_selector = rule_def.get("scope_selector", {"target_type": rule_def.get("target_type", "devices")})
+        target_type = scope_selector.pop("target_type", "devices")
+        target = RuleTarget(type=target_type, filter=scope_selector)
         
+        compiled_params = {}
         for p in template_info["supported_params"]:
             if p in params:
-                compiled_rule[p] = params[p]
+                compiled_params[p] = params[p]
                 
-        return compiled_rule
+        msg_template = rule_def.get("message_template") or rule_def.get("error_message") or ""
+                
+        return CompiledRule(
+            rule_id=rule_id,
+            rule_type=template_name,
+            target=target,
+            executor=template_info["target_executor"],
+            params=compiled_params,
+            message=RuleMessage(template=msg_template, severity=rule_def.get("severity", "medium"))
+        )

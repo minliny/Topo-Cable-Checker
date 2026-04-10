@@ -1,27 +1,29 @@
 from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
+from src.domain.compiled_rule_schema import CompiledRule
 from src.crosscutting.ids.generator import generate_id
 import dataclasses
 
 class TopologyExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
-                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
-        rule_subtype = rule_def.get("type")
-        severity = rule_def.get("severity", "medium")
+    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
+        rule_id = compiled_rule.rule_id
+        rule_subtype = compiled_rule.params.get("type") or compiled_rule.rule_type
+        severity = compiled_rule.message.severity
         issues = []
         
-        links = filtered_dataset.get("links", [])
-        devices = filtered_dataset.get("devices", [])
+        links = dataset.get("links", [])
+        devices = dataset.get("devices", [])
         
         if rule_subtype == "duplicate_link":
             seen_links = {}
             for i, link in enumerate(links):
                 key = f"{link.src_device}:{link.src_port}->{link.dst_device}:{link.dst_port}"
                 if key in seen_links:
+                    msg = compiled_rule.message.template or f"Rule {rule_id} (duplicate_link) failed: Link {key} already exists."
                     issues.append(IssueItem(
                         issue_id=generate_id(),
-                        message=f"Rule {rule_id} (duplicate_link) failed: Link {key} already exists.",
+                        message=msg,
                         evidence={
                             "rule_id": rule_id,
                             "item_data": dataclasses.asdict(link),
@@ -45,9 +47,10 @@ class TopologyExecutor(RuleExecutor):
                 missing_dst = link.dst_device not in devices_map
                 
                 if missing_src or missing_dst:
+                    msg = compiled_rule.message.template or f"Rule {rule_id} (missing_peer) failed: Missing peer device in link {link.src_device}->{link.dst_device}."
                     issues.append(IssueItem(
                         issue_id=generate_id(),
-                        message=f"Rule {rule_id} (missing_peer) failed: Missing peer device in link {link.src_device}->{link.dst_device}.",
+                        message=msg,
                         evidence={
                             "rule_id": rule_id,
                             "item_data": dataclasses.asdict(link),
@@ -63,14 +66,15 @@ class TopologyExecutor(RuleExecutor):
                     ))
                     
         elif rule_subtype == "topology_assertion":
-            assertion_type = rule_def.get("assertion_type")
+            assertion_type = compiled_rule.params.get("assertion_type")
             
             if assertion_type == "self_loop":
                 for i, link in enumerate(links):
                     if link.src_device == link.dst_device:
+                        msg = compiled_rule.message.template or f"Rule {rule_id} (topology_assertion) failed: Self-loop detected on {link.src_device}."
                         issues.append(IssueItem(
                             issue_id=generate_id(),
-                            message=f"Rule {rule_id} (topology_assertion) failed: Self-loop detected on {link.src_device}.",
+                            message=msg,
                             evidence={
                                 "rule_id": rule_id,
                                 "item_data": dataclasses.asdict(link),
@@ -93,15 +97,16 @@ class TopologyExecutor(RuleExecutor):
                     
                 for i, dev in enumerate(devices):
                     if dev.device_name and dev.device_name not in linked_devices:
+                        msg = compiled_rule.message.template or f"Rule {rule_id} (topology_assertion) failed: Device {dev.device_name} is isolated."
                         issues.append(IssueItem(
                             issue_id=generate_id(),
-                            message=f"Rule {rule_id} (topology_assertion) failed: Device {dev.device_name} is isolated.",
+                            message=msg,
                             evidence={
                                 "rule_id": rule_id,
                                 "item_data": dataclasses.asdict(dev),
                                 "device_name": dev.device_name
                             },
-                            expected="Device has at least one link",
+                            expected="Device has links",
                             actual="No links found",
                             details={"target_type": "devices", "assertion_type": "isolated_device"},
                             source_row=i + 1,
