@@ -128,32 +128,37 @@ def main():
             svc = services["check_run_service"]
             run_id = svc.run_checks(args.task)
             print(f"Run completed. Run ID: {run_id}")
-            
-            # Fetch details for result delivery
-            query_svc = services["result_query_service"]
-            summary = query_svc.get_summary(run_id)
-            stats = query_svc.get_statistics(run_id)
-            issues = query_svc.get_issues(run_id)
-            
-            print("ResultDelivery triggered")
-            from src.presentation.result_delivery import ResultDeliveryService
-            delivery_svc = ResultDeliveryService()
-            formatted = delivery_svc.format_output(
-                task_id=args.task, 
-                run_id=run_id, 
-                summary=summary, 
-                stats=stats, 
-                issues=issues, 
-                max_issues=args.max_issues,
-                fmt=args.result_format
-            )
-            
-            delivery_svc.deliver_result(
-                formatted, 
-                copy=args.copy, 
-                open_ide=args.open, 
-                fmt=args.result_format
-            )
+
+            # Optional Result Delivery Integration
+            if getattr(args, "copy", False) or getattr(args, "open", False):
+                try:
+                    # Fetch details for result delivery
+                    query_svc = services["result_query_service"]
+                    summary = query_svc.get_summary(run_id)
+                    stats = query_svc.get_statistics(run_id)
+                    issues = query_svc.get_issues(run_id)
+
+                    print("ResultDelivery triggered")
+                    from src.presentation.result_delivery import ResultDeliveryService
+                    delivery_svc = ResultDeliveryService()
+                    formatted = delivery_svc.format_output(
+                        task_id=args.task,
+                        run_id=run_id,
+                        summary=summary,
+                        stats=stats,
+                        issues=issues,
+                        max_issues=args.max_issues,
+                        fmt=args.result_format
+                    )
+
+                    delivery_svc.deliver_result(
+                        formatted,
+                        copy=args.copy,
+                        open_ide=args.open,
+                        fmt=args.result_format
+                    )
+                except Exception as e:
+                    print(f"Warning: Optional ResultDelivery failed: {e}")
 
         elif args.command == "summary":
             svc = services["result_query_service"]

@@ -8,5 +8,15 @@
       "Switch": 3,
       "Router": 1
     }
+  },
+  "7f608ac6-7b59-4b32-adf5-c2d75d923c50": {
+    "run_id": "7f608ac6-7b59-4b32-adf5-c2d75d923c50",
+    "total_devices": 3,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 2,
+      "Router": 1
+    }
   }
 }

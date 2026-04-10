@@ -24,8 +24,8 @@ class ReviewService:
         task_id = execution.task_id
         rec_snapshot = self.result_repo.get_recognition(task_id)
         raw_data = rec_snapshot.recognized_data["row_data"]
-        dataset = self.normalization_service.normalize(raw_data)
-        
+        dataset, _ = self.normalization_service.normalize(raw_data)
+
         # 2. Filter Ports and Links related to device
         related_ports = [dataclasses.asdict(p) for p in dataset.ports if p.device_name == device_name]
         related_links = []

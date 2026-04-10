@@ -43,14 +43,14 @@ class CheckRunService:
         raw_data = rec_snapshot.recognized_data["row_data"]
         
         # 3. Normalize Data Pipeline
-        normalized_dataset = self.normalization_service.normalize(raw_data)
-        
+        normalized_dataset, normalization_issues = self.normalization_service.normalize(raw_data)
+
         # 4. Statistics Layer (NEW)
         device_types = {}
         for dev in normalized_dataset.devices:
             dt = dev.device_type or "Unknown"
             device_types[dt] = device_types.get(dt, 0) + 1
-            
+
         stats_snapshot = RunStatisticsSnapshot(
             run_id=run_id,
             total_devices=len(normalized_dataset.devices),
@@ -59,17 +59,20 @@ class CheckRunService:
             device_type_distribution=device_types
         )
         self.result_repo.save_statistics(stats_snapshot)
-        
+
         # 5. Rule Engine Execution
         baseline = self.baseline_repo.get_by_id(task.baseline_id)
-        issues = rule_engine.execute(normalized_dataset, baseline)
+        rule_issues = rule_engine.execute(normalized_dataset, baseline)
         
+        # Combine issues
+        all_issues = normalization_issues + rule_issues
+
         # 6. Aggregate Layer (NEW)
         by_device = {}
         by_rule = {}
         by_severity = {}
-        
-        for issue in issues:
+
+        for issue in all_issues:
             item_data = issue.evidence.get("item_data", {})
             dev_name = item_data.get("device_name", "Unknown")
             rule_id = issue.evidence.get("rule_id", "Unknown")
@@ -80,18 +83,18 @@ class CheckRunService:
             by_severity[severity] = by_severity.get(severity, 0) + 1
             
         aggregate = IssueAggregateSnapshot(
-            run_id=run_id, 
-            issues=issues,
+            run_id=run_id,
+            issues=all_issues,
             by_device=by_device,
             by_rule=by_rule,
             by_severity=by_severity
         )
         self.result_repo.save_issue_aggregate(aggregate)
-        
+
         # 7. Summary
         summary = RunSummaryOverview(
-            run_id=run_id, 
-            summary=f"Analysis complete. {stats_snapshot.total_devices} devices, {stats_snapshot.total_ports} ports. Found {len(issues)} issues."
+            run_id=run_id,
+            summary=f"Analysis complete. {stats_snapshot.total_devices} devices, {stats_snapshot.total_ports} ports. Found {len(all_issues)} issues."
         )
         self.result_repo.save_summary(summary)
         
