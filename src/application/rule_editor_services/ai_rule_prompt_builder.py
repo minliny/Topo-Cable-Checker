@@ -1,62 +1,50 @@
-import json
 from typing import List
-from src.application.rule_catalog_services.rule_catalog_presentation_service import RuleCatalogPresentationService
+
+from src.application.rule_editor_services.ai_rule_schema_builder import AiDraftSchema, AiRuleTypeSchema, AiRuleFieldSchema
 
 class AiRulePromptBuilder:
-    """
-    Builds the system prompt and instructions for the AI Rule Generation Agent.
-    Injects catalog constraints, required fields, and expected output formats.
-    """
-    
     @classmethod
-    def build_system_prompt(cls) -> str:
-        rule_previews = RuleCatalogPresentationService.list_rule_previews()
-        
+    def build(cls, schema: AiDraftSchema, user_input: str) -> str:
         prompt_parts = [
             "You are an AI rule generation assistant.",
             "Your task is to map the user's natural language request into a valid rule draft.",
-            "You MUST ONLY use the rule types and fields defined below.",
-            "You MUST output your response in valid JSON format matching the schema exactly.",
+            "You MUST ONLY use the rule types and fields defined by the provided schema.",
+            "You MUST output your response as valid JSON only.",
             "",
             "### Output JSON Schema",
             "```json",
             "{",
-            '  "rule_type": "string (the selected rule type)",',
-            '  "target_type": "string (the selected target type)",',
-            '  "severity": "string (low, medium, high, critical)",',
-            '  "rule_definition": {',
-            '    "field1": "value1",',
-            '    "field2": "value2"',
-            "  }",
+            '  "rule_type": "string",',
+            '  "target_type": "string",',
+            '  "severity": "string",',
+            '  "rule_definition": { "field": "value" }',
             "}",
             "```",
             "",
             "### General Constraints",
-            "- DO NOT invent any rule types, fields, or target types.",
-            "- DO NOT output explanatory text outside of the JSON.",
-            "- If you cannot determine a required field, provide an empty string or null to let the downstream validation catch it.",
+            "- Top-level MUST ONLY contain: rule_type, target_type, severity, rule_definition",
+            "- rule_type MUST be one of the allowed rule types below.",
+            "- rule_definition MUST be an object containing ONLY allowed fields for the selected rule_type.",
+            "- Do not output any explanatory text outside of the JSON.",
+            "- If you cannot determine a required field, output null or empty string to allow downstream validation to fail explicitly.",
             "",
-            "### Available Rule Types and Constraints"
+            "### Allowed Rule Types and Field Constraints",
+            "",
+            f"User input: {user_input}",
         ]
         
-        for preview in rule_previews:
-            form_def = RuleCatalogPresentationService.get_rule_form_definition(preview.rule_type)
-            if not form_def:
-                continue
-                
-            prompt_parts.append(f"\n#### Rule Type: `{preview.rule_type}`")
-            prompt_parts.append(f"Name: {preview.display_name}")
-            prompt_parts.append(f"Description: {preview.description}")
-            prompt_parts.append(f"Supported Targets: {', '.join(form_def.supported_targets)}")
-            
-            capabilities = [f"- {cap.description}" for cap in form_def.capabilities]
-            prompt_parts.append("Capabilities:\n" + "\n".join(capabilities))
-            
+        for rt in schema.rule_types:
+            prompt_parts.append(f"\n#### Rule Type: `{rt.rule_type}`")
+            if rt.summary:
+                prompt_parts.append(f"Summary: {rt.summary}")
+            if rt.supported_targets:
+                prompt_parts.append(f"Supported targets: {', '.join(rt.supported_targets)}")
             prompt_parts.append("Fields:")
-            for field in form_def.parameter_fields:
-                req = "REQUIRED" if field.required else "OPTIONAL"
-                enum_info = f", ENUM: {field.enum_options}" if field.enum_options else ""
-                default_info = f", DEFAULT: {field.default_value}" if field.default_value is not None else ""
-                prompt_parts.append(f"  - `{field.field_name}` ({field.field_type}): {req}{enum_info}{default_info} - {field.help_text}")
+            for f in rt.fields:
+                req = "REQUIRED" if f.required else "OPTIONAL"
+                enum_info = f", ENUM: {f.enum_values}" if f.enum_values else ""
+                default_info = f", DEFAULT: {f.default}" if f.default is not None else ""
+                desc = f.description or ""
+                prompt_parts.append(f"  - `{f.name}` ({f.field_type}): {req}{enum_info}{default_info} {desc}".strip())
                 
         return "\n".join(prompt_parts)

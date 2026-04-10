@@ -116,9 +116,10 @@
 ### 4.10 AI 辅助规则生成 (Natural Language -> Rule Draft MVP)
 在规则治理体系成熟后，引入自然语言生成规则草稿能力。当前阶段已完成最小闭环：
 - 接收自然语言输入
-- 基于 RuleCatalog 构建强约束 prompt
-- 调用 LLM Gateway 抽象接口获取结构化输出
-- 通过现有的 RuleEditorMVPService 验证链路确保输出合法
+- 基于 RuleCatalog 构建 canonical schema（Catalog 与 LLM 之间的稳定契约）
+- PromptBuilder 只负责表达层，将 schema 转为模型上下文
+- 通过 LLM Gateway 抽象接口获取结构化输出（schema-aware output_schema 传入）
+- 本地 Schema 校验层先拦截结构错误，再进入 RuleEditorMVPService 业务校验
 - 避免 AI 绕过业务规则系统，实现 GUI 和 Agent 消费统一的 RuleDraft 验证主链路。
 
 ---
@@ -205,10 +206,10 @@
 
 ### 正在进入的阶段
 5. AI 辅助规则生成 MVP (Natural Language -> Rule Draft)
-   - Rule Catalog Context Prompt Builder
-   - 抽象 LLM Gateway
-   - 自然语言 -> 结构化 Draft
-   - 验证闭环与错误反馈
+   - Canonical schema（Catalog -> SchemaBuilder）
+   - PromptBuilder（表达层，schema -> instruction）
+   - 抽象 LLM Gateway（schema-aware output_schema）
+   - 本地 Schema Validator gate + RuleEditorMVPService 最终真值
 
 6. 发布治理闭环  
    - 草稿发布为 baseline
