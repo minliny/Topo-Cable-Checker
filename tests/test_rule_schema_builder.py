@@ -1,8 +1,7 @@
-from src.application.rule_editor_services.ai_rule_schema_builder import AiRuleSchemaBuilder
-
+from src.application.rule_editor_services.rule_schema_builder import RuleDraftSchemaBuilder
 
 def test_ai_rule_schema_builder_builds_canonical_schema():
-    schema = AiRuleSchemaBuilder.build()
+    schema = RuleDraftSchemaBuilder.build()
     assert schema.rule_types
 
     threshold = next((t for t in schema.rule_types if t.rule_type == "threshold"), None)

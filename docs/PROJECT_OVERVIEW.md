@@ -113,14 +113,10 @@
 ### 4.9 差异分析与回滚
 支持规则版本 diff、历史追踪和回滚，降低规则升级风险。
 
-### 4.10 AI 辅助规则生成 (Natural Language -> Rule Draft MVP)
-在规则治理体系成熟后，引入自然语言生成规则草稿能力。当前阶段已完成最小闭环：
-- 接收自然语言输入
-- 基于 RuleCatalog 构建 canonical schema（Catalog 与 LLM 之间的稳定契约）
-- PromptBuilder 只负责表达层，将 schema 转为模型上下文
-- 通过 LLM Gateway 抽象接口获取结构化输出（schema-aware output_schema 传入）
-- 本地 Schema 校验层先拦截结构错误，再进入 RuleEditorMVPService 业务校验
-- 避免 AI 绕过业务规则系统，实现 GUI 和 Agent 消费统一的 RuleDraft 验证主链路。
+### 4.10 规则说明与外部 AI 消费
+本系统不是 AI 工具。系统不内嵌 AI 调用，也不提供自然语言生成规则的服务。
+外部 AI（如 ChatGPT、Claude 等）或人类通过阅读系统导出的“Rule Authoring Spec”，在系统外生成规则的 JSON 初稿。
+这些初稿可以通过 GUI 或 CLI 导入系统，由系统作为消费者进行严格校验、编辑和发布。
 
 ---
 
@@ -205,11 +201,10 @@
    - 发布候选摘要基础
 
 ### 正在进入的阶段
-5. AI 辅助规则生成 MVP (Natural Language -> Rule Draft)
-   - Canonical schema（Catalog -> SchemaBuilder）
-   - PromptBuilder（表达层，schema -> instruction）
-   - 抽象 LLM Gateway（schema-aware output_schema）
-   - 本地 Schema Validator gate + RuleEditorMVPService 最终真值
+5. 主线级拓扑分析层 (Mainline Topology Extraction)
+   - 收敛拓扑分析逻辑
+   - 提取 TopologyBuilder 形成图/索引
+   - 为拓扑类规则与 review 提供标准结构支持
 
 6. 发布治理闭环  
    - 草稿发布为 baseline

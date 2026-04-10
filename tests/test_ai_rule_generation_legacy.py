@@ -3,12 +3,12 @@ from typing import Dict, Any
 
 from src.application.ports.llm_gateway import ILLMGateway, LLMResponse
 from src.application.rule_editor_services.rule_editor_mvp_service import RuleEditorMVPService
-from src.application.rule_editor_services.ai_rule_generation_service import (
+from src.legacy_ai_internal.ai_rule_generation_service import (
     AiRuleGenerationService, 
     AiRuleGenerationRequest
 )
-from src.application.rule_editor_services.ai_rule_prompt_builder import AiRulePromptBuilder
-from src.application.rule_editor_services.ai_rule_schema_builder import AiRuleSchemaBuilder
+from src.application.rule_editor_services.rule_spec_renderer import RuleSpecRenderer
+from src.application.rule_editor_services.rule_schema_builder import RuleDraftSchemaBuilder
 
 class FakeLLMGateway(ILLMGateway):
     def __init__(self, response_content: Dict[str, Any]):
@@ -121,8 +121,8 @@ def test_generate_rule_draft_from_text_invalid_enum_value(editor_service):
     assert any(err.code == "invalid_enum_value" and err.field == "rule_definition.operator" for err in result.schema_errors)
 
 def test_prompt_builder_includes_catalog_constraints():
-    schema = AiRuleSchemaBuilder.build()
-    prompt = AiRulePromptBuilder.build(schema=schema, user_input="x")
+    schema = RuleDraftSchemaBuilder.build()
+    prompt = RuleSpecRenderer.build(schema=schema, user_input="x")
     
     # Assert rule type information
     assert "Rule Type: `threshold`" in prompt

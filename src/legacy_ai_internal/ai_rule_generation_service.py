@@ -4,9 +4,9 @@ import uuid
 
 from src.application.ports.llm_gateway import ILLMGateway
 from src.application.rule_editor_services.rule_editor_mvp_service import RuleEditorMVPService, RuleDraftView
-from src.application.rule_editor_services.ai_rule_prompt_builder import AiRulePromptBuilder
-from src.application.rule_editor_services.ai_rule_schema_builder import AiRuleSchemaBuilder
-from src.application.rule_editor_services.ai_rule_output_validator import AiRuleOutputValidator
+from src.application.rule_editor_services.rule_spec_renderer import RuleSpecRenderer
+from src.application.rule_editor_services.rule_schema_builder import RuleDraftSchemaBuilder
+from src.application.rule_editor_services.rule_draft_validator import RuleDraftValidator
 
 @dataclass
 class AiRuleGenerationRequest:
@@ -44,9 +44,9 @@ class AiRuleGenerationService:
         self._editor_service = editor_service
 
     def generate_rule_draft_from_text(self, request: AiRuleGenerationRequest) -> AiRuleGenerationResult:
-        schema = AiRuleSchemaBuilder.build()
-        system_instruction = AiRulePromptBuilder.build(schema=schema, user_input=request.user_input)
-        output_schema = AiRuleSchemaBuilder.to_gateway_schema(schema)
+        schema = RuleDraftSchemaBuilder.build()
+        system_instruction = RuleSpecRenderer.build(schema=schema, user_input=request.user_input)
+        output_schema = RuleDraftSchemaBuilder.to_gateway_schema(schema)
 
         llm_response = self._llm_gateway.generate_structured_rule_draft(
             system_instruction=system_instruction,
@@ -56,7 +56,7 @@ class AiRuleGenerationService:
         
         raw_output = llm_response.content
 
-        schema_result = AiRuleOutputValidator.validate(raw_output, schema)
+        schema_result = RuleDraftValidator.validate(raw_output, schema)
         if not schema_result.is_valid:
             schema_errors = [
                 AiGenerationValidationErrorView(

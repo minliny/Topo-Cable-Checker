@@ -7,12 +7,12 @@ architecture_audit:
   result_pipeline_status: "6-layer structured result models defined, populated with real Excel data, and persisted."
   rule_engine_status: "RuleEngine upgraded with CompiledRule strong validation, RuleMeta, ParameterSchema, and Capability inferencing. RuleCatalog service abstracts domain registry for upper layers."
   cli_status: "Full CLI implemented covering all lifecycle commands."
-  ui_status: "Local Web UI implemented using FastAPI+Jinja2. Features read-only Governance and MVP Rule Editor (Validate, Preview, Save Draft, Publish). Backend support for semantic rule-catalog-driven dynamic forms, diff analysis, rollback, and AI Rule Generation Agent MVP is ready."
+  ui_status: "Local Web UI implemented using FastAPI+Jinja2. Features read-only Governance and MVP Rule Editor (Validate, Preview, Save Draft, Publish). Backend support for semantic rule-catalog-driven dynamic forms, diff analysis, and rollback is ready."
   ui_ready_decision: "System is stable and ready for UI iteration. No direct Domain/Repository access from Presentation."
-  ai_agent_status: "AI Rule Generation Agent MVP upgraded to schema-driven chain: Catalog -> AiRuleSchemaBuilder (canonical schema) -> AiRulePromptBuilder (expression-only) -> ILLMGateway(output_schema) -> AiRuleOutputValidator (local gate) -> RuleEditorMVPService (final truth) -> RuleDraftView."
-  next_step: "Rule Publish Workflow MVP / Integration with real LLM providers"
+  ai_agent_status: "DEPRECATED: System is NOT an AI tool. Embedded AI generation is removed. AI is strictly used outside the system by reading exported Rule Authoring Specs and generating JSONs to be imported back."
+  next_step: "Rule Publish Workflow MVP / Mainline Topology Extraction"
   future_enhancements:
     - diff
     - rollback
     - GUI integration
-    - AI assisted drafting
+    - Rule Authoring Spec generation

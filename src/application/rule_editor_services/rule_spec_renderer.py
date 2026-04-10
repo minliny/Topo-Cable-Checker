@@ -1,10 +1,15 @@
 from typing import List
 
-from src.application.rule_editor_services.ai_rule_schema_builder import AiDraftSchema, AiRuleTypeSchema, AiRuleFieldSchema
+from src.application.rule_editor_services.rule_schema_builder import RuleDraftSchema
 
-class AiRulePromptBuilder:
+class RuleSpecRenderer:
+    """
+    Builds rule specification document for human and external AI reading.
+    Injects catalog constraints, required fields, and expected output formats.
+    """
+    
     @classmethod
-    def build(cls, schema: AiDraftSchema, user_input: str) -> str:
+    def build(cls, schema: RuleDraftSchema, user_input: str) -> str:
         prompt_parts = [
             "You are an AI rule generation assistant.",
             "Your task is to map the user's natural language request into a valid rule draft.",
