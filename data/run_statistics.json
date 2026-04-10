@@ -178,5 +178,25 @@
       "Switch": 3,
       "Router": 1
     }
+  },
+  "59b715b7-b904-4593-917c-e4e9ef0eb581": {
+    "run_id": "59b715b7-b904-4593-917c-e4e9ef0eb581",
+    "total_devices": 4,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Router": 1
+    }
+  },
+  "15cdf5f4-5d3f-4f12-8583-f14c8f8188a8": {
+    "run_id": "15cdf5f4-5d3f-4f12-8583-f14c8f8188a8",
+    "total_devices": 4,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Router": 1
+    }
   }
 }

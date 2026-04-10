@@ -7,54 +7,77 @@ from src.crosscutting.temp_files import create_temp_result_file
 logger = logging.getLogger(__name__)
 
 class ResultDeliveryService:
-    def format_markdown(self, task_id: str, run_id: str, summary: Any, stats: Any, issues: Any, max_issues: int = 20) -> str:
-        """Formats the result data into a markdown string."""
+    def format_output(self, task_id: str, run_id: str, summary: Any, stats: Any, issues: Any, max_issues: int = 20, fmt: str = "markdown") -> str:
+        """Formats the result data into a string (markdown or text)."""
         
-        md_lines = []
-        md_lines.append("# 检查执行结果\n")
+        # Boundary handling for max_issues
+        if max_issues < 0:
+            max_issues = 0
+
+        lines = []
+        is_md = (fmt == "markdown")
+        
+        h1 = "# " if is_md else ""
+        h2 = "## " if is_md else ""
+        h3 = "### " if is_md else ""
+        bold = "**" if is_md else ""
+        list_item = "- "
+        
+        lines.append(f"{h1}检查执行结果\n")
         
         # Basic Info
-        md_lines.append("## 基本信息\n")
-        md_lines.append(f"- **任务ID**: {task_id}")
-        md_lines.append(f"- **运行ID**: {run_id}")
-        md_lines.append("")
+        lines.append(f"{h2}基本信息\n")
+        lines.append(f"{list_item}{bold}任务ID{bold}: {task_id}")
+        lines.append(f"{list_item}{bold}运行ID{bold}: {run_id}")
+        lines.append("")
         
         # Execution Summary
-        md_lines.append("## 执行摘要\n")
+        lines.append(f"{h2}执行摘要\n")
         
-        pass_count = stats.total_devices * stats.total_ports - issues.total_issues if stats else 0
-        total_rules = 10 # Mock or pass real rules count
+        total_issues = issues.total_issues if issues and hasattr(issues, 'total_issues') else 0
+        lines.append(f"{list_item}{bold}问题总数{bold}: {total_issues}")
         
-        md_lines.append(f"- **问题总数**: {issues.total_issues if issues else 0}")
-        if issues and hasattr(issues, "by_severity"):
+        if issues and hasattr(issues, "by_severity") and issues.by_severity:
             for sev, count in issues.by_severity.items():
-                md_lines.append(f"  - {sev}: {count}")
-        md_lines.append("")
+                lines.append(f"  {list_item}{sev}: {count}")
+        lines.append("")
         
         # Overview Summary
-        md_lines.append("## 总览摘要\n")
-        if summary:
-            md_lines.append(f"{summary.summary}\n")
+        lines.append(f"{h2}总览摘要\n")
+        if summary and hasattr(summary, "summary"):
+            lines.append(f"{summary.summary}\n")
+        else:
+            lines.append("无总览信息\n")
             
         # Issues List
-        md_lines.append("## 问题清单\n")
-        if issues and hasattr(issues, "issues") and issues.issues:
+        lines.append(f"{h2}问题清单\n")
+        if issues and hasattr(issues, "issues") and issues.issues and max_issues > 0:
             display_issues = issues.issues[:max_issues]
-            md_lines.append(f"**显示前 {len(display_issues)} 条，共 {len(issues.issues)} 条问题**\n")
+            lines.append(f"{bold}显示前 {len(display_issues)} 条，共 {len(issues.issues)} 条问题{bold}\n")
             
             for i, issue in enumerate(display_issues, 1):
-                md_lines.append(f"### {i}. [{issue.severity}] {issue.rule_id}")
-                md_lines.append(f"- **设备名称**: {issue.device_name}")
-                md_lines.append(f"- **实际值**: {issue.actual_value}")
-                md_lines.append("")
+                rule_id = getattr(issue, 'rule_id', 'Unknown')
+                severity = getattr(issue, 'severity', 'Unknown')
+                device_name = getattr(issue, 'device_name', 'Unknown')
+                actual_value = getattr(issue, 'actual_value', 'Unknown')
+                
+                lines.append(f"{h3}{i}. [{severity}] {rule_id}")
+                lines.append(f"{list_item}{bold}设备名称{bold}: {device_name}")
+                lines.append(f"{list_item}{bold}实际值{bold}: {actual_value}")
+                lines.append("")
+        elif max_issues == 0:
+            lines.append("问题显示被禁用 (max_issues=0)。\n")
         else:
-            md_lines.append("没有发现问题。\n")
+            lines.append("没有发现问题。\n")
             
         import datetime
-        md_lines.append("---")
-        md_lines.append(f"生成时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        if is_md:
+            lines.append("---")
+        else:
+            lines.append("-" * 20)
+        lines.append(f"生成时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        return "\n".join(md_lines)
+        return "\n".join(lines)
 
     def deliver_result(self, formatted_text: str, copy: bool = True, open_ide: bool = True, fmt: str = "markdown"):
         """Delivers the formatted text according to requested options."""

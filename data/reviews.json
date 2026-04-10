@@ -84,5 +84,13 @@
     "connected_devices": [],
     "related_links": [],
     "related_issues": []
+  },
+  "59b715b7-b904-4593-917c-e4e9ef0eb581_Device_A": {
+    "run_id": "59b715b7-b904-4593-917c-e4e9ef0eb581",
+    "device_name": "Device_A",
+    "related_ports": [],
+    "connected_devices": [],
+    "related_links": [],
+    "related_issues": []
   }
 }

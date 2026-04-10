@@ -139,7 +139,15 @@ def main():
             
             from src.presentation.result_delivery import ResultDeliveryService
             delivery_svc = ResultDeliveryService()
-            formatted = delivery_svc.format_markdown(args.task, run_id, summary, stats, issues, args.max_issues)
+            formatted = delivery_svc.format_output(
+                task_id=args.task, 
+                run_id=run_id, 
+                summary=summary, 
+                stats=stats, 
+                issues=issues, 
+                max_issues=args.max_issues,
+                fmt=args.result_format
+            )
             
             delivery_svc.deliver_result(
                 formatted, 
