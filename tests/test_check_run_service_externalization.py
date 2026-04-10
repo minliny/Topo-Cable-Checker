@@ -126,6 +126,7 @@ def test_check_run_service_fails_fast_on_invalid_external_rules(setup_task_and_d
             "name": "Bad",
             "description": "Bad",
             "rule_type": "field_equals",
+            "parameters": {},
             "error_message": "Bad",
             "engine_scope": "rule_engine_single_fact"
         }
@@ -135,6 +136,71 @@ def test_check_run_service_fails_fast_on_invalid_external_rules(setup_task_and_d
     try:
         # Should raise TaskError failing the run
         with pytest.raises(TaskError, match="Failed to assemble external rules"):
+            run_svc.run_checks(task_id, external_rule_file_path=rule_path)
+    finally:
+        os.remove(rule_path)
+
+def test_check_run_service_executes_external_threshold_rule(setup_task_and_data):
+    task_id = setup_task_and_data
+    
+    # 1. Create external threshold rule file
+    rule_data = [
+        {
+            "rule_id": "RE_TH_EXT_01",
+            "name": "Too Many Firewalls",
+            "description": "Cannot have more than 0 firewalls in this test",
+            "rule_type": "threshold",
+            "parameters": {
+                "metric_type": "count",
+                "operator": "lte",
+                "expected_value": 0
+            },
+            "error_message": "Too many firewalls!",
+            "severity": "high",
+            "engine_scope": "rule_engine_threshold",
+            "applies_to": ["DeviceFact"]
+        }
+    ]
+    rule_path = _create_temp_json(rule_data)
+    
+    try:
+        run_svc = CheckRunService()
+        result_repo = ResultRepository()
+        
+        # 2. Run checks WITH external rule path
+        run_id = run_svc.run_checks(task_id, external_rule_file_path=rule_path)
+        
+        # 3. Assert external rule was executed and found issue
+        agg = result_repo.get_issue_aggregate(run_id)
+        issues = agg.issues
+        
+        ext_issues = [i for i in issues if i.evidence.get("rule_id") == "RE_TH_EXT_01"]
+        assert len(ext_issues) == 1
+        assert "Rule RE_TH_EXT_01 (threshold) failed" in ext_issues[0].message
+        
+    finally:
+        os.remove(rule_path)
+
+def test_check_run_service_fails_fast_on_unsupported_scope(setup_task_and_data):
+    task_id = setup_task_and_data
+    run_svc = CheckRunService()
+    
+    rule_data = [
+        {
+            "rule_id": "RE_UNSUPPORTED_01",
+            "name": "Unsupported",
+            "description": "Unsupported",
+            "rule_type": "field_equals",
+            "parameters": {},
+            "error_message": "Unsupported",
+            "engine_scope": "rule_engine_topology",
+            "applies_to": ["DeviceFact"]
+        }
+    ]
+    rule_path = _create_temp_json(rule_data)
+    
+    try:
+        with pytest.raises(TaskError, match="Found rules with unsupported engine_scope"):
             run_svc.run_checks(task_id, external_rule_file_path=rule_path)
     finally:
         os.remove(rule_path)

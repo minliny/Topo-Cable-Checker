@@ -11,7 +11,10 @@ class RuleDefinitionLoader:
     SUPPORTED_RULE_TYPES = {
         "field_equals",
         "field_not_equals",
-        "if_field_equals_then_required"
+        "if_field_equals_then_required",
+        "missing_value",
+        "threshold",
+        "threshold_check"
     }
 
     @staticmethod

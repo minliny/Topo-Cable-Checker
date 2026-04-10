@@ -230,5 +230,92 @@
     "total_ports": 1,
     "total_links": 0,
     "device_type_distribution": {}
+  },
+  "2f9fa98b-04ed-4083-9ad6-4370a1e23bce": {
+    "run_id": "2f9fa98b-04ed-4083-9ad6-4370a1e23bce",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "de3e0690-d1c9-4747-ab9b-99f08381431b": {
+    "run_id": "de3e0690-d1c9-4747-ab9b-99f08381431b",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "4389b38c-e4d9-4f99-8103-8965f243f93f": {
+    "run_id": "4389b38c-e4d9-4f99-8103-8965f243f93f",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "825a5bcc-12c4-4732-bce3-4cc457c52127": {
+    "run_id": "825a5bcc-12c4-4732-bce3-4cc457c52127",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "0421ffde-c599-4d30-84f2-39a7ff8a6202": {
+    "run_id": "0421ffde-c599-4d30-84f2-39a7ff8a6202",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "eadf3d1d-8ca1-40b1-8ad6-7cc91f50822f": {
+    "run_id": "eadf3d1d-8ca1-40b1-8ad6-7cc91f50822f",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "be258dbe-b2aa-4912-8202-a3ee4501d4da": {
+    "run_id": "be258dbe-b2aa-4912-8202-a3ee4501d4da",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "9abb33a0-9ea0-4eae-9cf3-94e69ea1d58e": {
+    "run_id": "9abb33a0-9ea0-4eae-9cf3-94e69ea1d58e",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "21f24ed5-a0cd-4444-90c0-a4494f4f0982": {
+    "run_id": "21f24ed5-a0cd-4444-90c0-a4494f4f0982",
+    "total_devices": 0,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {}
   }
 }

@@ -40,8 +40,12 @@ class SingleFactRuleCompiler:
             "expected": expected,
             "type": rule_type,
         }
-        if definition.message_template is not None:
+        
+        if definition.message_template:
             compiled_rule["message_template"] = definition.message_template
+        elif definition.error_message:
+            compiled_rule["message_template"] = definition.error_message
+            
         return compiled_rule
 
     @staticmethod
