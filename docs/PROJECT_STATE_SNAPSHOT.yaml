@@ -1,5 +1,5 @@
 architecture_audit:
-  current_phase: "UNIFIED_RULE_DEFINITION_BOUNDARY"
+  current_phase: "RULE_ENGINE_RUNTIME_EXTERNALIZATION_SINGLE_FACT"
   five_layer_status: "Aligned with strict 5-layer architecture. No cross-layer contamination."
   application_split_status: "Services are cleanly split by responsibility (Task, Recognition, Normalization, CheckRun, Query, Export, RuleGovernance, RuleEditor)."
   task_model_status: "CheckTask fully implemented with all required statuses."
@@ -18,6 +18,7 @@ rule_externalization_status:
     - "RuleDefinitionRegistry upgraded to multi-domain aware (filters by engine_scope and applies_to)"
     - "ContractBuilder to dynamically assemble contract with external rules"
     - "Proof of concept for mapping RuleEngine macroscopic rules (single_fact, topology) to RuleDefinition"
+    - "RuleEngine runtime externalization: SingleFact can execute external compiled rules sourced from RuleDefinitionRegistry"
   supported_rule_types:
     - "field_equals"
     - "field_not_equals"
@@ -25,7 +26,8 @@ rule_externalization_status:
   limitations:
     - "Complex boolean logic trees not yet supported"
     - "HeaderMapping.normalize_fn is not externalized"
-    - "RuleEngine executors still use hardcoded lambdas, pending migration to read from Registry"
+    - "RuleEngine GroupConsistency/Topology/Threshold are not externalized at runtime yet (still baseline.rule_set only)"
   next_steps:
     - "Introduce a lightweight boolean logic DSL (e.g. AND/OR tree)"
-    - "Refactor RuleEngine (e.g. SingleFactExecutor) to consume RuleDefinition from the Registry instead of hardcoded baseline rule_set"
+    - "Promote runtime externalization to baseline loading: feed RuleDefinitionRegistry rules into RuleEngine without test-only wiring"
+    - "Externalize runtime for Topology/Threshold/GroupConsistency executors in the same pattern (scope + compiler)"

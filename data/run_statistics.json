@@ -196,5 +196,12 @@
     "total_ports": 1,
     "total_links": 0,
     "device_type_distribution": {}
+  },
+  "0c533193-cd67-474f-9627-24c23b339537": {
+    "run_id": "0c533193-cd67-474f-9627-24c23b339537",
+    "total_devices": 0,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {}
   }
 }
