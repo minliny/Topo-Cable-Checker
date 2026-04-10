@@ -56,10 +56,8 @@ def main():
     # run
     run_parser = subparsers.add_parser("run", help="Run checks")
     run_parser.add_argument("--task", required=True, help="Task ID")
-    run_parser.add_argument("--copy-result", dest="copy_result", action="store_true", default=True, help="Copy result to clipboard (default)")
-    run_parser.add_argument("--no-copy-result", dest="copy_result", action="store_false", help="Disable clipboard copy")
-    run_parser.add_argument("--open-result", dest="open_result", action="store_true", default=True, help="Open result file in IDE (default)")
-    run_parser.add_argument("--no-open-result", dest="open_result", action="store_false", help="Disable opening in IDE")
+    run_parser.add_argument("--copy", dest="copy", action="store_true", help="Copy result to clipboard")
+    run_parser.add_argument("--open", dest="open", action="store_true", help="Open result file in IDE")
     run_parser.add_argument("--result-format", default="markdown", choices=["markdown", "text"], help="Output result format")
     run_parser.add_argument("--max-issues", type=int, default=20, help="Max number of issues to display")
 
@@ -137,6 +135,7 @@ def main():
             stats = query_svc.get_statistics(run_id)
             issues = query_svc.get_issues(run_id)
             
+            print("ResultDelivery triggered")
             from src.presentation.result_delivery import ResultDeliveryService
             delivery_svc = ResultDeliveryService()
             formatted = delivery_svc.format_output(
@@ -151,8 +150,8 @@ def main():
             
             delivery_svc.deliver_result(
                 formatted, 
-                copy=args.copy_result, 
-                open_ide=args.open_result, 
+                copy=args.copy, 
+                open_ide=args.open, 
                 fmt=args.result_format
             )
 

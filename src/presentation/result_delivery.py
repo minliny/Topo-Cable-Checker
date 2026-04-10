@@ -86,6 +86,7 @@ class ResultDeliveryService:
         if copy:
             success = copy_to_clipboard(formatted_text)
             if success:
+                print("Copied to clipboard")
                 logger.info("Result copied to clipboard successfully.")
             else:
                 logger.warning("Failed to copy result to clipboard.")
@@ -93,8 +94,11 @@ class ResultDeliveryService:
         if open_ide:
             temp_file = create_temp_result_file(formatted_text, ext)
             if temp_file:
+                print(f"Temp file created at: {temp_file}")
                 logger.info(f"Temporary result file created at: {temp_file}")
                 success = open_in_ide(temp_file)
+                if success:
+                    print("IDE launched")
                 if not success:
                     logger.warning("Failed to open IDE.")
             else:
