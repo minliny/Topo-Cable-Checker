@@ -1,11 +1,13 @@
-from typing import Dict, Any, List
 from abc import ABC, abstractmethod
+from typing import Dict, Any, List
 from src.domain.result_model import IssueItem
+from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.rule_engine.compiled_rule import CompiledRule
 
 class RuleExecutor(ABC):
     @abstractmethod
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
-                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, rule_id: str, compiled_rule: CompiledRule, filtered_dataset: Dict[str, List[Any]], 
+                context: ExecutionContext) -> List[IssueItem]:
         """
         Executes a rule against a filtered dataset.
         filtered_dataset is a dict where keys are target_types (devices, ports, links)

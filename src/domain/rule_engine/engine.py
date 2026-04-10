@@ -8,6 +8,8 @@ from src.domain.executors.threshold_executor import ThresholdExecutor
 from src.crosscutting.logging.logger import get_logger
 from src.domain.baseline_model import BaselineProfile
 from src.domain.rule_compiler import RuleCompiler
+from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.rule_engine.compiled_rule import RuleValidationError
 
 logger = get_logger(__name__)
 
@@ -74,6 +76,12 @@ class RuleEngine:
         parameter_profile = getattr(baseline, "parameter_profile", baseline.get("parameter_profile", {})) if isinstance(baseline, dict) else baseline.parameter_profile
         threshold_profile = getattr(baseline, "threshold_profile", baseline.get("threshold_profile", {})) if isinstance(baseline, dict) else baseline.threshold_profile
         
+        context = ExecutionContext(
+            parameter_profile=parameter_profile,
+            threshold_profile=threshold_profile,
+            runtime_flags={}
+        )
+        
         for rule_id, rule_def in rule_set.items():
             # 1. Compile Rule
             try:
@@ -82,17 +90,28 @@ class RuleEngine:
                 logger.error(f"Error compiling rule {rule_id}: {e}")
                 continue
 
-            rule_executor_type = compiled_rule.get("executor", "single_fact")
+            # 1.5 Validate Compiled Rule
+            try:
+                compiled_rule.validate()
+            except RuleValidationError as e:
+                logger.error(f"Rule validation failed for rule {rule_id}: {e}")
+                continue
+
+            rule_executor_type = compiled_rule.executor.get("type", "single_fact")
             executor = self.executors.get(rule_executor_type)
 
             if executor:
                 try:
-                    scope_def = compiled_rule.get("scope_selector", {})
+                    scope_def = compiled_rule.target.get("filter", {}) or {}
+                    # Add target_type to scope_def for backward compatibility with _apply_scope
+                    if "target_type" not in scope_def:
+                        scope_def["target_type"] = compiled_rule.target.get("type")
+                        
                     # 2. Apply Scope
                     filtered_dataset = self._apply_scope(normalized_dataset, scope_def)
 
                     # 3. Dispatch
-                    issues = executor.execute(rule_id, compiled_rule, filtered_dataset, parameter_profile, threshold_profile)
+                    issues = executor.execute(rule_id, compiled_rule, filtered_dataset, context)
                     all_issues.extend(issues)
                 except Exception as e:
                     logger.error(f"Error executing rule {rule_id}: {e}")

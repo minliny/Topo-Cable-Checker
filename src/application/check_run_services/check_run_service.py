@@ -1,7 +1,7 @@
 from src.domain.interfaces import ITaskRepository, IBaselineRepository, IResultRepository
 from src.application.normalization_services.normalization_service import NormalizationService
 from src.domain.task_model import TaskStatus
-from src.domain.rule_engine import rule_engine
+from src.domain.rule_engine.engine import rule_engine
 from src.domain.result_model import (
     RunExecutionSnapshot, RunSummaryOverview, IssueAggregateSnapshot, RunStatisticsSnapshot
 )

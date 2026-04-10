@@ -2,19 +2,22 @@ from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
 from src.crosscutting.ids.generator import generate_id
+from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.rule_engine.compiled_rule import CompiledRule
 import dataclasses
 import re
 
 class SingleFactExecutor(RuleExecutor):
-    def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
-                parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, rule_id: str, compiled_rule: CompiledRule, filtered_dataset: Dict[str, List[Any]], 
+                context: ExecutionContext) -> List[IssueItem]:
         issues = []
         
-        target_type = rule_def.get("scope_selector", {}).get("target_type")
-        target_field = rule_def.get("field")
-        rule_subtype = rule_def.get("type", "field_equals")
-        expected_val = rule_def.get("expected")
-        severity = rule_def.get("severity", "medium")
+        target_type = compiled_rule.target.get("type")
+        target_field = compiled_rule.get("field")
+        rule_subtype = compiled_rule.get("type", "field_equals")
+        expected_val = compiled_rule.get("expected")
+        severity = compiled_rule.severity
+        message_template = compiled_rule.message.get("template")
         
         target_list = filtered_dataset.get(target_type, [])
             
