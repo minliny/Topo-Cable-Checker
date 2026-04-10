@@ -238,5 +238,17 @@
     "created_at": "2026-04-10 01:58:39.885972",
     "latest_run_id": null,
     "parent_task_id": null
+  },
+  "1fccafb8-a7c8-4a4b-9042-96fffdf8d993": {
+    "task_id": "1fccafb8-a7c8-4a4b-9042-96fffdf8d993",
+    "task_name": "Task_test.xlsx",
+    "source_file_ref": "test.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.8",
+    "task_status": "check_completed",
+    "created_at": "2026-04-10 02:19:45.009278",
+    "latest_run_id": "75809536-7100-4ea3-be68-f43cd7b66dcf",
+    "parent_task_id": null
   }
 }
