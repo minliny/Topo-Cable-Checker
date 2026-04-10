@@ -1,100 +1,115 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Select, Card, Alert, message, Typography, Divider, Space } from 'antd';
-import { rulesApi, ValidationResult } from '../api/rules';
-import { Play, UploadCloud, FileCode } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Form, Input, Button, Select, Card, Typography, Empty, Space } from 'antd';
+import { Play, UploadCloud, FileCode, Save } from 'lucide-react';
+import { CenterMode, DraftData } from '../types/ui';
 
 const { Option } = Select;
 const { TextArea } = Input;
 const { Title, Text } = Typography;
 
 interface RuleEditorProps {
-  baselineId?: string;
-  onPublished?: () => void;
+  mode: CenterMode;
+  draftData: DraftData;
+  onChange: (data: DraftData) => void;
+  onDirtyChange: (dirty: boolean) => void;
+  onValidate: () => void;
+  onSaveDraft: () => void;
+  onPublish: () => void;
+  validating: boolean;
+  publishing: boolean;
+  saving: boolean;
+  validationPassed: boolean;
+  dirty: boolean;
 }
 
-const RuleEditor: React.FC<RuleEditorProps> = ({ baselineId, onPublished }) => {
+const RuleEditor: React.FC<RuleEditorProps> = ({
+  mode,
+  draftData,
+  onChange,
+  onDirtyChange,
+  onValidate,
+  onSaveDraft,
+  onPublish,
+  validating,
+  publishing,
+  saving,
+  validationPassed,
+  dirty,
+}) => {
   const [form] = Form.useForm();
-  const [validating, setValidating] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
-  const handleValidate = async () => {
-    try {
-      const values = await form.validateFields();
-      setValidating(true);
-      setValidationResult(null);
+  // Sync form with external draftData when it mounts or changes externally
+  useEffect(() => {
+    form.setFieldsValue({
+      rule_type: draftData.rule_type || 'threshold',
+      params: draftData.params || '',
+    });
+  }, [draftData, form]);
 
-      let parsedParams = {};
-      try {
-        parsedParams = JSON.parse(values.params || '{}');
-      } catch (err) {
-        message.error('Params must be valid JSON');
-        setValidating(false);
-        return;
-      }
-
-      const res = await rulesApi.validateDraft({
-        rule_type: values.rule_type,
-        params: parsedParams,
-      });
-
-      setValidationResult(res.validation_result);
-      if (res.validation_result.valid) {
-        message.success('Validation passed!');
-      } else {
-        message.error('Validation failed');
-      }
-    } catch (error: any) {
-      if (error.errorFields) {
-        // Form validation error, ignore
-        return;
-      }
-      message.error('Error during validation');
-      console.error(error);
-    } finally {
-      setValidating(false);
-    }
+  const handleValuesChange = (_changedValues: any, allValues: any) => {
+    onChange(allValues);
+    onDirtyChange(true);
   };
 
-  const handlePublish = async () => {
-    if (!baselineId) {
-      message.warning('Please select a baseline first');
-      return;
-    }
+  if (mode === 'empty') {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Empty description="Select a baseline to start editing rules" />
+      </div>
+    );
+  }
 
-    try {
-      setPublishing(true);
-      const res = await rulesApi.publishRules(baselineId);
-      message.success(`Published version ${res.version}: ${res.summary}`);
-      if (onPublished) {
-        onPublished();
-      }
-      // Reset after publish
-      setValidationResult(null);
-      form.resetFields();
-    } catch (error) {
-      message.error('Failed to publish rules');
-      console.error(error);
-    } finally {
-      setPublishing(false);
-    }
-  };
-
+  // Future expansion: diff view or history_detail view can be added here
+  // if (mode === 'diff') return <DiffMainView />
+  
   return (
-    <div className="h-full bg-gray-50 flex flex-col p-6 overflow-y-auto">
-      <div className="mb-6 flex items-center gap-2">
-        <FileCode size={24} className="text-blue-600" />
-        <Title level={4} className="!m-0">Rule Editor</Title>
+    <div className="h-full flex flex-col">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileCode size={24} className="text-blue-600" />
+          <Title level={4} className="!m-0">
+            {mode === 'create' ? 'Create New Rule' : 'Edit Rule Draft'}
+          </Title>
+          {dirty && <Text type="warning" className="ml-2">(Unsaved Changes)</Text>}
+        </div>
+        
+        <Space>
+          <Button 
+            icon={<Save size={16} />} 
+            onClick={onSaveDraft}
+            loading={saving}
+            disabled={!dirty}
+            className="flex items-center"
+          >
+            Save Draft
+          </Button>
+          <Button
+            type="primary"
+            icon={<Play size={16} />}
+            onClick={onValidate}
+            loading={validating}
+            className="flex items-center"
+          >
+            Validate
+          </Button>
+          <Button
+            icon={<UploadCloud size={16} />}
+            onClick={onPublish}
+            loading={publishing}
+            disabled={!validationPassed && !dirty} // Allow if valid or we bypass it, adjust as needed
+            className="flex items-center bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+          >
+            Publish
+          </Button>
+        </Space>
       </div>
 
-      <Card className="shadow-sm border-gray-200 rounded-lg mb-6">
+      <Card className="shadow-sm border-gray-200 rounded-lg flex-1 overflow-hidden flex flex-col">
         <Form
           form={form}
           layout="vertical"
-          initialValues={{
-            rule_type: 'threshold',
-            params: '{\n  "threshold": 10,\n  "severity": "warning"\n}'
-          }}
+          onValuesChange={handleValuesChange}
+          className="flex flex-col h-full"
         >
           <Form.Item
             name="rule_type"
@@ -113,73 +128,16 @@ const RuleEditor: React.FC<RuleEditorProps> = ({ baselineId, onPublished }) => {
             name="params"
             label={<Text strong>Parameters (JSON)</Text>}
             rules={[{ required: true, message: 'Please input rule parameters' }]}
+            className="flex-1 flex flex-col mb-0"
+            wrapperCol={{ className: 'flex-1' }}
           >
             <TextArea
-              rows={8}
-              className="font-mono text-sm bg-gray-50"
+              className="font-mono text-sm bg-gray-50 flex-1 h-full resize-none min-h-[300px]"
               placeholder='{"key": "value"}'
             />
           </Form.Item>
-
-          <div className="flex gap-4 pt-2">
-            <Button
-              type="primary"
-              icon={<Play size={16} />}
-              onClick={handleValidate}
-              loading={validating}
-              className="flex items-center"
-            >
-              Validate Draft
-            </Button>
-            <Button
-              icon={<UploadCloud size={16} />}
-              onClick={handlePublish}
-              loading={publishing}
-              disabled={!validationResult?.valid}
-              className="flex items-center"
-            >
-              Publish to Baseline
-            </Button>
-          </div>
         </Form>
       </Card>
-
-      {validationResult && (
-        <Card title="Validation Result" size="small" className="shadow-sm border-gray-200">
-          {validationResult.valid ? (
-            <Alert
-              message="Rule is valid"
-              type="success"
-              showIcon
-              className="mb-4"
-            />
-          ) : (
-            <Alert
-              message="Validation Errors"
-              description={
-                <ul className="list-disc pl-4 m-0">
-                  {validationResult.errors?.map((err, i) => (
-                    <li key={i}>{err}</li>
-                  ))}
-                </ul>
-              }
-              type="error"
-              showIcon
-              className="mb-4"
-            />
-          )}
-          
-          {validationResult.evidence && (
-            <div>
-              <Divider className="my-3" />
-              <Text strong className="block mb-2 text-gray-600">Evidence:</Text>
-              <pre className="bg-gray-100 p-3 rounded-md overflow-x-auto text-xs font-mono text-gray-700">
-                {JSON.stringify(validationResult.evidence, null, 2)}
-              </pre>
-            </div>
-          )}
-        </Card>
-      )}
     </div>
   );
 };
