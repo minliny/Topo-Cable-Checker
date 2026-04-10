@@ -4,6 +4,11 @@ import subprocess
 import json
 
 def test_cli_run_without_optional():
+    try:
+        __import__("openpyxl")
+    except ModuleNotFoundError:
+        pytest.skip("openpyxl not installed in this environment")
+
     # Setup: Create a task
     res = subprocess.run(
         ["python", "-m", "src.presentation.cli.main", "task", "create", "--baseline", "B001", "--file", "data/samples/test.xlsx"],

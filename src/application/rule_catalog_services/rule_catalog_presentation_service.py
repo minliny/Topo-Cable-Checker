@@ -76,6 +76,21 @@ class RuleCatalogPresentationService:
             "type": "string",
             "placeholder": "Field name",
             "help_text": "The name of the attribute to check."
+        },
+        "expected_value": {
+            "type": "number",
+            "placeholder": "Expected value",
+            "help_text": "Numeric expected value for comparisons."
+        },
+        "min_value": {
+            "type": "number",
+            "placeholder": "Minimum value",
+            "help_text": "Numeric minimum value for range comparisons."
+        },
+        "max_value": {
+            "type": "number",
+            "placeholder": "Maximum value",
+            "help_text": "Numeric maximum value for range comparisons."
         }
     }
 
