@@ -56,6 +56,12 @@ def main():
     # run
     run_parser = subparsers.add_parser("run", help="Run checks")
     run_parser.add_argument("--task", required=True, help="Task ID")
+    run_parser.add_argument("--copy-result", dest="copy_result", action="store_true", default=True, help="Copy result to clipboard (default)")
+    run_parser.add_argument("--no-copy-result", dest="copy_result", action="store_false", help="Disable clipboard copy")
+    run_parser.add_argument("--open-result", dest="open_result", action="store_true", default=True, help="Open result file in IDE (default)")
+    run_parser.add_argument("--no-open-result", dest="open_result", action="store_false", help="Disable opening in IDE")
+    run_parser.add_argument("--result-format", default="markdown", choices=["markdown", "text"], help="Output result format")
+    run_parser.add_argument("--max-issues", type=int, default=20, help="Max number of issues to display")
 
     # summary
     summary_parser = subparsers.add_parser("summary", help="View summary")
@@ -124,6 +130,23 @@ def main():
             svc = services["check_run_service"]
             run_id = svc.run_checks(args.task)
             print(f"Run completed. Run ID: {run_id}")
+            
+            # Fetch details for result delivery
+            query_svc = services["result_query_service"]
+            summary = query_svc.get_summary(run_id)
+            stats = query_svc.get_statistics(run_id)
+            issues = query_svc.get_issues(run_id)
+            
+            from src.presentation.result_delivery import ResultDeliveryService
+            delivery_svc = ResultDeliveryService()
+            formatted = delivery_svc.format_markdown(args.task, run_id, summary, stats, issues, args.max_issues)
+            
+            delivery_svc.deliver_result(
+                formatted, 
+                copy=args.copy_result, 
+                open_ide=args.open_result, 
+                fmt=args.result_format
+            )
 
         elif args.command == "summary":
             svc = services["result_query_service"]
