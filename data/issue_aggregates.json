@@ -1217,5 +1217,133 @@
       "warning": 1,
       "error": 2
     }
+  },
+  "cb55e3b9-e313-4e7b-808a-f4cf9941ff92": {
+    "run_id": "cb55e3b9-e313-4e7b-808a-f4cf9941ff92",
+    "issues": [
+      {
+        "issue_id": "141a1266-642f-46ba-b9d6-2647f1cc7e7e",
+        "message": "Missing required fields ['device_name'] in sheet 'device' at row 3.",
+        "evidence": {
+          "sheet": "device",
+          "row": 3,
+          "missing_fields": [
+            "device_name"
+          ]
+        },
+        "expected": "Value present",
+        "actual": "Empty",
+        "details": {
+          "row_data": {
+            "Device Name": null,
+            "Device Type": "Switch"
+          }
+        },
+        "source_row": 3,
+        "severity": "high",
+        "category": "missing_field",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "75e5853c-dc22-4438-ac9b-22ebb7740837",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "88d9740a-de14-4ce5-8db1-130afae133cb",
+        "message": "Device name is empty in sheet 'device' row 3.",
+        "evidence": {
+          "sheet": "device",
+          "row": 3
+        },
+        "expected": "Non-empty device name",
+        "actual": "Empty",
+        "details": {
+          "row_data": {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": null,
+            "device_type": "Switch",
+            "status": null
+          }
+        },
+        "source_row": 3,
+        "severity": "high",
+        "category": "normalization_error",
+        "stage": "normalization"
+      },
+      {
+        "issue_id": "60facf35-f7c1-431c-b536-7fa9c95b551f",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 1. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 1,
+          "compare_operator": "between",
+          "scope": {
+            "target_type": "devices"
+          },
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 1,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "134df614-a299-4fad-a534-fc20d1058338",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 1. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 1,
+          "compare_operator": "gte",
+          "scope": {
+            "target_type": "devices"
+          },
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 1,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 5
+    },
+    "by_rule": {
+      "Unknown": 3,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1
+    },
+    "by_severity": {
+      "high": 3,
+      "critical": 1,
+      "error": 1
+    }
   }
 }

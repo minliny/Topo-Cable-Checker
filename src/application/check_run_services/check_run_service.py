@@ -36,8 +36,13 @@ class CheckRunService:
             raise TaskError("Recognition data not found for task.")
         raw_data = rec_snapshot.recognized_data["row_data"]
         
+        # Load recognition issues
+        from src.domain.result_model import IssueItem
+        rec_issues_dicts = rec_snapshot.recognized_data.get("issues", [])
+        rec_issues = [IssueItem(**d) for d in rec_issues_dicts]
+        
         # 3. Normalize Data Pipeline
-        normalized_dataset = self.normalization_service.normalize(raw_data)
+        normalized_dataset, norm_issues = self.normalization_service.normalize(raw_data)
         
         # 4. Statistics Layer (NEW)
         device_types = {}
@@ -56,14 +61,17 @@ class CheckRunService:
         
         # 5. Rule Engine Execution
         baseline = self.baseline_repo.get_by_id(task.baseline_id)
-        issues = rule_engine.execute(normalized_dataset, baseline)
+        engine_issues = rule_engine.execute(normalized_dataset, baseline)
+        
+        # Combine all issues
+        all_issues = rec_issues + norm_issues + engine_issues
         
         # 6. Aggregate Layer (NEW)
         by_device = {}
         by_rule = {}
         by_severity = {}
         
-        for issue in issues:
+        for issue in all_issues:
             item_data = issue.evidence.get("item_data", {})
             dev_name = item_data.get("device_name", "Unknown")
             rule_id = issue.evidence.get("rule_id", "Unknown")
@@ -75,7 +83,7 @@ class CheckRunService:
             
         aggregate = IssueAggregateSnapshot(
             run_id=run_id, 
-            issues=issues,
+            issues=all_issues,
             by_device=by_device,
             by_rule=by_rule,
             by_severity=by_severity
@@ -85,7 +93,7 @@ class CheckRunService:
         # 7. Summary
         summary = RunSummaryOverview(
             run_id=run_id, 
-            summary=f"Analysis complete. {stats_snapshot.total_devices} devices, {stats_snapshot.total_ports} ports. Found {len(issues)} issues."
+            summary=f"Analysis complete. {stats_snapshot.total_devices} devices, {stats_snapshot.total_ports} ports. Found {len(all_issues)} issues."
         )
         self.result_repo.save_summary(summary)
         

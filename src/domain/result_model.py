@@ -36,6 +36,7 @@ class IssueItem:
     source_row: int
     severity: str = "medium"
     category: str = "general"
+    stage: str = "engine"  # e.g., "recognition", "normalization", "engine"
 
 @dataclass
 class IssueAggregateSnapshot:

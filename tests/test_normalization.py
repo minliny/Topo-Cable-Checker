@@ -1,0 +1,50 @@
+import pytest
+from src.application.normalization_services.normalization_service import NormalizationService
+from src.domain.fact_model import NormalizedDataset
+from src.domain.result_model import IssueItem
+
+def test_normalization_valid_data():
+    svc = NormalizationService()
+    
+    raw_data = {
+        "device": [
+            {"device_name": "FW-01", "device_type": "Firewall", "status": "Active", "_source_sheet": "devices_tab", "_source_row": 2}
+        ],
+        "port": [
+            {"device_name": "FW-01", "port_name": "eth0", "port_status": "Up", "_source_sheet": "ports_tab", "_source_row": 2}
+        ],
+        "link": [
+            {"src_device": "FW-01", "src_port": "eth0", "dst_device": "SW-01", "dst_port": "g0/1", "_source_sheet": "links_tab", "_source_row": 2}
+        ]
+    }
+    
+    dataset, issues = svc.normalize(raw_data)
+    
+    assert len(issues) == 0
+    assert len(dataset.devices) == 1
+    assert dataset.devices[0].device_name == "FW-01"
+    assert len(dataset.ports) == 1
+    assert len(dataset.links) == 1
+
+def test_normalization_missing_fields_issues():
+    svc = NormalizationService()
+    
+    raw_data = {
+        "device": [
+            {"device_name": "  ", "device_type": "Firewall", "_source_sheet": "devices_tab", "_source_row": 2} # Empty device name
+        ],
+        "link": [
+            {"src_device": "FW-01", "src_port": "eth0", "dst_device": "", "dst_port": "g0/1", "_source_sheet": "links_tab", "_source_row": 2} # Missing dst_device
+        ]
+    }
+    
+    dataset, issues = svc.normalize(raw_data)
+    
+    # devices missing device_name should be skipped and issue recorded
+    assert len(dataset.devices) == 0
+    assert len(dataset.links) == 0
+    assert len(issues) == 2
+    assert issues[0].stage == "normalization"
+    assert "Empty" in issues[0].actual
+    assert issues[1].stage == "normalization"
+    assert "Incomplete" in issues[1].actual

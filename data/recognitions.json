@@ -976,5 +976,92 @@
       },
       "warnings": []
     }
+  },
+  "2e281fea-4885-4951-9407-ef796017a014": {
+    "task_id": "2e281fea-4885-4951-9407-ef796017a014",
+    "recognized_data": {
+      "recognized_sheets": [
+        "device",
+        "ports"
+      ],
+      "header_mapping": {
+        "device": [
+          "Device Name",
+          "Device Type"
+        ],
+        "ports": [
+          "\u8bbe\u5907\u540d\u79f0",
+          "\u7aef\u53e3\u540d\u79f0",
+          "\u7aef\u53e3\u72b6\u6001"
+        ]
+      },
+      "row_data": {
+        "device": [
+          {
+            "_source_sheet": "device",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": null
+          },
+          {
+            "_source_sheet": "device",
+            "_source_row": 3,
+            "device_name": null,
+            "device_type": "Switch",
+            "status": null
+          }
+        ],
+        "port": [
+          {
+            "_source_sheet": "ports",
+            "_source_row": 2,
+            "device_name": "FW-01",
+            "port_name": "eth0",
+            "port_status": "Up"
+          }
+        ]
+      },
+      "issues": [
+        {
+          "issue_id": "141a1266-642f-46ba-b9d6-2647f1cc7e7e",
+          "message": "Missing required fields ['device_name'] in sheet 'device' at row 3.",
+          "evidence": {
+            "sheet": "device",
+            "row": 3,
+            "missing_fields": [
+              "device_name"
+            ]
+          },
+          "expected": "Value present",
+          "actual": "Empty",
+          "details": {
+            "row_data": {
+              "Device Name": null,
+              "Device Type": "Switch"
+            }
+          },
+          "source_row": 3,
+          "severity": "high",
+          "category": "missing_field",
+          "stage": "recognition"
+        },
+        {
+          "issue_id": "75e5853c-dc22-4438-ac9b-22ebb7740837",
+          "message": "Missing required sheet type 'link'.",
+          "evidence": {
+            "missing_sheet": "link"
+          },
+          "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+          "actual": null,
+          "details": {},
+          "source_row": 0,
+          "severity": "high",
+          "category": "missing_sheet",
+          "stage": "recognition"
+        }
+      ],
+      "warnings": []
+    }
   }
 }

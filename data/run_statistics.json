@@ -138,5 +138,14 @@
       "Switch": 3,
       "Firewall": 1
     }
+  },
+  "cb55e3b9-e313-4e7b-808a-f4cf9941ff92": {
+    "run_id": "cb55e3b9-e313-4e7b-808a-f4cf9941ff92",
+    "total_devices": 1,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1
+    }
   }
 }

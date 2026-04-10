@@ -1,15 +1,19 @@
 from src.infrastructure.repository import TaskRepository, ResultRepository
 from src.infrastructure.excel_reader import ExcelReader
 from src.domain.task_model import TaskStatus
-from src.domain.result_model import RecognitionResultSnapshot
+from src.domain.result_model import RecognitionResultSnapshot, IssueItem
 from src.crosscutting.errors.exceptions import TaskError
-from typing import Dict, Any
+from src.crosscutting.ids.generator import generate_id
+from src.application.recognition_services.input_contract import DEFAULT_CONTRACT
+from typing import Dict, Any, List
+import dataclasses
 
 class RecognitionService:
     def __init__(self):
         self.task_repo = TaskRepository()
         self.result_repo = ResultRepository()
         self.excel_reader = ExcelReader()
+        self.contract = DEFAULT_CONTRACT
         
     def recognize_data(self, task_id: str) -> Dict[str, Any]:
         task = self.task_repo.get_by_id(task_id)
@@ -26,13 +30,17 @@ class RecognitionService:
         except Exception as e:
             raise TaskError(f"Failed to read excel file {file_path}: {e}")
 
+        # Apply Input Contract
+        contract_result = self._apply_contract(excel_data)
+
         # 2. Build snapshot
         snapshot = RecognitionResultSnapshot(
             task_id=task_id,
             recognized_data={
                 "recognized_sheets": excel_data["sheets"],
                 "header_mapping": excel_data["header_mapping"],
-                "row_data": excel_data["row_data"],
+                "row_data": contract_result["row_data"],
+                "issues": [dataclasses.asdict(iss) for iss in contract_result["issues"]],
                 "warnings": []
             }
         )
@@ -45,7 +53,123 @@ class RecognitionService:
         return {
             "status": "recognized", 
             "task_id": task_id, 
-            "sheets_found": len(excel_data["sheets"])
+            "sheets_found": len(excel_data["sheets"]),
+            "issues_count": len(contract_result["issues"])
+        }
+
+    def _apply_contract(self, excel_data: Dict[str, Any]) -> Dict[str, Any]:
+        result_row_data = {}
+        issues = []
+        
+        found_sheet_types = set()
+        
+        for sheet_name, rows in excel_data["row_data"].items():
+            s_name_lower = sheet_name.lower()
+            
+            # Identify sheet type
+            matched_config = None
+            for sheet_config in self.contract.sheets:
+                if any(kw in s_name_lower for kw in sheet_config.keywords):
+                    matched_config = sheet_config
+                    break
+                    
+            if not matched_config:
+                continue
+                
+            sheet_type = matched_config.sheet_type
+            found_sheet_types.add(sheet_type)
+            
+            # Header mapping
+            original_headers = excel_data["header_mapping"].get(sheet_name, [])
+            header_map = {} # original_header -> standard_name
+            unmapped_headers = []
+            
+            for orig_h in original_headers:
+                orig_h_lower = orig_h.lower().strip()
+                mapped = False
+                for h_config in matched_config.headers:
+                    aliases_lower = [a.lower().strip() for a in h_config.aliases]
+                    if orig_h_lower == h_config.standard_name.lower().strip() or orig_h_lower in aliases_lower:
+                        header_map[orig_h] = h_config.standard_name
+                        mapped = True
+                        break
+                if not mapped:
+                    unmapped_headers.append(orig_h)
+            
+            # Check missing required headers
+            found_standard_headers = set(header_map.values())
+            for h_config in matched_config.headers:
+                if h_config.required and h_config.standard_name not in found_standard_headers:
+                    issues.append(IssueItem(
+                        issue_id=generate_id(),
+                        message=f"Missing required header '{h_config.standard_name}' in sheet '{sheet_name}'.",
+                        evidence={"sheet": sheet_name, "missing_header": h_config.standard_name},
+                        expected=h_config.standard_name,
+                        actual=None,
+                        details={"aliases": h_config.aliases},
+                        source_row=0,
+                        severity="high",
+                        category="missing_header",
+                        stage="recognition"
+                    ))
+            
+            # Map rows
+            mapped_rows = []
+            for idx, row_dict in enumerate(rows):
+                row_idx = idx + 2 # Excel 1-based, +1 for header
+                mapped_row = {"_source_sheet": sheet_name, "_source_row": row_idx}
+                
+                for orig_k, v in row_dict.items():
+                    if orig_k in header_map:
+                        mapped_row[header_map[orig_k]] = v
+                        
+                # Check missing required values
+                missing_fields = []
+                for h_config in matched_config.headers:
+                    if h_config.required:
+                        val = mapped_row.get(h_config.standard_name)
+                        if val is None or str(val).strip() == "":
+                            missing_fields.append(h_config.standard_name)
+                    elif h_config.standard_name not in mapped_row:
+                        mapped_row[h_config.standard_name] = h_config.default_value
+                        
+                if missing_fields:
+                    issues.append(IssueItem(
+                        issue_id=generate_id(),
+                        message=f"Missing required fields {missing_fields} in sheet '{sheet_name}' at row {row_idx}.",
+                        evidence={"sheet": sheet_name, "row": row_idx, "missing_fields": missing_fields},
+                        expected="Value present",
+                        actual="Empty",
+                        details={"row_data": row_dict},
+                        source_row=row_idx,
+                        severity="high",
+                        category="missing_field",
+                        stage="recognition"
+                    ))
+                
+                mapped_rows.append(mapped_row)
+                
+            result_row_data[sheet_type] = mapped_rows
+
+        # Check missing sheets
+        for sheet_config in self.contract.sheets:
+            if sheet_config.sheet_type not in found_sheet_types:
+                issues.append(IssueItem(
+                    issue_id=generate_id(),
+                    message=f"Missing required sheet type '{sheet_config.sheet_type}'.",
+                    evidence={"missing_sheet": sheet_config.sheet_type},
+                    expected=f"Sheet matching {sheet_config.keywords}",
+                    actual=None,
+                    details={},
+                    source_row=0,
+                    severity="high",
+                    category="missing_sheet",
+                    stage="recognition"
+                ))
+
+        return {
+            "row_data": result_row_data,
+            "issues": issues
         }
 
     def confirm_recognition(self, task_id: str) -> Dict[str, Any]:
