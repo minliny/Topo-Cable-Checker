@@ -26,6 +26,7 @@ function App() {
     validationRequested: false,
     publishRequested: false,
     diffRequested: false,
+    rollbackRequested: false,
     
     validationResult: null,
     diffData: null,
@@ -177,8 +178,41 @@ function App() {
     fetchDiff();
   }, [pageState.diffRequested, pageState.selectedBaselineId]);
 
+  // Side Effect: Rollback Request
+  useEffect(() => {
+    if (!pageState.rollbackRequested || !pageState.selectedVersionId) return;
+
+    const performRollback = async () => {
+      // Transition to preparing mode visually
+      setPageState(prev => ({ ...prev, centerMode: 'rollback_preparing' }));
+      
+      // Simulate API call to fetch historical draft/data
+      setTimeout(() => {
+        // State transition: Rollback Success -> Ready to Edit as Draft
+        setPageState(prev => ({
+          ...prev,
+          rollbackRequested: false, // Reset signal
+          centerMode: 'rollback_ready_edit',
+          rightPanelMode: 'help',
+          draftData: { 
+            rule_type: 'threshold', 
+            params: '{\n  "threshold": 5,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + pageState.selectedVersionId + '"\n}' 
+          },
+          dirty: true, // It is a new draft derived from history, needs saving
+        }));
+        message.success(`Successfully loaded draft from version ${pageState.selectedVersionId}`);
+      }, 1000);
+    };
+
+    performRollback();
+  }, [pageState.rollbackRequested, pageState.selectedVersionId]);
+
 
   // --- 4. Event Handlers (Only updating state, no direct API calls) ---
+
+  const requestRollback = () => {
+    setPageState(prev => ({ ...prev, rollbackRequested: true }));
+  };
 
   const switchNavContext = (baselineId: string, versionId: string) => {
     const isDraft = versionId === 'draft';
@@ -192,6 +226,10 @@ function App() {
         ? { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning"\n}' } 
         : {},
       dirty: false,
+      validationRequested: false,
+      publishRequested: false,
+      diffRequested: false,
+      rollbackRequested: false,
       validationResult: null,
       diffData: null,
       targetFieldPath: undefined,
@@ -260,6 +298,24 @@ function App() {
     setPageState(prev => ({ ...prev, diffRequested: true }));
   };
 
+  const handleRequestRollbackClick = () => {
+    setPageState(prev => ({
+      ...prev,
+      centerMode: 'rollback_confirm'
+    }));
+  };
+
+  const confirmRollback = () => {
+    setPageState(prev => ({ ...prev, rollbackRequested: true }));
+  };
+
+  const cancelRollback = () => {
+    setPageState(prev => ({
+      ...prev,
+      centerMode: 'history_detail'
+    }));
+  };
+
   const handleSaveDraft = () => {
     setSaving(true);
     // Simulate save API
@@ -320,12 +376,17 @@ function App() {
               diffData={pageState.diffData}
               targetFieldPath={pageState.targetFieldPath}
               targetRuleId={pageState.targetRuleId}
+              selectedVersionId={pageState.selectedVersionId}
               onChange={handleDraftChange}
               onDirtyChange={handleDirtyChange}
               onValidateRequest={requestValidation}
               onSaveDraft={handleSaveDraft}
               onPublishConfirmRequest={requestPublishConfirm}
               onCancelPublish={cancelPublish}
+              onRequestDiff={requestDiff}
+              onRequestRollback={handleRequestRollbackClick}
+              onRollbackConfirmRequest={confirmRollback}
+              onCancelRollback={cancelRollback}
             />
           </div>
 

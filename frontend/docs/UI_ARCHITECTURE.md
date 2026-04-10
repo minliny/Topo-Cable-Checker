@@ -76,7 +76,39 @@ export interface PageState {
    - 用户点击查看 Diff -> `centerMode = 'diff'`, `rightPanelMode = 'diff_summary'`, `diffRequested = true`。
    - `useEffect` 捕获到信号 -> 调用 diff API -> 更新 `diffData`, `diffRequested = false`。
 
-## 三、脏数据守卫 (Dirty Guard)
+## 三、状态迁移表 (State Transition Table)
+
+系统行为被收敛在状态迁移和对应的 Effect 队列中，以下是主要业务流的状态流转：
+
+### 1. 规则编辑与校验 (Edit & Validation)
+| 起始状态 | 触发动作 | 目标状态 (Center/Right) | 附加副作用 |
+|---------|---------|-------------------------|------------|
+| (any) | 左栏点击 Draft | `edit` / `help` | 加载 Draft |
+| `edit` | 表单输入 | `edit` / 保持不变 | `dirty = true` |
+| `edit` | 点击 Validate | `edit` / 保持不变 | 发送 `validationRequested = true` 信号 |
+| `edit` | Validation 成功 | `edit` / `validation` | 收到结果，`validationRequested = false` |
+
+### 2. 发布工作流 (Publish Flow)
+发布不再是一个简单的按钮，而是一个具有预检和确认的完整流程。
+| 起始状态 | 触发动作 | 目标状态 (Center/Right) | 附加副作用 |
+|---------|---------|-------------------------|------------|
+| `edit` | 点击 Prepare Publish | `publish_confirm` / `publish_check` | |
+| `publish_confirm` | 点击 Cancel | `edit` / `validation` | 返回编辑态 |
+| `publish_confirm` | 点击 Confirm Publish | 保持不变 | 发送 `publishRequested = true` 信号 |
+| `publish_confirm` | Publish 完成 | `history_detail` / `version_meta` | `dirty = false`, `publishRequested = false`, 左栏刷新 |
+
+### 3. 历史与回滚工作流 (History & Rollback Flow)
+直接回滚是不安全的，系统必须通过生成“回滚候选草稿”让用户二次确认和修改。
+| 起始状态 | 触发动作 | 目标状态 (Center/Right) | 附加副作用 |
+|---------|---------|-------------------------|------------|
+| (any) | 左栏点击历史版本 | `history_detail` / `version_meta` | 过 Dirty Guard 保护 |
+| `history_detail` | 点击 Compare Changes | `diff` / `diff_summary` | 发送 `diffRequested = true` |
+| `history_detail` | 点击 Rollback to this | `rollback_confirm` / `version_meta` | |
+| `rollback_confirm` | 点击 Cancel | `history_detail` / `version_meta` | |
+| `rollback_confirm` | 点击 Confirm Rollback| `rollback_preparing` / `version_meta` | 发送 `rollbackRequested = true` |
+| `rollback_preparing`| Rollback 数据加载完毕 | `rollback_ready_edit` / `help` | `dirty = true` (强转为未保存草稿)，加载历史参数至编辑区 |
+
+## 四、脏数据守卫 (Dirty Guard)
 - **触发条件**：当 `dirty = true` 时，用户尝试切换左栏节点，或者尝试从中栏编辑态切出。
 - **行为约束**：必须弹出确认框 (Modal.confirm)，要求用户选择“放弃修改”或“取消切换”。不能静默丢失用户数据，也不能在有脏数据时直接拉取新上下文。
 

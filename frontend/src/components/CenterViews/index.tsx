@@ -1,10 +1,12 @@
 import React from 'react';
 import { CenterMode, DraftData } from '../../types/ui';
 import { ValidationResult, DiffResponse } from '../../api/rules';
-import { Empty } from 'antd';
+import { Empty, Spin } from 'antd';
 import EditorView from './EditorView';
 import DiffView from './DiffView';
 import PublishConfirmView from './PublishConfirmView';
+import HistoryDetailView from './HistoryDetailView';
+import RollbackConfirmView from './RollbackConfirmView';
 
 interface CenterContainerProps {
   mode: CenterMode;
@@ -18,12 +20,17 @@ interface CenterContainerProps {
   diffData: DiffResponse | null;
   targetFieldPath?: string;
   targetRuleId?: string;
+  selectedVersionId?: string;
   onChange: (data: DraftData) => void;
   onDirtyChange: (dirty: boolean) => void;
   onValidateRequest: () => void;
   onSaveDraft: () => void;
   onPublishConfirmRequest: () => void;
   onCancelPublish: () => void;
+  onRequestDiff: () => void;
+  onRequestRollback: () => void;
+  onRollbackConfirmRequest: () => void;
+  onCancelRollback: () => void;
 }
 
 const CenterContainer: React.FC<CenterContainerProps> = ({
@@ -38,12 +45,17 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
   diffData,
   targetFieldPath,
   targetRuleId,
+  selectedVersionId,
   onChange,
   onDirtyChange,
   onValidateRequest,
   onSaveDraft,
   onPublishConfirmRequest,
-  onCancelPublish
+  onCancelPublish,
+  onRequestDiff,
+  onRequestRollback,
+  onRollbackConfirmRequest,
+  onCancelRollback
 }) => {
   switch (mode) {
     case 'empty':
@@ -54,6 +66,7 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
       );
       
     case 'edit':
+    case 'rollback_ready_edit': // rollback results in an editable state with slightly different intent
       return (
         <EditorView
           draftData={draftData}
@@ -85,8 +98,29 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
       
     case 'history_detail':
       return (
-        <div className="h-full flex items-center justify-center bg-gray-50">
-          <Empty description="History detail view is read-only. Switch to 'diff' mode to see changes." />
+        <HistoryDetailView 
+          versionId={selectedVersionId}
+          onRequestDiff={onRequestDiff}
+          onRequestRollback={onRequestRollback}
+        />
+      );
+
+    case 'rollback_confirm':
+      return (
+        <RollbackConfirmView 
+          versionId={selectedVersionId}
+          onRollbackConfirmRequest={onRollbackConfirmRequest}
+          onCancelRollback={onCancelRollback}
+        />
+      );
+
+    case 'publish_checking':
+    case 'publishing':
+    case 'rollback_preparing':
+      return (
+        <div className="h-full flex items-center justify-center bg-gray-50 flex-col gap-4">
+          <Spin size="large" />
+          <span className="text-gray-500 uppercase tracking-widest text-sm">{mode.replace('_', ' ')}...</span>
         </div>
       );
       

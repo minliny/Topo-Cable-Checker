@@ -27,6 +27,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
         {
           key: `${baseline.id}-draft`,
           title: 'Draft',
+          type: 'working_draft',
           isLeaf: true,
           baselineId: baseline.id,
           versionId: 'draft',
@@ -35,6 +36,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
         {
           key: `${baseline.id}-v1.1`,
           title: 'v1.1 (Testing)',
+          type: 'published_version',
           isLeaf: true,
           baselineId: baseline.id,
           versionId: 'v1.1',
@@ -43,6 +45,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
         {
           key: `${baseline.id}-v1.0`,
           title: 'v1.0 (Prod)',
+          type: 'published_version',
           isLeaf: true,
           baselineId: baseline.id,
           versionId: 'v1.0',
@@ -53,6 +56,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
       return {
         key: baseline.id,
         title: baseline.name,
+        type: 'baseline_root',
         baselineId: baseline.id,
         versionId: 'root',
         children: versions
