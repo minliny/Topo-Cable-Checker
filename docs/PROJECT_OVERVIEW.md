@@ -101,13 +101,13 @@
 ### 4.5 规则目录与消费层
 通过 Rule Catalog 统一描述系统支持的规则类型、参数 schema、默认示例、表单定义和能力元信息。
 
-### 4.6 规则编辑器
+### 4.6 RuleEditor MVP
 基于 Catalog 驱动规则表单渲染，实现规则类型选择、默认值填充、表单校验和草稿生成。
 
-### 4.7 编辑器到治理链路桥接
-将前端 `RuleDraft` 转换到底层规则定义，执行编译与结构验证，并将错误统一映射为 UI 可理解的字段级错误。
+### 4.7 编辑器到治理链路桥接 (Governance Bridge)
+将前端 `RuleDraft` 转换到底层规则定义，执行草稿预编译 (compile preview) 与结构验证，并将错误统一映射为 UI 可理解的字段级错误 (field-level error mapping)。
 
-### 4.8 规则发布与版本治理
+### 4.8 规则发布与版本治理 (Rule Publish Workflow MVP)
 将通过校验的规则草稿发布为正式 baseline，并纳入版本管理体系。
 
 ### 4.9 差异分析与回滚
@@ -181,21 +181,21 @@
    - `Capability`
 
 2. 规则目录与消费层  
-   - `RuleCatalog`
+   - Rule Catalog
    - Consumer 层
 
-3. 规则编辑器 MVP  
+3. RuleEditor MVP  
    - 规则类型列表
    - 表单视图模型
    - 默认值填充
    - 表单校验
    - `RuleDraftView`
 
-4. 编辑器到治理桥接  
-   - `compile_draft_preview`
+4. 编辑器到治理桥接 (Governance Bridge)
+   - 草稿预编译 (compile preview)
    - `RuleCompiler.compile(...)`
    - `CompiledRule.validate()`
-   - 字段级错误映射
+   - 字段级错误映射 (field-level error mapping)
    - 发布候选摘要基础
 
 ### 正在进入的阶段
@@ -257,13 +257,13 @@
 ### 阶段 B：规则平台化
 完成规则协议重构、Rule Catalog 建设、目录驱动消费。
 
-### 阶段 C：规则编辑器 MVP
+### 阶段 C：RuleEditor MVP
 完成表单化规则创建、默认值填充、草稿生成。
 
-### 阶段 D：治理桥接
-完成草稿预编译、结构校验、字段级错误映射。
+### 阶段 D：治理桥接 (Governance Bridge)
+完成草稿预编译 (compile preview)、结构校验、字段级错误映射 (field-level error mapping)。
 
-### 阶段 E：发布治理闭环
+### 阶段 E：发布治理闭环 (Rule Publish Workflow MVP)
 完成发布服务、baseline 版本、发布记录、发布摘要。
 
 ### 阶段 F：版本 diff 与回滚

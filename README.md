@@ -37,13 +37,13 @@
 - 底层规则协议重构
 - `CompiledRule` 统一结构
 - `RuleMeta / Capability` 语义定义
-- `RuleCatalog` 目录与消费层
+- `Rule Catalog` 目录与消费层
 - `RuleEditor MVP`
 - 表单校验与规则草稿生成
-- 编辑器到治理链路桥接
-- 草稿预编译
+- 编辑器到治理链路桥接 (Governance Bridge)
+- 草稿预编译 (compile preview)
 - 编译与结构校验联通
-- 字段级错误映射
+- 字段级错误映射 (field-level error mapping)
 - 发布候选摘要基础
 
 当前阶段判断：
@@ -68,22 +68,68 @@
 
 ---
 
+## 安装与配置
+
+1. **环境要求**: Python 3.8+
+2. **安装依赖**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## 快速开始
+
+使用 CLI 入口点进行各种操作：
+
+```bash
+# 1. 查看基线列表
+python src/presentation/cli/main.py baseline list
+
+# 2. 创建检查任务
+python src/presentation/cli/main.py task create --baseline <id> --file <path>
+
+# 3. 执行识别
+python src/presentation/cli/main.py recognize --task <task_id>
+
+# 4. 确认识别结果
+python src/presentation/cli/main.py confirm-recognition --task <task_id>
+
+# 5. 执行检查规则并交付结果
+python src/presentation/cli/main.py run --task <task_id>
+```
+
+### 结果交付高级选项
+
+`run` 命令支持多种结果交付相关的参数控制：
+
+```bash
+# 默认行为：将结果复制到剪贴板，并在 PyCharm/IDE 中打开 Markdown 格式报告
+python src/presentation/cli/main.py run --task <task_id>
+
+# 禁用所有交付行为（不复制剪贴板，不打开 IDE）
+python src/presentation/cli/main.py run --task <task_id> --no-copy-result --no-open-result
+
+# 指定输出为纯文本格式，并限制最多显示 10 个 Issue
+python src/presentation/cli/main.py run --task <task_id> --result-format text --max-issues 10
+```
+
+---
+
 ## 路线图
 
 ### 阶段 1：核心检查闭环
 数据输入、输入契约、规则执行、基础结果输出
 
 ### 阶段 2：规则平台化
-`CompiledRule`、`RuleMeta / Capability`、`RuleCatalog`
+`CompiledRule`、`RuleMeta / Capability`、`Rule Catalog`
 
-### 阶段 3：规则编辑器 MVP
+### 阶段 3：RuleEditor MVP
 规则类型选择、表单渲染、草稿生成、表单校验
 
-### 阶段 4：治理桥接
-草稿预编译、compile + validate 联调、字段级错误映射
+### 阶段 4：治理桥接 (Governance Bridge)
+草稿预编译 (compile preview)、compile + validate 联调、字段级错误映射 (field-level error mapping)
 
-### 阶段 5：发布治理闭环
-发布服务、baseline 版本、发布摘要、发布记录
+### 阶段 5：发布治理闭环 (Rule Publish Workflow MVP)
+发布服务、baseline 版本生成、发布摘要、发布记录
 
 ### 阶段 6：差异分析与回滚
 版本 diff、历史版本、回滚机制、影响分析
