@@ -29,11 +29,26 @@ class RuleDefinitionRegistry:
             return [d for d in self._definitions.values() if d.enabled]
         return list(self._definitions.values())
         
+    def get_by_scope(self, engine_scope: str, enabled_only: bool = True) -> List[RuleDefinition]:
+        """
+        Retrieves rules assigned to a specific engine scope (e.g. "normalization" vs "rule_engine_single_fact").
+        """
+        rules = self.get_all(enabled_only=enabled_only)
+        return [r for r in rules if r.engine_scope == engine_scope]
+        
+    def get_by_target(self, applies_to: str, enabled_only: bool = True) -> List[RuleDefinition]:
+        """
+        Retrieves rules applicable to a specific target domain (e.g. "device", "link").
+        """
+        rules = self.get_all(enabled_only=enabled_only)
+        return [r for r in rules if r.applies_to and applies_to in r.applies_to]
+        
     def to_row_constraints(self, enabled_only: bool = True) -> List[RowConstraint]:
         """
-        Compiles the registered definitions into executable runtime objects.
+        Compiles ONLY the "normalization" scope registered definitions into executable runtime RowConstraints.
         """
-        definitions = self.get_all(enabled_only=enabled_only)
+        # We enforce that only rules meant for normalization are compiled into RowConstraints
+        definitions = self.get_by_scope("normalization", enabled_only=enabled_only)
         constraints = []
         for d in definitions:
             try:
