@@ -26,15 +26,19 @@ class SingleFactExecutor(RuleExecutor):
             if rule_subtype == "field_equals":
                 if actual_val != expected_val:
                     is_failed = True
-                    message = f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected '{expected_val}', got '{actual_val}'"
+                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected '{expected_val}', got '{actual_val}'"
+            elif rule_subtype == "field_not_equals":
+                if actual_val == expected_val:
+                    is_failed = True
+                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected anything but '{expected_val}', got '{actual_val}'"
             elif rule_subtype == "regex_match":
                 if not actual_val or not re.match(str(expected_val), str(actual_val)):
                     is_failed = True
-                    message = f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: '{actual_val}' does not match regex '{expected_val}'"
+                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: '{actual_val}' does not match regex '{expected_val}'"
             elif rule_subtype == "missing_value":
                 if actual_val is None or str(actual_val).strip() == "":
                     is_failed = True
-                    message = f"Rule {rule_id} ({rule_subtype}) failed: Required field '{target_field}' is missing or empty"
+                    message = rule_def.get("message_template") or f"Rule {rule_id} ({rule_subtype}) failed: Required field '{target_field}' is missing or empty"
             
             if is_failed:
                 issues.append(IssueItem(

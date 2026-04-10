@@ -310,5 +310,53 @@
     "created_at": "2026-04-10 06:01:08.738410",
     "latest_run_id": "0c533193-cd67-474f-9627-24c23b339537",
     "parent_task_id": null
+  },
+  "a8f5900c-fae8-471b-bbd6-ec78391500cc": {
+    "task_id": "a8f5900c-fae8-471b-bbd6-ec78391500cc",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.4",
+    "task_status": "check_completed",
+    "created_at": "2026-04-10 06:08:03.522769",
+    "latest_run_id": "15909b71-3a45-4eea-925f-2cc74b15d873",
+    "parent_task_id": null
+  },
+  "7e9bef27-9de7-4b44-a2b3-6d3e90422e48": {
+    "task_id": "7e9bef27-9de7-4b44-a2b3-6d3e90422e48",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.4",
+    "task_status": "check_completed",
+    "created_at": "2026-04-10 06:08:03.562682",
+    "latest_run_id": "353cd99f-fbb2-49af-84f9-6f602c5bedc8",
+    "parent_task_id": null
+  },
+  "0ebbef2f-a495-4ff5-91c3-42c0629ac940": {
+    "task_id": "0ebbef2f-a495-4ff5-91c3-42c0629ac940",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.4",
+    "task_status": "ready_to_check",
+    "created_at": "2026-04-10 06:08:03.586280",
+    "latest_run_id": null,
+    "parent_task_id": null
+  },
+  "e7f481c7-da1a-407e-8977-4c202d6b9441": {
+    "task_id": "e7f481c7-da1a-407e-8977-4c202d6b9441",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.4",
+    "task_status": "check_completed",
+    "created_at": "2026-04-10 06:08:03.623571",
+    "latest_run_id": "86ef248f-69b5-4e13-be4e-290f5b5d5bf0",
+    "parent_task_id": null
   }
 }

@@ -203,5 +203,32 @@
     "total_ports": 1,
     "total_links": 0,
     "device_type_distribution": {}
+  },
+  "15909b71-3a45-4eea-925f-2cc74b15d873": {
+    "run_id": "15909b71-3a45-4eea-925f-2cc74b15d873",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "353cd99f-fbb2-49af-84f9-6f602c5bedc8": {
+    "run_id": "353cd99f-fbb2-49af-84f9-6f602c5bedc8",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "86ef248f-69b5-4e13-be4e-290f5b5d5bf0": {
+    "run_id": "86ef248f-69b5-4e13-be4e-290f5b5d5bf0",
+    "total_devices": 0,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {}
   }
 }
