@@ -2,6 +2,7 @@ import re
 from typing import Dict, Any, List
 from src.domain.rule_engine.compiled_rule import CompiledRule
 from src.domain.rule_engine.parameter_schema_registry import ParameterSchemaRegistry
+from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry
 
 class RuleCompileError(Exception):
     """
@@ -170,6 +171,11 @@ class RuleCompiler:
             raise RuleCompileError(rule_id, "invalid_dsl_expression", "Invalid 'assert' clause format")
             
         executor_type = compiled_rule_dict["executor"]
+        
+        rule_meta = RuleMetaRegistry.get_meta(executor_type)
+        if not rule_meta:
+            raise RuleCompileError(rule_id, "unknown_rule_meta", f"Unknown executor type: {executor_type}")
+
         params = {k: v for k, v in compiled_rule_dict.items() if k not in ["executor", "scope_selector", "severity"]}
         
         # Schema validation
@@ -187,6 +193,7 @@ class RuleCompiler:
             message={"template": rule_def.get("message", f"Rule {rule_id} failed")},
             severity=compiled_rule_dict["severity"],
             params=params,
+            rule_meta=rule_meta,
             # Backward compatibility attributes
             scope_selector={"target_type": target_type, **scope_selector},
             **params
@@ -213,6 +220,10 @@ class RuleCompiler:
         
         executor_type = template_info["target_executor"]
         
+        rule_meta = RuleMetaRegistry.get_meta(executor_type)
+        if not rule_meta:
+            raise RuleCompileError(rule_id, "unknown_rule_meta", f"Unknown executor type: {executor_type}")
+            
         # Schema validation (for newly supported structure)
         schema_err = ParameterSchemaRegistry.validate(executor_type, params)
         if schema_err:
@@ -234,6 +245,7 @@ class RuleCompiler:
             message={"template": rule_def.get("message", f"Rule {rule_id} failed")},
             severity=rule_def.get("severity", "medium"),
             params=compiled_rule_params,
+            rule_meta=rule_meta,
             # Backward compatibility attributes
             scope_selector={"target_type": target_type, **scope_selector},
             **compiled_rule_params

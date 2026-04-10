@@ -2,6 +2,7 @@ import pytest
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError
 from src.domain.rule_engine.compiled_rule import CompiledRule, RuleValidationError
 from src.domain.rule_engine.parameter_schema_registry import ParameterSchemaRegistry
+from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry, RuleMeta
 from src.domain.rule_engine.engine import RuleEngine
 from src.domain.baseline_model import BaselineProfile
 from src.domain.fact_model import NormalizedDataset
@@ -103,3 +104,48 @@ def test_invalid_rule_rejected():
             "target_type": "devices",
             "params": {}
         })
+
+def test_rule_meta_registry():
+    # Check threshold meta
+    threshold_meta = RuleMetaRegistry.get_meta("threshold")
+    assert threshold_meta is not None
+    assert threshold_meta.category == "quantitative"
+    assert threshold_meta.supports_grouping is True
+
+    # Check topology meta
+    topology_meta = RuleMetaRegistry.get_meta("topology")
+    assert topology_meta is not None
+    assert topology_meta.category == "topology"
+    assert topology_meta.supports_topology is True
+    
+def test_rule_type_validation():
+    # Unregistered meta throws an error in compiler
+    with pytest.raises(RuleCompileError, match="unknown_rule_meta"):
+        # Force a template that produces an unknown executor
+        # We need to temporarily add a bad template
+        from src.domain.rule_compiler import TemplateRegistry
+        TemplateRegistry._templates["bad_template"] = {
+            "target_executor": "unknown_executor",
+            "supported_params": [],
+            "validation_rules": []
+        }
+        
+        RuleCompiler.compile("r1", {
+            "rule_type": "template",
+            "template": "bad_template",
+            "target_type": "devices",
+            "params": {}
+        })
+        
+        # Cleanup
+        del TemplateRegistry._templates["bad_template"]
+
+def test_meta_and_schema_consistency():
+    # All schemas in ParameterSchemaRegistry should have a corresponding RuleMeta
+    for rule_type in ParameterSchemaRegistry._schemas:
+        meta = RuleMetaRegistry.get_meta(rule_type)
+        assert meta is not None, f"No RuleMeta found for rule_type: {rule_type}"
+        
+    # Registering a schema for an unknown rule_type should fail
+    with pytest.raises(ValueError, match="Cannot register schema for unknown rule_type"):
+        ParameterSchemaRegistry.register("fake_rule", required=[], optional=[])

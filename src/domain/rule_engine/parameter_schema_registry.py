@@ -1,24 +1,18 @@
 from typing import Dict, Any, Optional
+from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry
 
 class ParameterSchemaRegistry:
-    _schemas = {
-        "threshold": {
-            "required": ["metric_type"],
-            "optional": ["metric_field", "threshold_key", "operator", "expected_value", "expected", "min_value", "max_value"]
-        },
-        "single_fact": {
-            "required": ["field", "type"],
-            "optional": ["expected"]
-        },
-        "group_consistency": {
-            "required": [],
-            "optional": ["group_key", "comparison_field", "parameter_key"]
-        },
-        "topology": {
-            "required": ["source_type", "target_type", "link_type", "expected_connection"],
-            "optional": []
+    _schemas = {}
+
+    @classmethod
+    def register(cls, rule_type: str, required: list, optional: list):
+        if not RuleMetaRegistry.get_meta(rule_type):
+            raise ValueError(f"Cannot register schema for unknown rule_type: {rule_type}")
+            
+        cls._schemas[rule_type] = {
+            "required": required,
+            "optional": optional
         }
-    }
 
     @classmethod
     def validate(cls, executor_type: str, params: Dict[str, Any]) -> Optional[str]:
@@ -37,3 +31,28 @@ class ParameterSchemaRegistry:
         #         return f"Unsupported parameter: {k}"
                 
         return None
+
+# Register out-of-the-box schemas
+ParameterSchemaRegistry.register(
+    "threshold",
+    required=["metric_type"],
+    optional=["metric_field", "threshold_key", "operator", "expected_value", "expected", "min_value", "max_value"]
+)
+
+ParameterSchemaRegistry.register(
+    "single_fact",
+    required=["field", "type"],
+    optional=["expected"]
+)
+
+ParameterSchemaRegistry.register(
+    "group_consistency",
+    required=[],
+    optional=["group_key", "comparison_field", "parameter_key"]
+)
+
+ParameterSchemaRegistry.register(
+    "topology",
+    required=["source_type", "target_type", "link_type", "expected_connection"],
+    optional=[]
+)

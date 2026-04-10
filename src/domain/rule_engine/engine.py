@@ -98,6 +98,11 @@ class RuleEngine:
                 continue
 
             rule_executor_type = compiled_rule.executor.get("type", "single_fact")
+            
+            # (预留) 基于 rule_meta 做执行分流，例如：
+            # if compiled_rule.rule_meta and compiled_rule.rule_meta.category == "topology":
+            #     executor = self.executors.get("topology")
+            
             executor = self.executors.get(rule_executor_type)
 
             if executor:
