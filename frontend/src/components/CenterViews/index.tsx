@@ -1,7 +1,8 @@
 import React from 'react';
 import { CenterMode, DraftData } from '../../types/ui';
 import { ValidationResult, DiffResponse } from '../../api/rules';
-import { Empty, Spin } from 'antd';
+import { Empty, Spin, Result, Button, List } from 'antd';
+import { XCircle, CheckCircle } from 'lucide-react';
 import EditorView from './EditorView';
 import DiffView from './DiffView';
 import PublishConfirmView from './PublishConfirmView';
@@ -17,6 +18,7 @@ interface CenterContainerProps {
   publishing: boolean;
   validationPassed: boolean;
   validationResult: ValidationResult | null;
+  publishBlockedIssues: any[] | null;
   diffData: DiffResponse | null;
   targetFieldPath?: string;
   targetRuleId?: string;
@@ -26,6 +28,7 @@ interface CenterContainerProps {
   onValidateRequest: () => void;
   onSaveDraft: () => void;
   onPublishConfirmRequest: () => void;
+  onPublishRequest: () => void;
   onCancelPublish: () => void;
   onRequestDiff: () => void;
   onRequestRollback: () => void;
@@ -42,6 +45,7 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
   publishing,
   validationPassed,
   validationResult,
+  publishBlockedIssues,
   diffData,
   targetFieldPath,
   targetRuleId,
@@ -51,6 +55,7 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
   onValidateRequest,
   onSaveDraft,
   onPublishConfirmRequest,
+  onPublishRequest,
   onCancelPublish,
   onRequestDiff,
   onRequestRollback,
@@ -91,11 +96,54 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
         <PublishConfirmView 
           validationResult={validationResult}
           publishing={publishing}
-          onPublishConfirmRequest={onPublishConfirmRequest}
+          onPublishConfirmRequest={onPublishRequest}
           onCancelPublish={onCancelPublish}
         />
       );
       
+    case 'publish_blocked':
+      return (
+        <div className="h-full p-8 bg-white rounded-lg shadow-sm border border-red-100 flex flex-col">
+          <Result
+            status="error"
+            title="Publish Blocked"
+            subTitle="Your publish request was blocked due to critical validation issues."
+            extra={[
+              <Button key="fix" type="primary" onClick={onCancelPublish}>
+                Return to Editor to Fix
+              </Button>
+            ]}
+          >
+            <div className="mt-4">
+              <h4 className="text-red-800 font-medium mb-2">Blocking Issues:</h4>
+              <List
+                size="small"
+                dataSource={publishBlockedIssues || []}
+                renderItem={(item: any) => (
+                  <List.Item>
+                    <Typography.Text type="danger" className="flex items-center gap-2">
+                      <XCircle size={14} />
+                      {item.message}
+                    </Typography.Text>
+                  </List.Item>
+                )}
+              />
+            </div>
+          </Result>
+        </div>
+      );
+
+    case 'published':
+      return (
+        <div className="h-full p-8 bg-white rounded-lg shadow-sm border border-green-100 flex items-center justify-center">
+          <Result
+            status="success"
+            title="Successfully Published!"
+            subTitle="The new version has been saved and is now active."
+          />
+        </div>
+      );
+
     case 'history_detail':
       return (
         <HistoryDetailView 

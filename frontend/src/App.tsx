@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useReducer } from 'react';
 import { Layout, Typography, ConfigProvider, Modal, message } from 'antd';
 import { DatabaseZap } from 'lucide-react';
 import BaselineList from './components/BaselineList';
@@ -6,6 +6,7 @@ import CenterContainer from './components/CenterViews';
 import RightPanel from './components/RightPanel';
 import { rulesApi, Baseline } from './api/rules';
 import { PageState, DraftData, BaselineTreeNode } from './types/ui';
+import { pageReducer } from './store/pageReducer';
 import './api/mock';
 
 const { Header, Content } = Layout;
@@ -13,7 +14,7 @@ const { Title } = Typography;
 
 function App() {
   // --- 1. State Machine (Page Level) ---
-  const [pageState, setPageState] = useState<PageState>({
+  const [pageState, dispatch] = useReducer(pageReducer, {
     selectedBaselineId: undefined,
     selectedVersionId: undefined,
     
@@ -23,12 +24,8 @@ function App() {
     draftData: {},
     dirty: false,
     
-    validationRequested: false,
-    publishRequested: false,
-    diffRequested: false,
-    rollbackRequested: false,
-    
     validationResult: null,
+    publishBlockedIssues: null,
     diffData: null,
   });
 
@@ -38,7 +35,6 @@ function App() {
   // Local Loading States
   const [loadingDiff, setLoadingDiff] = useState(false);
   const [validating, setValidating] = useState(false);
-  const [publishing, setPublishing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // --- 2. Initialization ---
@@ -52,7 +48,7 @@ function App() {
         setBaselines(baselinesList);
         if (baselinesList.length > 0) {
           // Init select first draft
-          switchNavContext(baselinesList[0].id, 'draft');
+          switchNavContext(baselinesList[0].id, 'draft', 'working_draft');
         }
       } catch (error) {
         console.error('Failed to fetch baselines', error);
@@ -65,176 +61,30 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- 3. State Driven Side Effects (The State Machine Engine) ---
+  // --- 4. Event Handlers (Dispatching Actions) ---
 
-  // Side Effect: Validate API
-  useEffect(() => {
-    if (!pageState.validationRequested) return;
-
-    const runValidation = async () => {
-      setValidating(true);
-      try {
-        let parsedParams = {};
-        try {
-          parsedParams = JSON.parse(pageState.draftData.params || '{}');
-        } catch (err) {
-          message.error('Params must be valid JSON');
-          setPageState(prev => ({ ...prev, validationRequested: false }));
-          setValidating(false);
-          return;
-        }
-
-        const res = await rulesApi.validateDraft({
-          rule_type: pageState.draftData.rule_type || 'threshold',
-          params: parsedParams,
-        });
-
-        // State transition after validation success
-        setPageState(prev => ({ 
-          ...prev, 
-          validationResult: res.validation_result,
-          rightPanelMode: 'validation',
-          validationRequested: false, // Reset signal
-          targetFieldPath: undefined // Reset target field
-        }));
-
-        if (res.validation_result.valid) {
-          message.success('Validation passed!');
-        } else {
-          message.error('Validation failed');
-        }
-      } catch (error) {
-        console.error(error);
-        message.error('Error during validation');
-        setPageState(prev => ({ ...prev, validationRequested: false }));
-      } finally {
-        setValidating(false);
-      }
-    };
-
-    runValidation();
-  }, [pageState.validationRequested, pageState.draftData]);
-
-  // Side Effect: Publish API
-  useEffect(() => {
-    if (!pageState.publishRequested || !pageState.selectedBaselineId) return;
-
-    const runPublish = async () => {
-      setPublishing(true);
-      try {
-        const res = await rulesApi.publishRules(pageState.selectedBaselineId!);
-        message.success(`Published version ${res.version}: ${res.summary}`);
-        
-        // State transition: Publish Success -> History Detail View
-        setPageState(prev => ({
-          ...prev,
-          selectedVersionId: res.version,
-          centerMode: 'history_detail',
-          rightPanelMode: 'version_meta',
-          dirty: false,
-          publishRequested: false, // Reset signal
-          validationResult: null,
-          diffData: null,
-        }));
-        
-      } catch (error) {
-        console.error(error);
-        message.error('Failed to publish rules');
-        setPageState(prev => ({ ...prev, publishRequested: false }));
-      } finally {
-        setPublishing(false);
-      }
-    };
-
-    runPublish();
-  }, [pageState.publishRequested, pageState.selectedBaselineId]);
-
-  // Side Effect: Diff API
-  useEffect(() => {
-    if (!pageState.diffRequested || !pageState.selectedBaselineId) return;
-
-    const fetchDiff = async () => {
-      setLoadingDiff(true);
-      try {
-        const data = await rulesApi.getBaselineDiff(pageState.selectedBaselineId!);
-        
-        // State transition: Diff loaded -> Show Diff Views
-        setPageState(prev => ({ 
-          ...prev, 
-          diffData: data,
-          centerMode: 'diff',
-          rightPanelMode: 'diff_summary',
-          diffRequested: false // Reset signal
-        }));
-      } catch (error) {
-        console.error('Failed to fetch diff', error);
-        message.error('Failed to load diff data');
-        setPageState(prev => ({ ...prev, diffRequested: false }));
-      } finally {
-        setLoadingDiff(false);
-      }
-    };
-
-    fetchDiff();
-  }, [pageState.diffRequested, pageState.selectedBaselineId]);
-
-  // Side Effect: Rollback Request
-  useEffect(() => {
-    if (!pageState.rollbackRequested || !pageState.selectedVersionId) return;
-
-    const performRollback = async () => {
-      // Transition to preparing mode visually
-      setPageState(prev => ({ ...prev, centerMode: 'rollback_preparing' }));
-      
-      // Simulate API call to fetch historical draft/data
-      setTimeout(() => {
-        // State transition: Rollback Success -> Ready to Edit as Draft
-        setPageState(prev => ({
-          ...prev,
-          rollbackRequested: false, // Reset signal
-          centerMode: 'rollback_ready_edit',
-          rightPanelMode: 'help',
-          draftData: { 
-            rule_type: 'threshold', 
-            params: '{\n  "threshold": 5,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + pageState.selectedVersionId + '"\n}' 
-          },
-          dirty: true, // It is a new draft derived from history, needs saving
-        }));
-        message.success(`Successfully loaded draft from version ${pageState.selectedVersionId}`);
-      }, 1000);
-    };
-
-    performRollback();
-  }, [pageState.rollbackRequested, pageState.selectedVersionId]);
-
-
-  // --- 4. Event Handlers (Only updating state, no direct API calls) ---
-
-  const requestRollback = () => {
-    setPageState(prev => ({ ...prev, rollbackRequested: true }));
-  };
-
-  const switchNavContext = (baselineId: string, versionId: string) => {
+  const switchNavContext = (baselineId: string, versionId: string, nodeType: string, sourceVersionId?: string, sourceVersionLabel?: string) => {
     const isDraft = versionId === 'draft';
-    setPageState(prev => ({
-      ...prev,
-      selectedBaselineId: baselineId,
-      selectedVersionId: versionId,
-      centerMode: isDraft ? 'edit' : 'history_detail',
-      rightPanelMode: isDraft ? 'help' : 'version_meta',
-      draftData: isDraft 
-        ? { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning"\n}' } 
-        : {},
-      dirty: false,
-      validationRequested: false,
-      publishRequested: false,
-      diffRequested: false,
-      rollbackRequested: false,
-      validationResult: null,
-      diffData: null,
-      targetFieldPath: undefined,
-      targetRuleId: undefined,
-    }));
+    let draftData = {};
+    if (isDraft) {
+      if (nodeType === 'rollback_candidate') {
+        draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + sourceVersionId + '"\n}' };
+      } else {
+        draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning"\n}' };
+      }
+    }
+    dispatch({ 
+      type: 'SWITCH_CONTEXT', 
+      payload: { 
+        baselineId, 
+        versionId, 
+        isDraft, 
+        draftData,
+        nodeType: nodeType as any,
+        sourceVersionId,
+        sourceVersionLabel
+      } 
+    });
   };
 
   // Left Nav Tree Selection (With Dirty Guard)
@@ -250,70 +100,148 @@ function App() {
         okType: 'danger',
         cancelText: 'Cancel',
         onOk: () => {
-          switchNavContext(node.baselineId, node.versionId);
+          switchNavContext(node.baselineId, node.versionId, node.type, node.sourceVersionId, node.sourceVersionLabel);
         }
       });
     } else {
-      switchNavContext(node.baselineId, node.versionId);
+      switchNavContext(node.baselineId, node.versionId, node.type, node.sourceVersionId, node.sourceVersionLabel);
     }
   };
 
   // Center Column: Data Change
   const handleDraftChange = (data: DraftData) => {
-    setPageState(prev => ({ ...prev, draftData: data, targetFieldPath: undefined }));
+    dispatch({ type: 'UPDATE_DRAFT', payload: { draftData: data, dirty: pageState.dirty } });
   };
 
   const handleDirtyChange = (dirty: boolean) => {
-    setPageState(prev => ({ ...prev, dirty }));
+    dispatch({ type: 'UPDATE_DRAFT', payload: { draftData: pageState.draftData, dirty } });
   };
 
   // Action Requests (State machine signals)
-  const requestValidation = () => {
-    setPageState(prev => ({ ...prev, validationRequested: true }));
+  const requestValidation = async () => {
+    dispatch({ type: 'REQUEST_VALIDATION' });
+    setValidating(true);
+    try {
+      let parsedParams = {};
+      try {
+        parsedParams = JSON.parse(pageState.draftData.params || '{}');
+      } catch (err) {
+        message.error('Params must be valid JSON');
+        setValidating(false);
+        dispatch({ type: 'VALIDATION_FAILED' });
+        return;
+      }
+
+      const res = await rulesApi.validateDraft({
+        rule_type: pageState.draftData.rule_type || 'threshold',
+        params: parsedParams,
+      });
+
+      dispatch({ type: 'VALIDATION_SUCCESS', payload: { result: res.validation_result } });
+
+      if (res.validation_result.valid) {
+        message.success('Validation passed!');
+      } else {
+        message.error('Validation failed');
+      }
+    } catch (error) {
+      console.error(error);
+      message.error('Error during validation');
+      dispatch({ type: 'VALIDATION_FAILED' });
+    } finally {
+      setValidating(false);
+    }
   };
 
   const requestPublishConfirm = () => {
-    // Transition to publish confirm view
-    setPageState(prev => ({
-      ...prev,
-      centerMode: 'publish_confirm',
-      rightPanelMode: 'publish_check'
-    }));
+    dispatch({ type: 'PREPARE_PUBLISH' });
   };
 
-  const requestPublish = () => {
-    setPageState(prev => ({ ...prev, publishRequested: true }));
+  const requestPublish = async () => {
+    dispatch({ type: 'REQUEST_PUBLISH' });
+    
+    try {
+      const res = await rulesApi.publishRules(pageState.selectedBaselineId!);
+      
+      // Check for blocked issues (simulated)
+      if (pageState.draftData.params?.includes('block')) {
+        dispatch({ type: 'PUBLISH_BLOCKED', payload: { issues: [{ field_path: 'params', message: 'Contains forbidden keyword block' }] } });
+        message.error('Publish blocked by validation rules');
+        return;
+      }
+
+      message.success(`Published version ${res.version}: ${res.summary}`);
+      dispatch({ type: 'PUBLISH_SUCCESS', payload: { versionId: res.version } });
+      
+      // Simulate refreshing the baseline list to get the new version
+      setTimeout(() => {
+         // After a short delay to show "published" success view, auto-navigate to history
+         dispatch({ type: 'GO_TO_HISTORY', payload: { versionId: res.version } });
+      }, 1500);
+      
+    } catch (error) {
+      console.error(error);
+      message.error('Failed to publish rules');
+      dispatch({ type: 'CANCEL_PUBLISH' });
+    }
   };
 
   const cancelPublish = () => {
-    // Transition back to edit mode
-    setPageState(prev => ({
-      ...prev,
-      centerMode: 'edit',
-      rightPanelMode: 'validation' // or help
-    }));
+    dispatch({ type: 'CANCEL_PUBLISH' });
   };
 
-  const requestDiff = () => {
-    setPageState(prev => ({ ...prev, diffRequested: true }));
+  const requestDiff = async () => {
+    dispatch({ type: 'REQUEST_DIFF' });
+    setLoadingDiff(true);
+    try {
+      const data = await rulesApi.getBaselineDiff(pageState.selectedBaselineId!);
+      dispatch({ type: 'DIFF_SUCCESS', payload: { diffData: data } });
+    } catch (error) {
+      console.error('Failed to fetch diff', error);
+      message.error('Failed to load diff data');
+      dispatch({ type: 'DIFF_FAILED' });
+    } finally {
+      setLoadingDiff(false);
+    }
   };
 
   const handleRequestRollbackClick = () => {
-    setPageState(prev => ({
-      ...prev,
-      centerMode: 'rollback_confirm'
-    }));
+    // If there is already a draft, prompt user
+    const hasDraft = baselines.find(b => b.id === pageState.selectedBaselineId)?.status === 'draft';
+    // Simplified logic: assume we warn them
+    if (pageState.dirty || hasDraft) {
+      Modal.confirm({
+        title: 'Draft Conflict',
+        content: 'There is an existing working draft. Creating a rollback candidate will overwrite or conflict. Proceed?',
+        onOk: () => dispatch({ type: 'REQUEST_ROLLBACK_CONFIRM' })
+      });
+    } else {
+      dispatch({ type: 'REQUEST_ROLLBACK_CONFIRM' });
+    }
   };
 
   const confirmRollback = () => {
-    setPageState(prev => ({ ...prev, rollbackRequested: true }));
+    dispatch({ type: 'REQUEST_ROLLBACK' });
+    
+    // Simulate API call
+    setTimeout(() => {
+      dispatch({ 
+        type: 'ROLLBACK_READY', 
+        payload: { 
+          draftData: { 
+            rule_type: 'threshold', 
+            params: '{\n  "threshold": 5,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + pageState.selectedVersionId + '"\n}' 
+          },
+          sourceVersionId: pageState.selectedVersionId!,
+          sourceVersionLabel: pageState.selectedVersionId!
+        } 
+      });
+      message.success(`Successfully created rollback candidate from version ${pageState.selectedVersionId}`);
+    }, 1000);
   };
 
   const cancelRollback = () => {
-    setPageState(prev => ({
-      ...prev,
-      centerMode: 'history_detail'
-    }));
+    dispatch({ type: 'CANCEL_ROLLBACK' });
   };
 
   const handleSaveDraft = () => {
@@ -321,20 +249,19 @@ function App() {
     // Simulate save API
     setTimeout(() => {
       setSaving(false);
-      setPageState(prev => ({ ...prev, dirty: false }));
+      dispatch({ type: 'CLEAR_DIRTY' });
       message.success('Draft saved successfully');
     }, 500);
   };
 
   // Target Jump interactions from Right Panel
   const handleJumpToField = (field: string) => {
-    setPageState(prev => ({ ...prev, targetFieldPath: field }));
+    dispatch({ type: 'JUMP_TO_FIELD', payload: { fieldPath: field } });
   };
 
   const handleJumpToRule = (ruleId: string) => {
-    setPageState(prev => ({ ...prev, targetRuleId: ruleId, centerMode: 'diff' }));
+    dispatch({ type: 'JUMP_TO_RULE', payload: { ruleId } });
   };
-
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#1677ff', borderRadius: 6 } }}>
@@ -358,6 +285,7 @@ function App() {
               baselines={baselines}
               loading={loadingBaselines}
               selectedKey={pageState.selectedVersionId ? `${pageState.selectedBaselineId}-${pageState.selectedVersionId}` : undefined}
+              selectedNodeType={pageState.selectedNodeType}
               onSelect={handleNavSelect}
             />
           </div>
@@ -370,9 +298,10 @@ function App() {
               dirty={pageState.dirty}
               validating={validating}
               saving={saving}
-              publishing={publishing}
+              publishing={pageState.centerMode === 'publish_checking'}
               validationPassed={pageState.validationResult?.valid ?? false}
               validationResult={pageState.validationResult}
+              publishBlockedIssues={pageState.publishBlockedIssues}
               diffData={pageState.diffData}
               targetFieldPath={pageState.targetFieldPath}
               targetRuleId={pageState.targetRuleId}
@@ -382,6 +311,7 @@ function App() {
               onValidateRequest={requestValidation}
               onSaveDraft={handleSaveDraft}
               onPublishConfirmRequest={requestPublishConfirm}
+              onPublishRequest={requestPublish}
               onCancelPublish={cancelPublish}
               onRequestDiff={requestDiff}
               onRequestRollback={handleRequestRollbackClick}

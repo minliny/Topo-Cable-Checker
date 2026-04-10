@@ -40,7 +40,10 @@ export interface BaselineTreeNode {
   type: BaselineNodeType;
   isLeaf?: boolean;
   baselineId: string;
+  parentId?: string;
   versionId: string;
+  sourceVersionId?: string;
+  sourceVersionLabel?: string;
   status?: 'published' | 'draft' | 'testing';
   children?: BaselineTreeNode[];
 }
@@ -59,17 +62,14 @@ export interface PageState {
   draftData: DraftData;
   dirty: boolean;
   
-  // Side Effect Requests (State Machine Signals)
-  validationRequested: boolean;
-  publishRequested: boolean;
-  diffRequested: boolean;
-  rollbackRequested: boolean;
-  
-  // Cached Results
+  // Validation / Blocking Info
   validationResult: ValidationResult | null;
-  diffData: DiffResponse | null;
+  publishBlockedIssues: any[] | null;
   
   // Target positioning
   targetFieldPath?: string;
   targetRuleId?: string;
+  
+  // Diff Info
+  diffData: DiffResponse | null;
 }

@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react';
 import { Tree, Spin, Typography } from 'antd';
-import { Database, GitBranch, Edit3, Archive } from 'lucide-react';
+import { Database, GitBranch, Edit3, Archive, History } from 'lucide-react';
 import { Baseline } from '../api/rules';
-import { BaselineTreeNode } from '../types/ui';
+import { BaselineTreeNode, BaselineNodeType } from '../types/ui';
 import type { DataNode } from 'antd/es/tree';
 
 interface BaselineListProps {
   baselines: Baseline[];
   loading: boolean;
   selectedKey?: string;
+  selectedNodeType?: BaselineNodeType;
   onSelect: (node: BaselineTreeNode) => void;
 }
 
@@ -16,6 +17,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
   baselines, 
   loading, 
   selectedKey, 
+  selectedNodeType,
   onSelect 
 }) => {
   
@@ -30,7 +32,21 @@ const BaselineList: React.FC<BaselineListProps> = ({
           type: 'working_draft',
           isLeaf: true,
           baselineId: baseline.id,
+          parentId: baseline.id,
           versionId: 'draft',
+          status: 'draft',
+        },
+        // Simulate a rollback candidate
+        {
+          key: `${baseline.id}-rollback-candidate`,
+          title: 'Rollback Candidate (v1.0)',
+          type: 'rollback_candidate',
+          isLeaf: true,
+          baselineId: baseline.id,
+          parentId: baseline.id,
+          versionId: 'draft',
+          sourceVersionId: 'v1.0',
+          sourceVersionLabel: 'v1.0 (Prod)',
           status: 'draft',
         },
         {
@@ -39,6 +55,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
           type: 'published_version',
           isLeaf: true,
           baselineId: baseline.id,
+          parentId: baseline.id,
           versionId: 'v1.1',
           status: 'testing',
         },
@@ -48,6 +65,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
           type: 'published_version',
           isLeaf: true,
           baselineId: baseline.id,
+          parentId: baseline.id,
           versionId: 'v1.0',
           status: 'published',
         }
@@ -68,8 +86,9 @@ const BaselineList: React.FC<BaselineListProps> = ({
   const renderTreeNodes = (data: BaselineTreeNode[]): DataNode[] => {
     return data.map((item) => {
       let icon = <Database size={14} className="text-gray-500" />;
-      if (item.versionId === 'draft') icon = <Edit3 size={14} className="text-orange-500" />;
-      else if (item.versionId !== 'root') icon = <Archive size={14} className="text-green-600" />;
+      if (item.type === 'working_draft') icon = <Edit3 size={14} className="text-orange-500" />;
+      else if (item.type === 'rollback_candidate') icon = <History size={14} className="text-purple-500" />;
+      else if (item.type === 'published_version') icon = <Archive size={14} className="text-green-600" />;
       else icon = <GitBranch size={14} className="text-blue-600" />;
 
       return {
@@ -97,6 +116,11 @@ const BaselineList: React.FC<BaselineListProps> = ({
     }
   };
 
+  // Determine actual selected key based on node type and version
+  const activeKey = selectedNodeType === 'rollback_candidate' 
+    ? `${selectedKey?.split('-')[0]}-rollback-candidate` 
+    : selectedKey;
+
   return (
     <div className="h-full bg-white flex flex-col p-4">
       <div className="flex items-center space-x-2 mb-6 pb-2 border-b border-gray-100">
@@ -113,7 +137,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
           <Tree
             showLine
             defaultExpandAll
-            selectedKeys={selectedKey ? [selectedKey] : []}
+            selectedKeys={activeKey ? [activeKey] : []}
             onSelect={handleSelect}
             treeData={renderTreeNodes(treeData)}
             className="text-gray-700 bg-transparent"
