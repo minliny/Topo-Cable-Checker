@@ -1,5 +1,5 @@
 architecture_audit:
-  current_phase: "RULE_EDITOR_IMPLEMENTATION"
+  current_phase: "RULE_DEFINITION_LOADER_IMPLEMENTATION"
   five_layer_status: "Aligned with strict 5-layer architecture. No cross-layer contamination."
   application_split_status: "Services are cleanly split by responsibility (Task, Recognition, Normalization, CheckRun, Query, Export, RuleGovernance, RuleEditor)."
   task_model_status: "CheckTask fully implemented with all required statuses."
@@ -8,3 +8,24 @@ architecture_audit:
   cli_status: "Full CLI implemented covering all lifecycle commands."
   ui_status: "Local Web UI implemented using FastAPI+Jinja2. Features read-only Governance and MVP Rule Editor (Validate, Preview, Save Draft, Publish)."
   ui_ready_decision: "System is stable and ready for UI iteration. No direct Domain/Repository access from Presentation."
+
+rule_externalization_status:
+  completed_features:
+    - "RuleDefinition serializable model (no lambdas)"
+    - "RuleDefinitionConverter to runtime RowConstraint"
+    - "InputContractConfig source tracking (source_type, source_name)"
+    - "RuleDefinitionLoader for loading from JSON files"
+    - "RuleDefinitionRegistry for central management and compilation"
+    - "ContractBuilder to dynamically assemble contract with external rules"
+  supported_rule_types:
+    - "field_equals"
+    - "field_not_equals"
+    - "if_field_equals_then_required"
+  limitations:
+    - "Complex boolean logic trees not yet supported"
+    - "HeaderMapping.normalize_fn is not externalized"
+    - "RuleEngine macroscopic rules remain separate from RowConstraint"
+  next_steps:
+    - "Introduce a lightweight boolean logic DSL (e.g. AND/OR tree)"
+    - "Expand rule_types for cross-field validations"
+    - "Merge RuleEngine macro rules into a unified Definition Registry"

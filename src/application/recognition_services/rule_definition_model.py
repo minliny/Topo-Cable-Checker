@@ -21,3 +21,7 @@ class RuleDefinition:
     severity: str = "warning"
     enabled: bool = True
     group: str = "validation"
+    
+    # Governance metadata
+    schema_version: str = "1.0"
+    message_template: Optional[str] = None
