@@ -98,11 +98,24 @@ Diff 状态现已不再是简单的 mode，它依赖完整的上下文环境：
 
 ---
 
-## 五、真实后端 API 与 Adapter 适配层 (API Integration & Dual Channel)
+## 四、真实后端 API 与 Adapter 适配层 (API Integration & Dual Channel)
 
 为保障后端联调顺利，系统采用了**API 适配层 (Adapter)** 和 **Mock/Real 双通道策略**，前端 UI 层与 Reducer 绝不直接消费后端原始数据。
 
-### 1. Mock / Real 双通道策略
+> **联调状态更新 (2026-04-10)**：第一轮真实网络联调已完成。所有 6 个核心接口均已接通 FastAPI 真实后端，状态机运行平稳，双通道验证通过。
+
+### 1. 接口联调状态总览
+
+| 接口 | 路由 | 状态 | 页面表现 | 当前已知缺口 (Gap Layer) |
+|------|------|------|----------|--------------------------|
+| **Baseline Tree** | `GET /baselines` | OK | 左栏树正常渲染，正确派生 root/draft/version 上下文 | 无。后端已实现组树聚合逻辑。 |
+| **Version Detail** | `GET /baselines/{id}/versions/{version_id}` | OK | `history_detail` 右栏正常显示版本元信息 | **Domain/Infra**：底层存储目前不记录 `publisher` 等审计字段，暂由后端 API 兜底填充。 |
+| **Diff** | `GET /baselines/{id}/diff` | PARTIAL | 中栏/右栏正常展现 Diff 结构与差异项 | **App Service**：后端尚未实现真正的配置 JSON 差异对比，目前仅返回结构化占位数据。 |
+| **Validate** | `POST /rules/draft/validate` | OK | 右栏错误列表展示正常，点击可驱动中栏物理定位 | 无。后端已实现从 Domain Error 提取 `field_path`。 |
+| **Publish** | `POST /rules/publish/{baseline_id}` | OK | 成功流转至 `publish_blocked` 并展示结构化阻断项 | **App Service**：后端暂未实现真正的落盘 commit 操作，仅模拟版本号生成。 |
+| **Rollback** | `POST /rules/rollback` | OK | `rollback_ready_edit` 状态正常，中栏正确填充历史草稿参数 | 无。后端已成功从历史快照中 hydrated 真实数据。 |
+
+### 2. Mock / Real 双通道策略
 - 通过环境变量 `VITE_USE_MOCK_API=true/false` 切换 `src/api/client.ts` 中的 Axios Mock Adapter 拦截。
 - 不管走哪条通道，API 返回的数据都必须经过 `src/api/adapters.ts` 进行规范化处理。这样在真实接口异常或格式变更时，能快速定位是 Network 还是 Adapter 层的问题。
 
