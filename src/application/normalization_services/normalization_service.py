@@ -13,10 +13,12 @@ class NormalizationService:
     def __init__(self):
         self.contract = DEFAULT_CONTRACT
         
-    def _validate_and_normalize_row(self, row: Dict[str, Any], header_configs: Dict[str, Any], source_sheet: str, source_row: int) -> tuple[Dict[str, Any], List[IssueItem]]:
+    def _validate_and_normalize_row(self, row: Dict[str, Any], sheet_config: Any, source_sheet: str, source_row: int) -> tuple[Dict[str, Any], List[IssueItem]]:
+        header_configs = {h.standard_name: h for h in sheet_config.headers} if sheet_config else {}
         normalized_row = dict(row)
         issues = []
         
+        # Phase 1: HeaderMapping Validation
         for field_name, value in row.items():
             if field_name.startswith("_") or field_name not in header_configs:
                 continue
@@ -89,6 +91,38 @@ class NormalizationService:
                     continue
                     
             normalized_row[field_name] = value
+
+        # Phase 2: RowConstraint Validation (Cross-field validation)
+        if sheet_config and hasattr(sheet_config, "row_constraints"):
+            for constraint in sheet_config.row_constraints:
+                try:
+                    is_valid = constraint.condition(normalized_row)
+                    if not is_valid:
+                        issues.append(IssueItem(
+                            issue_id=generate_id(),
+                            message=f"Constraint violation in sheet '{source_sheet}' row {source_row}: {constraint.error_message}",
+                            evidence={"sheet": source_sheet, "row": source_row},
+                            expected="Constraint satisfied",
+                            actual="Constraint violated",
+                            details={"row_data": normalized_row, "error_message": constraint.error_message},
+                            source_row=source_row,
+                            severity="high",
+                            category="constraint_violation",
+                            stage="normalization"
+                        ))
+                except Exception as e:
+                    issues.append(IssueItem(
+                        issue_id=generate_id(),
+                        message=f"Error evaluating constraint in sheet '{source_sheet}' row {source_row}: {str(e)}",
+                        evidence={"sheet": source_sheet, "row": source_row},
+                        expected="Evaluation success",
+                        actual="Exception",
+                        details={"row_data": normalized_row, "error": str(e)},
+                        source_row=source_row,
+                        severity="high",
+                        category="constraint_violation",
+                        stage="normalization"
+                    ))
             
         return normalized_row, issues
         
@@ -101,7 +135,6 @@ class NormalizationService:
         for sheet_type, rows in raw_data.items():
             # Get sheet config
             sheet_config = next((s for s in self.contract.sheets if s.sheet_type == sheet_type), None)
-            header_configs = {h.standard_name: h for h in sheet_config.headers} if sheet_config else {}
             
             if sheet_type == "device":
                 for r in rows:
@@ -109,7 +142,7 @@ class NormalizationService:
                     source_row = r.get("_source_row", 0)
                     
                     # Contract Validation
-                    norm_row, row_issues = self._validate_and_normalize_row(r, header_configs, source_sheet, source_row)
+                    norm_row, row_issues = self._validate_and_normalize_row(r, sheet_config, source_sheet, source_row)
                     if row_issues:
                         issues.extend(row_issues)
                         continue
@@ -143,7 +176,7 @@ class NormalizationService:
                     source_row = r.get("_source_row", 0)
                     
                     # Contract Validation
-                    norm_row, row_issues = self._validate_and_normalize_row(r, header_configs, source_sheet, source_row)
+                    norm_row, row_issues = self._validate_and_normalize_row(r, sheet_config, source_sheet, source_row)
                     if row_issues:
                         issues.extend(row_issues)
                         continue
@@ -178,7 +211,7 @@ class NormalizationService:
                     source_row = r.get("_source_row", 0)
                     
                     # Contract Validation
-                    norm_row, row_issues = self._validate_and_normalize_row(r, header_configs, source_sheet, source_row)
+                    norm_row, row_issues = self._validate_and_normalize_row(r, sheet_config, source_sheet, source_row)
                     if row_issues:
                         issues.extend(row_issues)
                         continue

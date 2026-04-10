@@ -12,17 +12,29 @@ class HeaderMapping:
     normalize_fn: Optional[Callable[[Any], Any]] = None
 
 @dataclass
+class RowConstraint:
+    # A function that takes a row dict and returns True if the constraint is satisfied
+    condition: Callable[[Dict[str, Any]], bool]
+    error_message: str
+    required_fields: Optional[List[str]] = None
+    allowed_combinations: Optional[List[Dict[str, Any]]] = None
+
+@dataclass
 class SheetConfig:
     sheet_type: str  # e.g., "device", "port", "link"
     keywords: List[str]
     headers: List[HeaderMapping]
+    row_constraints: List[RowConstraint] = field(default_factory=list)
+    conflict_strategy: str = "reject"  # e.g. "reject", "append"
 
 @dataclass
 class InputContractConfig:
     sheets: List[SheetConfig]
+    version: str = "v1"
 
 # The default built-in contract
 DEFAULT_CONTRACT = InputContractConfig(
+    version="v1",
     sheets=[
         SheetConfig(
             sheet_type="device",

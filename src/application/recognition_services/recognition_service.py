@@ -85,18 +85,26 @@ class RecognitionService:
         valid_sheet_types = set()
         for sheet_type, sheet_names in found_sheet_types.items():
             if len(sheet_names) > 1:
-                issues.append(IssueItem(
-                    issue_id=generate_id(),
-                    message=f"Multiple sheets mapped to the same type '{sheet_type}': {sheet_names}",
-                    evidence={"sheet_type": sheet_type, "conflicting_sheets": sheet_names},
-                    expected="1 sheet per type",
-                    actual=f"{len(sheet_names)} sheets",
-                    details={"sheet_names": sheet_names},
-                    source_row=0,
-                    severity="critical",
-                    category="sheet_conflict",
-                    stage="recognition"
-                ))
+                # Find the config for this sheet type to check conflict_strategy
+                matched_config = next((c for c in self.contract.sheets if c.sheet_type == sheet_type), None)
+                strategy = matched_config.conflict_strategy if matched_config else "reject"
+                
+                if strategy == "reject":
+                    issues.append(IssueItem(
+                        issue_id=generate_id(),
+                        message=f"Multiple sheets mapped to the same type '{sheet_type}': {sheet_names}",
+                        evidence={"sheet_type": sheet_type, "conflicting_sheets": sheet_names},
+                        expected="1 sheet per type",
+                        actual=f"{len(sheet_names)} sheets",
+                        details={"sheet_names": sheet_names},
+                        source_row=0,
+                        severity="critical",
+                        category="sheet_conflict",
+                        stage="recognition"
+                    ))
+                else:
+                    # e.g., append strategy, allow multiple sheets
+                    valid_sheet_types.add(sheet_type)
             else:
                 valid_sheet_types.add(sheet_type)
 

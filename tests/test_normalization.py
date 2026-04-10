@@ -1,7 +1,7 @@
 import pytest
 from src.application.normalization_services.normalization_service import NormalizationService
 from src.domain.fact_model import NormalizedDataset
-from src.application.recognition_services.input_contract import InputContractConfig, SheetConfig, HeaderMapping
+from src.application.recognition_services.input_contract import InputContractConfig, SheetConfig, HeaderMapping, RowConstraint
 
 def test_normalization_valid_data():
     svc = NormalizationService()
@@ -49,10 +49,52 @@ def test_normalization_missing_fields_issues():
     assert issues[1].stage == "normalization"
     assert "Incomplete" in issues[1].actual
 
+def test_normalization_row_constraints():
+    svc = NormalizationService()
+    
+    svc.contract = InputContractConfig(
+        version="v1.1",
+        sheets=[
+            SheetConfig(
+                sheet_type="device",
+                keywords=["device"],
+                headers=[
+                    HeaderMapping("device_name", [], required=True),
+                    HeaderMapping("device_type", [], required=False),
+                    HeaderMapping("status", [], required=False)
+                ],
+                row_constraints=[
+                    RowConstraint(
+                        condition=lambda row: not (row.get("device_type") == "Firewall" and row.get("status") == "Inactive"),
+                        error_message="Firewalls cannot be Inactive"
+                    )
+                ]
+            )
+        ]
+    )
+    
+    raw_data = {
+        "device": [
+            {"device_name": "FW-01", "device_type": "Firewall", "status": "Active", "_source_sheet": "devices", "_source_row": 2},
+            {"device_name": "FW-02", "device_type": "Firewall", "status": "Inactive", "_source_sheet": "devices", "_source_row": 3}, # violation
+            {"device_name": "SW-01", "device_type": "Switch", "status": "Inactive", "_source_sheet": "devices", "_source_row": 4}
+        ]
+    }
+    
+    dataset, issues = svc.normalize(raw_data)
+    
+    assert len(dataset.devices) == 2
+    assert dataset.devices[0].device_name == "FW-01"
+    assert dataset.devices[1].device_name == "SW-01"
+    
+    assert len(issues) == 1
+    assert issues[0].category == "constraint_violation"
+    assert issues[0].stage == "normalization"
 def test_normalization_enum_type_issues():
     svc = NormalizationService()
     # Overwrite contract for testing
     svc.contract = InputContractConfig(
+        version="v2",
         sheets=[
             SheetConfig(
                 sheet_type="device",
