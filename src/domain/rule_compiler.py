@@ -34,12 +34,27 @@ class TemplateRegistry:
                 lambda p: None if ("parameter_key" in p or ("group_key" in p and "comparison_field" in p)) else "missing_required_param: either parameter_key or (group_key + comparison_field) is required"
             ]
         },
+        "threshold": {
+            "target_executor": "threshold",
+            "supported_params": ["metric_type", "metric_field", "threshold_key", "operator", "expected_value", "expected", "min_value", "max_value"],
+            "validation_rules": []
+        },
         "threshold_check": {
             "target_executor": "threshold",
             "supported_params": ["metric_type", "metric_field", "threshold_key"],
             "validation_rules": [
                 lambda p: None if "metric_type" in p else "missing_required_param: metric_type is required"
             ]
+        },
+        "single_fact": {
+            "target_executor": "single_fact",
+            "supported_params": ["field", "type", "expected"],
+            "validation_rules": []
+        },
+        "topology": {
+            "target_executor": "topology",
+            "supported_params": ["source_type", "target_type", "link_type", "expected_connection"],
+            "validation_rules": []
         },
         "topology_assertion": {
             "target_executor": "topology",
