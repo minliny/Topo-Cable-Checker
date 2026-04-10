@@ -61,7 +61,7 @@ class RecognitionService:
         result_row_data = {}
         issues = []
         
-        found_sheet_types = set()
+        found_sheet_types = {} # type -> list of sheet names
         
         for sheet_name, rows in excel_data["row_data"].items():
             s_name_lower = sheet_name.lower()
@@ -77,7 +77,45 @@ class RecognitionService:
                 continue
                 
             sheet_type = matched_config.sheet_type
-            found_sheet_types.add(sheet_type)
+            if sheet_type not in found_sheet_types:
+                found_sheet_types[sheet_type] = []
+            found_sheet_types[sheet_type].append(sheet_name)
+            
+        # Check sheet conflicts
+        valid_sheet_types = set()
+        for sheet_type, sheet_names in found_sheet_types.items():
+            if len(sheet_names) > 1:
+                issues.append(IssueItem(
+                    issue_id=generate_id(),
+                    message=f"Multiple sheets mapped to the same type '{sheet_type}': {sheet_names}",
+                    evidence={"sheet_type": sheet_type, "conflicting_sheets": sheet_names},
+                    expected="1 sheet per type",
+                    actual=f"{len(sheet_names)} sheets",
+                    details={"sheet_names": sheet_names},
+                    source_row=0,
+                    severity="critical",
+                    category="sheet_conflict",
+                    stage="recognition"
+                ))
+            else:
+                valid_sheet_types.add(sheet_type)
+
+        for sheet_name, rows in excel_data["row_data"].items():
+            s_name_lower = sheet_name.lower()
+            
+            # Identify sheet type
+            matched_config = None
+            for sheet_config in self.contract.sheets:
+                if any(kw in s_name_lower for kw in sheet_config.keywords):
+                    matched_config = sheet_config
+                    break
+                    
+            if not matched_config:
+                continue
+                
+            sheet_type = matched_config.sheet_type
+            if sheet_type not in valid_sheet_types:
+                continue
             
             # Header mapping
             original_headers = excel_data["header_mapping"].get(sheet_name, [])
@@ -95,6 +133,20 @@ class RecognitionService:
                         break
                 if not mapped:
                     unmapped_headers.append(orig_h)
+            
+            if unmapped_headers:
+                issues.append(IssueItem(
+                    issue_id=generate_id(),
+                    message=f"Unmapped headers found in sheet '{sheet_name}': {unmapped_headers}",
+                    evidence={"sheet": sheet_name, "unmapped_headers": unmapped_headers},
+                    expected="All headers mapped",
+                    actual=f"{len(unmapped_headers)} unmapped headers",
+                    details={"unmapped_headers": unmapped_headers},
+                    source_row=0,
+                    severity="warning",
+                    category="unmapped_header",
+                    stage="recognition"
+                ))
             
             # Check missing required headers
             found_standard_headers = set(header_map.values())

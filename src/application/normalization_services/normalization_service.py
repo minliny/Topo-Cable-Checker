@@ -2,6 +2,7 @@ from typing import Dict, Any, List
 from src.domain.fact_model import DeviceFact, PortFact, LinkFact, NormalizedDataset
 from src.domain.result_model import IssueItem
 from src.crosscutting.ids.generator import generate_id
+from src.application.recognition_services.input_contract import DEFAULT_CONTRACT
 
 class NormalizationService:
     """
@@ -9,6 +10,88 @@ class NormalizationService:
     DeviceFact, PortFact, LinkFact.
     Also produces normalization issues (e.g. data type issues, business logic checks).
     """
+    def __init__(self):
+        self.contract = DEFAULT_CONTRACT
+        
+    def _validate_and_normalize_row(self, row: Dict[str, Any], header_configs: Dict[str, Any], source_sheet: str, source_row: int) -> tuple[Dict[str, Any], List[IssueItem]]:
+        normalized_row = dict(row)
+        issues = []
+        
+        for field_name, value in row.items():
+            if field_name.startswith("_") or field_name not in header_configs:
+                continue
+                
+            config = header_configs[field_name]
+            
+            # skip None values if not required (required check is already done in recognition)
+            if value is None or str(value).strip() == "":
+                continue
+                
+            # 1. Type validation/conversion
+            if config.type == "str":
+                value = str(value).strip()
+            elif config.type == "int":
+                try:
+                    value = int(value)
+                except ValueError:
+                    issues.append(IssueItem(
+                        issue_id=generate_id(),
+                        message=f"Invalid type for {field_name} in sheet '{source_sheet}' row {source_row}. Expected int.",
+                        evidence={"sheet": source_sheet, "row": source_row, "field": field_name, "value": value},
+                        expected="int",
+                        actual=str(type(value).__name__),
+                        details={"row_data": row},
+                        source_row=source_row,
+                        severity="high",
+                        category="normalization_error",
+                        stage="normalization"
+                    ))
+                    continue
+            elif config.type == "enum":
+                value = str(value).strip()
+                
+            # 2. Allowed values validation
+            if config.allowed_values is not None:
+                # case-insensitive check
+                allowed_lower = [str(a).lower() for a in config.allowed_values]
+                if str(value).lower() not in allowed_lower:
+                    issues.append(IssueItem(
+                        issue_id=generate_id(),
+                        message=f"Invalid value '{value}' for {field_name} in sheet '{source_sheet}' row {source_row}. Expected one of {config.allowed_values}.",
+                        evidence={"sheet": source_sheet, "row": source_row, "field": field_name, "value": value},
+                        expected=f"One of {config.allowed_values}",
+                        actual=value,
+                        details={"row_data": row},
+                        source_row=source_row,
+                        severity="high",
+                        category="normalization_error",
+                        stage="normalization"
+                    ))
+                    continue
+                    
+            # 3. Custom normalize function
+            if config.normalize_fn is not None:
+                try:
+                    value = config.normalize_fn(value)
+                except Exception as e:
+                    issues.append(IssueItem(
+                        issue_id=generate_id(),
+                        message=f"Normalization function failed for {field_name} in sheet '{source_sheet}' row {source_row}: {str(e)}",
+                        evidence={"sheet": source_sheet, "row": source_row, "field": field_name, "value": value},
+                        expected="Valid value",
+                        actual="Exception",
+                        details={"row_data": row, "error": str(e)},
+                        source_row=source_row,
+                        severity="high",
+                        category="normalization_error",
+                        stage="normalization"
+                    ))
+                    continue
+                    
+            normalized_row[field_name] = value
+            
+        return normalized_row, issues
+        
     def normalize(self, raw_data: Dict[str, Any]) -> tuple[NormalizedDataset, List[IssueItem]]:
         devices = []
         ports = []
@@ -16,11 +99,22 @@ class NormalizationService:
         issues = []
         
         for sheet_type, rows in raw_data.items():
+            # Get sheet config
+            sheet_config = next((s for s in self.contract.sheets if s.sheet_type == sheet_type), None)
+            header_configs = {h.standard_name: h for h in sheet_config.headers} if sheet_config else {}
+            
             if sheet_type == "device":
                 for r in rows:
                     source_sheet = r.get("_source_sheet", "unknown")
                     source_row = r.get("_source_row", 0)
-                    device_name = r.get("device_name")
+                    
+                    # Contract Validation
+                    norm_row, row_issues = self._validate_and_normalize_row(r, header_configs, source_sheet, source_row)
+                    if row_issues:
+                        issues.extend(row_issues)
+                        continue
+                        
+                    device_name = norm_row.get("device_name")
                     
                     if not device_name or not str(device_name).strip():
                         issues.append(IssueItem(
@@ -39,16 +133,23 @@ class NormalizationService:
                         
                     devices.append(DeviceFact(
                         device_name=str(device_name).strip(),
-                        device_type=str(r.get("device_type")).strip() if r.get("device_type") is not None else None,
-                        status=str(r.get("status")).strip() if r.get("status") is not None else None,
+                        device_type=norm_row.get("device_type"),
+                        status=norm_row.get("status"),
                         _source_sheet=source_sheet
                     ))
             elif sheet_type == "port":
                 for r in rows:
                     source_sheet = r.get("_source_sheet", "unknown")
                     source_row = r.get("_source_row", 0)
-                    device_name = r.get("device_name")
-                    port_name = r.get("port_name")
+                    
+                    # Contract Validation
+                    norm_row, row_issues = self._validate_and_normalize_row(r, header_configs, source_sheet, source_row)
+                    if row_issues:
+                        issues.extend(row_issues)
+                        continue
+                        
+                    device_name = norm_row.get("device_name")
+                    port_name = norm_row.get("port_name")
                     
                     if not device_name or not port_name or not str(device_name).strip() or not str(port_name).strip():
                         issues.append(IssueItem(
@@ -68,17 +169,24 @@ class NormalizationService:
                     ports.append(PortFact(
                         device_name=str(device_name).strip(),
                         port_name=str(port_name).strip(),
-                        port_status=str(r.get("port_status")).strip() if r.get("port_status") is not None else None,
+                        port_status=norm_row.get("port_status"),
                         _source_sheet=source_sheet
                     ))
             elif sheet_type == "link":
                 for r in rows:
                     source_sheet = r.get("_source_sheet", "unknown")
                     source_row = r.get("_source_row", 0)
-                    src_device = r.get("src_device")
-                    src_port = r.get("src_port")
-                    dst_device = r.get("dst_device")
-                    dst_port = r.get("dst_port")
+                    
+                    # Contract Validation
+                    norm_row, row_issues = self._validate_and_normalize_row(r, header_configs, source_sheet, source_row)
+                    if row_issues:
+                        issues.extend(row_issues)
+                        continue
+                        
+                    src_device = norm_row.get("src_device")
+                    src_port = norm_row.get("src_port")
+                    dst_device = norm_row.get("dst_device")
+                    dst_port = norm_row.get("dst_port")
                     
                     if not src_device or not src_port or not dst_device or not dst_port or not all(str(x).strip() for x in [src_device, src_port, dst_device, dst_port]):
                         issues.append(IssueItem(

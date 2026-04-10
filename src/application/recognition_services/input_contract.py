@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 
 @dataclass
 class HeaderMapping:
@@ -7,6 +7,9 @@ class HeaderMapping:
     aliases: List[str]
     required: bool = False
     default_value: Any = None
+    type: str = "str"  # e.g. "str", "int", "enum"
+    allowed_values: Optional[List[str]] = None
+    normalize_fn: Optional[Callable[[Any], Any]] = None
 
 @dataclass
 class SheetConfig:

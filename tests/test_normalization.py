@@ -1,7 +1,7 @@
 import pytest
 from src.application.normalization_services.normalization_service import NormalizationService
 from src.domain.fact_model import NormalizedDataset
-from src.domain.result_model import IssueItem
+from src.application.recognition_services.input_contract import InputContractConfig, SheetConfig, HeaderMapping
 
 def test_normalization_valid_data():
     svc = NormalizationService()
@@ -48,3 +48,42 @@ def test_normalization_missing_fields_issues():
     assert "Empty" in issues[0].actual
     assert issues[1].stage == "normalization"
     assert "Incomplete" in issues[1].actual
+
+def test_normalization_enum_type_issues():
+    svc = NormalizationService()
+    # Overwrite contract for testing
+    svc.contract = InputContractConfig(
+        sheets=[
+            SheetConfig(
+                sheet_type="device",
+                keywords=["device"],
+                headers=[
+                    HeaderMapping("device_name", [], required=True, type="str"),
+                    HeaderMapping("status", [], required=False, type="enum", allowed_values=["Active", "Inactive"]),
+                    HeaderMapping("rack_id", [], required=False, type="int")
+                ]
+            )
+        ]
+    )
+    
+    raw_data = {
+        "device": [
+            # valid row
+            {"device_name": "FW-01", "status": "Active", "rack_id": "10", "_source_sheet": "devices", "_source_row": 2},
+            # invalid enum
+            {"device_name": "FW-02", "status": "Up", "rack_id": "11", "_source_sheet": "devices", "_source_row": 3},
+            # invalid type
+            {"device_name": "FW-03", "status": "Inactive", "rack_id": "A12", "_source_sheet": "devices", "_source_row": 4}
+        ]
+    }
+    
+    dataset, issues = svc.normalize(raw_data)
+    
+    assert len(dataset.devices) == 1
+    assert dataset.devices[0].device_name == "FW-01"
+    
+    assert len(issues) == 2
+    assert issues[0].category == "normalization_error"
+    assert "Expected one of ['Active', 'Inactive']" in issues[0].message
+    assert issues[1].category == "normalization_error"
+    assert "Expected int" in issues[1].message

@@ -31,9 +31,13 @@ def test_run_core_recognition_and_normalization_issues():
             ["FW-01", "Firewall"],
             ["", "Switch"] # missing device name (recognition issue)
         ],
+        "device_dup": [ # Sheet conflict
+            ["Device Name", "Device Type"],
+            ["FW-02", "Firewall"]
+        ],
         "ports": [
-            ["设备名称", "端口名称", "端口状态"], # alias mapping
-            ["FW-01", "eth0", "Up"]
+            ["设备名称", "端口名称", "端口状态", "Extra Column"], # alias mapping, unmapped header
+            ["FW-01", "eth0", "Up", "xyz"]
         ]
         # missing link sheet (recognition issue)
     }
@@ -64,14 +68,19 @@ def test_run_core_recognition_and_normalization_issues():
     assert len(missing_sheet_issues) == 1
     assert missing_sheet_issues[0].evidence["missing_sheet"] == "link"
     
-    # Assert missing required field issue (FW-01 device name empty)
-    missing_field_issues = [i for i in issues if i.category == "missing_field" and i.stage == "recognition"]
-    assert len(missing_field_issues) == 1
-    assert "device_name" in missing_field_issues[0].evidence["missing_fields"]
+    # Assert sheet conflict issue
+    conflict_issues = [i for i in issues if i.category == "sheet_conflict" and i.stage == "recognition"]
+    assert len(conflict_issues) == 1
+    assert "device" in conflict_issues[0].evidence["sheet_type"]
     
-    # Check that devices and ports are still normalized for valid rows
+    # Assert unmapped header issue
+    unmapped_issues = [i for i in issues if i.category == "unmapped_header" and i.stage == "recognition"]
+    assert len(unmapped_issues) == 1
+    assert "Extra Column" in unmapped_issues[0].evidence["unmapped_headers"]
+    
+    # Check that devices are skipped because of conflict, ports are still normalized
     stats = result_repo.get_statistics(run_id)
-    assert stats.total_devices == 1
+    assert stats.total_devices == 0  # blocked by sheet conflict
     assert stats.total_ports == 1
     
     os.remove(filepath)
