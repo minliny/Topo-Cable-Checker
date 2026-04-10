@@ -173,10 +173,9 @@ function App() {
       message.success(`Published version ${res.version}: ${res.summary}`);
       dispatch({ type: 'PUBLISH_SUCCESS', payload: { versionId: res.version } });
       
-      // Simulate refreshing the baseline list to get the new version
+      // After a short delay to show "published" success view, auto-navigate to history
       setTimeout(() => {
-         // After a short delay to show "published" success view, auto-navigate to history
-         dispatch({ type: 'GO_TO_HISTORY', payload: { versionId: res.version } });
+         dispatch({ type: 'TRIGGER_POST_PUBLISH_NAVIGATION', payload: { versionId: res.version } });
       }, 1500);
       
     } catch (error) {
@@ -191,7 +190,12 @@ function App() {
   };
 
   const requestDiff = async () => {
-    dispatch({ type: 'REQUEST_DIFF' });
+    const sourceVersionId = pageState.selectedNodeType === 'working_draft' || pageState.selectedNodeType === 'rollback_candidate' 
+      ? pageState.selectedVersionId || 'draft' 
+      : pageState.selectedVersionId!;
+    const targetVersionId = 'previous_version'; // Simplified for MVP
+
+    dispatch({ type: 'REQUEST_DIFF', payload: { sourceVersionId, targetVersionId } });
     setLoadingDiff(true);
     try {
       const data = await rulesApi.getBaselineDiff(pageState.selectedBaselineId!);
@@ -254,6 +258,23 @@ function App() {
     }, 500);
   };
 
+  const closeDiff = () => {
+    dispatch({ type: 'CLOSE_DIFF' });
+  };
+
+  const discardRollbackCandidate = () => {
+    Modal.confirm({
+      title: 'Discard Rollback Candidate',
+      content: 'Are you sure you want to discard this rollback candidate? Your changes will be lost.',
+      okText: 'Discard',
+      okType: 'danger',
+      onOk: () => {
+        dispatch({ type: 'DISCARD_ROLLBACK_CANDIDATE' });
+        message.success('Rollback candidate discarded');
+      }
+    });
+  };
+
   // Target Jump interactions from Right Panel
   const handleJumpToField = (field: string) => {
     dispatch({ type: 'JUMP_TO_FIELD', payload: { fieldPath: field } });
@@ -314,9 +335,11 @@ function App() {
               onPublishRequest={requestPublish}
               onCancelPublish={cancelPublish}
               onRequestDiff={requestDiff}
+              onCloseDiff={closeDiff}
               onRequestRollback={handleRequestRollbackClick}
               onRollbackConfirmRequest={confirmRollback}
               onCancelRollback={cancelRollback}
+              onDiscardRollbackCandidate={discardRollbackCandidate}
             />
           </div>
 

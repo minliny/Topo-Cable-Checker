@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Form, Input, Button, Select, Card, Typography, Space, FormInstance } from 'antd';
-import { Play, UploadCloud, FileCode, Save } from 'lucide-react';
+import { Play, UploadCloud, FileCode, Save, Trash2 } from 'lucide-react';
 import { DraftData } from '../types/ui';
 
 const { Option } = Select;
@@ -14,11 +14,13 @@ interface EditorViewProps {
   validationPassed: boolean;
   saving: boolean;
   targetFieldPath?: string;
+  isRollbackCandidate?: boolean;
   onChange: (data: DraftData) => void;
   onDirtyChange: (dirty: boolean) => void;
   onValidateRequest: () => void;
   onSaveDraft: () => void;
   onPublishConfirmRequest: () => void;
+  onDiscardRollbackCandidate?: () => void;
 }
 
 const EditorView: React.FC<EditorViewProps> = ({
@@ -28,11 +30,13 @@ const EditorView: React.FC<EditorViewProps> = ({
   validationPassed,
   saving,
   targetFieldPath,
+  isRollbackCandidate,
   onChange,
   onDirtyChange,
   onValidateRequest,
   onSaveDraft,
-  onPublishConfirmRequest
+  onPublishConfirmRequest,
+  onDiscardRollbackCandidate
 }) => {
   const [form] = Form.useForm();
   const formRef = useRef<FormInstance>(null);
@@ -64,11 +68,27 @@ const EditorView: React.FC<EditorViewProps> = ({
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileCode size={24} className="text-blue-600" />
-          <Title level={4} className="!m-0">Edit Rule Draft</Title>
+          <Title level={4} className="!m-0">
+            {isRollbackCandidate ? 'Review Rollback Candidate' : 'Edit Rule Draft'}
+          </Title>
           {dirty && <Text type="warning" className="ml-2">(Unsaved Changes)</Text>}
+          {isRollbackCandidate && (
+            <span className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded text-xs ml-2 border border-purple-100">
+              Rollback Candidate
+            </span>
+          )}
         </div>
         
         <Space>
+          {isRollbackCandidate && (
+             <Button 
+               danger 
+               icon={<Trash2 size={16} />} 
+               onClick={onDiscardRollbackCandidate}
+             >
+               Discard Candidate
+             </Button>
+          )}
           <Button 
             icon={<Save size={16} />} 
             onClick={onSaveDraft}

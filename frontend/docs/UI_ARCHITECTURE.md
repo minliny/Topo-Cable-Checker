@@ -25,7 +25,7 @@
 
 ## 二、状态机驱动模型 (State Machine Driven)
 
-页面抛弃了传统的“点击按钮 -> 调用 API -> 设值”的命令式流程，转而采用**Reducer 集中管理状态**和**派发 Action 触发状态转移**的架构。所有的 UI 都是当前 `PageState` 的纯函数映射。
+页面抛弃了传统的“点击按钮 -> 调用 API -> 设值”的命令式流程，转而采用**Reducer 集中管理状态**和**派发 Action 触发状态转移**的架构。所有的 UI 都是当前 `PageState` 的纯函数映射。所有的状态转换都受到明确的 `guard` 保护，拒绝不合法的隐式跳转。
 
 ### 核心状态 (`PageState` 在 `src/types/ui.ts`)
 
@@ -48,49 +48,86 @@ export interface PageState {
   validationResult: ValidationResult | null; // 校验结果
   publishBlockedIssues: any[] | null;        // 发布被阻断时的错误信息
   diffData: DiffResponse | null;             // Diff 差异数据
+  
+  // Diff 上下文
+  diffContext?: {
+    sourceVersionId: string;
+    targetVersionId: string;
+  };
 }
 ```
 
-### 状态流转时序 (State Transitions)
+## 三、状态迁移总表 (State Transition Table)
 
-**流转原则**：所有状态变更均通过 `dispatch(Action)` 由 `pageReducer` 集中处理，保证状态流转的安全性和一致性。
+系统所有关键的视图和模式切换都被严格定义在 `pageReducer` 中。以下是核心状态的迁移矩阵，任何脱离下表的跳转都会被 Guard 拒绝：
 
-1. **进入编辑态 (Edit)**
-   - 左栏选择 draft -> Dispatch `SWITCH_CONTEXT` -> `centerMode = 'edit'`, `rightPanelMode = 'help'` -> 加载 draft 数据。
-   - 用户编辑 -> Dispatch `UPDATE_DRAFT` -> `dirty = true`。
+### 1. 发布闭环工作流 (Publish Flow)
+| Current State (Center) | Action | Guard 校验 | Next State (Center) | 状态变更说明 |
+|------------------------|--------|-----------|---------------------|--------------|
+| `edit` / `rollback_ready_edit` | `PREPARE_PUBLISH` | 必须在编辑态 | `publish_confirm` | 唤起右侧 `publish_check` 面板 |
+| `publish_confirm` / `publish_blocked` | `CANCEL_PUBLISH` | 必须在确认或阻塞态 | `edit` 或 `rollback_ready_edit` | 退回对应的草稿态 |
+| `publish_confirm` | `REQUEST_PUBLISH` | 必须在确认态 | `publish_checking` | 锁定界面，开始网络请求 |
+| `publish_checking` | `PUBLISH_BLOCKED` | 必须在校验态 | `publish_blocked` | 展示 `publishBlockedIssues` |
+| `publish_checking` | `PUBLISH_SUCCESS` | 必须在校验态 | `published` | **正式进入发布成功态**，清理 `dirty=false` |
+| `published` | `TRIGGER_POST_PUBLISH_NAVIGATION` | **必须在 published 态** | `history_detail` | 收尾操作：切换上下文至新版本，刷新左栏 |
 
-2. **触发校验 (Validate)**
-   - 用户点击校验 -> Dispatch `REQUEST_VALIDATION` -> 显示 loading。
-   - API 调用成功 -> Dispatch `VALIDATION_SUCCESS` -> 更新 `validationResult`, `rightPanelMode = 'validation'`。
+> **关于 `published` 的正式状态声明**：
+> `published` 是一个**显式停留结果态**，提供成功的视觉反馈。它不允许组件隐式地使用 `setTimeout` 盲目跳转，而是必须显式派发 `TRIGGER_POST_PUBLISH_NAVIGATION` 才能退出该状态进入历史详情页。
 
-3. **完整发布工作流闭环 (Publish Flow)**
-   - **预备**：用户点击发布准备 -> Dispatch `PREPARE_PUBLISH` -> `centerMode = 'publish_confirm'`, `rightPanelMode = 'publish_check'`。
-   - **发起**：确认发布 -> Dispatch `REQUEST_PUBLISH` -> `centerMode = 'publish_checking'` (显示过渡态)。
-   - **阻断**：若接口校验不通过 -> Dispatch `PUBLISH_BLOCKED` -> `centerMode = 'publish_blocked'`，展示阻断项。可点击返回编辑态修复。
-   - **成功**：若接口成功 -> Dispatch `PUBLISH_SUCCESS` -> `centerMode = 'published'`, `dirty = false`。
-   - **收尾**：短暂展示 published 成功页后，自动 Dispatch `GO_TO_HISTORY` -> `centerMode = 'history_detail'`, `rightPanelMode = 'version_meta'`, 左栏精准定位到新版本节点。
+### 2. 回滚候选生命周期 (Rollback Lifecycle)
+| Current State (Center) | Action | Guard 校验 | Next State (Center) | 状态变更说明 |
+|------------------------|--------|-----------|---------------------|--------------|
+| `history_detail` | `REQUEST_ROLLBACK_CONFIRM` | 必须在历史版本页 | `rollback_confirm` | - |
+| `rollback_confirm` | `REQUEST_ROLLBACK` | 必须在确认态 | `rollback_preparing`| - |
+| `rollback_preparing` | `ROLLBACK_READY` | 必须在准备态 | `rollback_ready_edit`| **创建回滚候选**。`dirty=true`，节点标记为 `rollback_candidate` |
+| `rollback_ready_edit` | `DISCARD_ROLLBACK_CANDIDATE` | - | `empty` | 放弃回滚，清空脏数据，左栏退回 |
 
-4. **查看历史与 Diff (History & Diff)**
-   - 左栏选择某版本 (v1.0) -> (触发 Dirty Guard 若有脏数据) -> 确认后 Dispatch `SWITCH_CONTEXT` -> `centerMode = 'history_detail'`。
-   - 用户点击查看 Diff -> Dispatch `REQUEST_DIFF` -> 显示 loading。
-   - API 调用成功 -> Dispatch `DIFF_SUCCESS` -> `centerMode = 'diff'`, `rightPanelMode = 'diff_summary'`。
+> **`rollback_candidate` 生命周期规则**：
+> 1. **创建时机**：当用户在 `history_detail` 确认回滚且数据加载完毕时。
+> 2. **唯一性**：每个基线下只允许存在一个活跃的 `working_draft` 或 `rollback_candidate`。若冲突需弹窗提示用户覆盖。
+> 3. **销毁条件**：(1) 发布成功转为正式版本；(2) 手动点击 Discard；(3) 被新的草稿覆盖。
+> 4. **UI 表现**：左栏树独立显示紫色节点并记录 `sourceVersionId`。
 
-5. **回滚候选语义补完 (Rollback Flow)**
-   - 历史详情点击 Rollback -> Dispatch `REQUEST_ROLLBACK_CONFIRM` -> `centerMode = 'rollback_confirm'`。
-   - (若已有普通草稿，触发冲突处理询问)。
-   - 确认回滚 -> Dispatch `REQUEST_ROLLBACK` -> `centerMode = 'rollback_preparing'` (加载历史配置)。
-   - 加载完毕 -> Dispatch `ROLLBACK_READY` -> `centerMode = 'rollback_ready_edit'`, `selectedNodeType = 'rollback_candidate'`, `dirty = true`。左栏显式标记为回滚候选草稿，并记录来源版本 ID。
+### 3. 对比工作流 (Diff Flow)
+Diff 状态现已不再是简单的 mode，它依赖完整的上下文环境：
+| Current State (Center) | Action | Next State (Center) | 状态变更说明 |
+|------------------------|--------|---------------------|--------------|
+| `history_detail` / `edit` / `rollback_ready_edit` | `REQUEST_DIFF` | 保持当前态 | 注入 `diffContext` (source/target ID) |
+| (Any) | `DIFF_SUCCESS` | `diff` | 加载数据成功，右栏切至 `diff_summary` |
+| `diff` | `CLOSE_DIFF` | 恢复原状 | 根据当前选中的节点类型退回 `edit` 或 `history_detail`，清空 `diffContext` |
 
-## 三、真实后端 DTO 契约映射
+---
 
-即使当前采用 Mock 数据，UI 状态模型也已对齐真实后端接口结构 (`src/types/dto.ts`)。
+## 四、真实后端 API 与 DTO 契约映射图
 
-- **BaselineNodeDTO**: 包含 `parentId`, `source_version_id`, `source_version_label` 等关系字段，支撑树状结构。
-- **VersionMetaDTO**: 记录版本详细信息，如 `publisher`, `published_at`, `parent_version_id`。
-- **ValidationIssueDTO**: 包含 `field_path`, `issue_type`, `message` 等，支撑右栏反向定位。
-- **PublishResultDTO**: 支持携带 `blocked_issues`。
-- **RollbackCandidateDTO**: 明确记录 `source_version_id` 和 `draft_data`。
-- **DiffSourceTargetDTO**: 支持结构化的差异项列表 `DiffRuleDTO`，用于中栏的高亮对比。
+为保障后端联调顺利，基于 `src/types/dto.ts`，明确了 API、DTO 与 UI 状态的映射流向。
+
+### 1. 左栏树加载
+- **API**: `GET /api/baselines`
+- **DTO**: `BaselineNodeDTO[]`
+- **UI State**: `baselines` 列表。UI 会基于 `type` (root/draft/published/rollback_candidate) 渲染图标，利用 `source_version_id` 追踪回滚来源。
+
+### 2. 版本元数据加载 (右栏)
+- **API**: `GET /api/baselines/{id}/versions/{version_id}`
+- **DTO**: `VersionMetaDTO`
+- **UI State**: 当 `centerMode = history_detail` 时，填入右栏 `version_meta` 面板展示发布者与日志。
+
+### 3. 草稿校验
+- **API**: `POST /api/rules/draft/validate`
+- **DTO**: `ValidationResultDTO` -> 包含 `ValidationIssueDTO[]`
+- **UI State**: `validationResult`。当点击某条 `issue` 时，读取 `field_path` 并派发 `JUMP_TO_FIELD` 实现物理滚动。
+
+### 4. 版本发布
+- **API**: `POST /api/rules/publish/{baseline_id}`
+- **DTO**: `PublishResultDTO`
+- **UI State**:
+  - 成功：更新左栏，返回 `version_id` 用于触发后续的 `TRIGGER_POST_PUBLISH_NAVIGATION`。
+  - 阻断：解析 `blocked_issues` 并填充 `publishBlockedIssues` 触发 `publish_blocked` 视图。
+
+### 5. 差异对比
+- **API**: `GET /api/baselines/{id}/diff?source={id}&target={id}`
+- **DTO**: `DiffSourceTargetDTO` -> 包含 `DiffRuleDTO[]`
+- **UI State**: 写入 `diffData`。右栏基于 `diff_summary` 绘制摘要，中栏基于 `rules` 绘制增删改代码块。
 
 ## 四、脏数据守卫 (Dirty Guard)
 - **触发条件**：当 `dirty = true` 时，用户尝试切换左栏节点，或者尝试从中栏编辑态切出。

@@ -72,4 +72,8 @@ export interface PageState {
   
   // Diff Info
   diffData: DiffResponse | null;
+  diffContext?: {
+    sourceVersionId: string;
+    targetVersionId: string;
+  };
 }

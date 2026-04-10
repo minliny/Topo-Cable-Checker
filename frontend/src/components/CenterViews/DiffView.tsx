@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Typography, Empty } from 'antd';
-import { GitCommit } from 'lucide-react';
+import { Card, Typography, Empty, Button } from 'antd';
+import { GitCommit, ArrowLeft } from 'lucide-react';
 import { DiffResponse } from '../../api/rules';
 
 const { Title, Text } = Typography;
@@ -8,9 +8,10 @@ const { Title, Text } = Typography;
 interface DiffViewProps {
   diffData: DiffResponse | null;
   targetRuleId?: string;
+  onClose?: () => void;
 }
 
-const DiffView: React.FC<DiffViewProps> = ({ diffData, targetRuleId }) => {
+const DiffView: React.FC<DiffViewProps> = ({ diffData, targetRuleId, onClose }) => {
   if (!diffData) {
     return <Empty description="No diff data loaded." />;
   }
@@ -18,6 +19,14 @@ const DiffView: React.FC<DiffViewProps> = ({ diffData, targetRuleId }) => {
   return (
     <div className="h-full flex flex-col">
       <div className="mb-6 flex items-center gap-2">
+        {onClose && (
+          <Button 
+            type="text" 
+            icon={<ArrowLeft size={16} />} 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-800"
+          />
+        )}
         <GitCommit size={24} className="text-blue-600" />
         <Title level={4} className="!m-0">Detailed Diff View</Title>
       </div>

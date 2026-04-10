@@ -31,9 +31,11 @@ interface CenterContainerProps {
   onPublishRequest: () => void;
   onCancelPublish: () => void;
   onRequestDiff: () => void;
+  onCloseDiff: () => void;
   onRequestRollback: () => void;
   onRollbackConfirmRequest: () => void;
   onCancelRollback: () => void;
+  onDiscardRollbackCandidate: () => void;
 }
 
 const CenterContainer: React.FC<CenterContainerProps> = ({
@@ -58,9 +60,11 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
   onPublishRequest,
   onCancelPublish,
   onRequestDiff,
+  onCloseDiff,
   onRequestRollback,
   onRollbackConfirmRequest,
-  onCancelRollback
+  onCancelRollback,
+  onDiscardRollbackCandidate
 }) => {
   switch (mode) {
     case 'empty':
@@ -80,16 +84,18 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
           validationPassed={validationPassed}
           saving={saving}
           targetFieldPath={targetFieldPath}
+          isRollbackCandidate={mode === 'rollback_ready_edit'}
           onChange={onChange}
           onDirtyChange={onDirtyChange}
           onValidateRequest={onValidateRequest}
           onSaveDraft={onSaveDraft}
           onPublishConfirmRequest={onPublishConfirmRequest}
+          onDiscardRollbackCandidate={onDiscardRollbackCandidate}
         />
       );
 
     case 'diff':
-      return <DiffView diffData={diffData} targetRuleId={targetRuleId} />;
+      return <DiffView diffData={diffData} targetRuleId={targetRuleId} onClose={onCloseDiff} />;
       
     case 'publish_confirm':
       return (
