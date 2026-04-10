@@ -2,35 +2,45 @@ import React, { useEffect, useState } from 'react';
 import { Layout, Typography, ConfigProvider, Modal, message } from 'antd';
 import { DatabaseZap } from 'lucide-react';
 import BaselineList from './components/BaselineList';
-import RuleEditor from './components/RuleEditor';
+import CenterContainer from './components/CenterViews';
 import RightPanel from './components/RightPanel';
 import { rulesApi, Baseline } from './api/rules';
-import { PageState, CenterMode, RightPanelMode, DraftData } from './types/ui';
+import { PageState, DraftData, BaselineTreeNode } from './types/ui';
 import './api/mock';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
 function App() {
-  // Page-level unified state
+  // --- 1. State Machine (Page Level) ---
   const [pageState, setPageState] = useState<PageState>({
     selectedBaselineId: undefined,
+    selectedVersionId: undefined,
+    
     centerMode: 'empty',
     rightPanelMode: 'help',
+    
     draftData: {},
     dirty: false,
+    
+    validationRequested: false,
+    publishRequested: false,
+    diffRequested: false,
+    
     validationResult: null,
     diffData: null,
   });
 
   const [baselines, setBaselines] = useState<Baseline[]>([]);
   const [loadingBaselines, setLoadingBaselines] = useState(true);
+  
+  // Local Loading States
   const [loadingDiff, setLoadingDiff] = useState(false);
   const [validating, setValidating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Load baselines on mount
+  // --- 2. Initialization ---
   useEffect(() => {
     const fetchBaselines = async () => {
       setLoadingBaselines(true);
@@ -38,8 +48,8 @@ function App() {
         const data = await rulesApi.getBaselines();
         setBaselines(data);
         if (data.length > 0) {
-          // Initialize default selection
-          switchBaselineContext(data[0].id);
+          // Init select first draft
+          switchNavContext(data[0].id, 'draft');
         }
       } catch (error) {
         console.error('Failed to fetch baselines', error);
@@ -52,73 +62,203 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch diff when baseline context switches to diff_summary
+  // --- 3. State Driven Side Effects (The State Machine Engine) ---
+
+  // Side Effect: Validate API
   useEffect(() => {
+    if (!pageState.validationRequested) return;
+
+    const runValidation = async () => {
+      setValidating(true);
+      try {
+        let parsedParams = {};
+        try {
+          parsedParams = JSON.parse(pageState.draftData.params || '{}');
+        } catch (err) {
+          message.error('Params must be valid JSON');
+          setPageState(prev => ({ ...prev, validationRequested: false }));
+          setValidating(false);
+          return;
+        }
+
+        const res = await rulesApi.validateDraft({
+          rule_type: pageState.draftData.rule_type || 'threshold',
+          params: parsedParams,
+        });
+
+        // State transition after validation success
+        setPageState(prev => ({ 
+          ...prev, 
+          validationResult: res.validation_result,
+          rightPanelMode: 'validation',
+          validationRequested: false, // Reset signal
+          targetFieldPath: undefined // Reset target field
+        }));
+
+        if (res.validation_result.valid) {
+          message.success('Validation passed!');
+        } else {
+          message.error('Validation failed');
+        }
+      } catch (error) {
+        console.error(error);
+        message.error('Error during validation');
+        setPageState(prev => ({ ...prev, validationRequested: false }));
+      } finally {
+        setValidating(false);
+      }
+    };
+
+    runValidation();
+  }, [pageState.validationRequested, pageState.draftData]);
+
+  // Side Effect: Publish API
+  useEffect(() => {
+    if (!pageState.publishRequested || !pageState.selectedBaselineId) return;
+
+    const runPublish = async () => {
+      setPublishing(true);
+      try {
+        const res = await rulesApi.publishRules(pageState.selectedBaselineId!);
+        message.success(`Published version ${res.version}: ${res.summary}`);
+        
+        // State transition: Publish Success -> History Detail View
+        setPageState(prev => ({
+          ...prev,
+          selectedVersionId: res.version,
+          centerMode: 'history_detail',
+          rightPanelMode: 'version_meta',
+          dirty: false,
+          publishRequested: false, // Reset signal
+          validationResult: null,
+          diffData: null,
+        }));
+        
+      } catch (error) {
+        console.error(error);
+        message.error('Failed to publish rules');
+        setPageState(prev => ({ ...prev, publishRequested: false }));
+      } finally {
+        setPublishing(false);
+      }
+    };
+
+    runPublish();
+  }, [pageState.publishRequested, pageState.selectedBaselineId]);
+
+  // Side Effect: Diff API
+  useEffect(() => {
+    if (!pageState.diffRequested || !pageState.selectedBaselineId) return;
+
     const fetchDiff = async () => {
-      if (!pageState.selectedBaselineId) return;
-      
       setLoadingDiff(true);
       try {
-        const data = await rulesApi.getBaselineDiff(pageState.selectedBaselineId);
-        setPageState(prev => ({ ...prev, diffData: data }));
+        const data = await rulesApi.getBaselineDiff(pageState.selectedBaselineId!);
+        
+        // State transition: Diff loaded -> Show Diff Views
+        setPageState(prev => ({ 
+          ...prev, 
+          diffData: data,
+          centerMode: 'diff',
+          rightPanelMode: 'diff_summary',
+          diffRequested: false // Reset signal
+        }));
       } catch (error) {
         console.error('Failed to fetch diff', error);
         message.error('Failed to load diff data');
+        setPageState(prev => ({ ...prev, diffRequested: false }));
       } finally {
         setLoadingDiff(false);
       }
     };
 
-    if (pageState.rightPanelMode === 'diff_summary') {
-      fetchDiff();
-    }
-  }, [pageState.selectedBaselineId, pageState.rightPanelMode]);
+    fetchDiff();
+  }, [pageState.diffRequested, pageState.selectedBaselineId]);
 
-  // Switch Context (Logic without Dirty Guard)
-  const switchBaselineContext = (id: string) => {
+
+  // --- 4. Event Handlers (Only updating state, no direct API calls) ---
+
+  const switchNavContext = (baselineId: string, versionId: string) => {
+    const isDraft = versionId === 'draft';
     setPageState(prev => ({
       ...prev,
-      selectedBaselineId: id,
-      centerMode: 'edit',
-      rightPanelMode: 'diff_summary', // Show diff summary by default when switching
-      draftData: { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning"\n}' }, // Load real data here in future
+      selectedBaselineId: baselineId,
+      selectedVersionId: versionId,
+      centerMode: isDraft ? 'edit' : 'history_detail',
+      rightPanelMode: isDraft ? 'help' : 'version_meta',
+      draftData: isDraft 
+        ? { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning"\n}' } 
+        : {},
       dirty: false,
       validationResult: null,
       diffData: null,
+      targetFieldPath: undefined,
+      targetRuleId: undefined,
     }));
   };
 
-  // Left Nav Click Handler (With Dirty Guard)
-  const handleNavChange = (id: string) => {
-    if (id === pageState.selectedBaselineId) return;
+  // Left Nav Tree Selection (With Dirty Guard)
+  const handleNavSelect = (node: BaselineTreeNode) => {
+    const isSameContext = node.baselineId === pageState.selectedBaselineId && node.versionId === pageState.selectedVersionId;
+    if (isSameContext) return;
 
     if (pageState.dirty) {
       Modal.confirm({
         title: 'Unsaved Changes',
-        content: 'You have unsaved changes in the current rule. Do you want to discard them?',
+        content: 'You have unsaved changes in the current draft. Do you want to discard them?',
         okText: 'Discard',
         okType: 'danger',
         cancelText: 'Cancel',
         onOk: () => {
-          switchBaselineContext(id);
+          switchNavContext(node.baselineId, node.versionId);
         }
       });
     } else {
-      switchBaselineContext(id);
+      switchNavContext(node.baselineId, node.versionId);
     }
   };
 
   // Center Column: Data Change
   const handleDraftChange = (data: DraftData) => {
-    setPageState(prev => ({ ...prev, draftData: data }));
+    setPageState(prev => ({ ...prev, draftData: data, targetFieldPath: undefined }));
   };
 
   const handleDirtyChange = (dirty: boolean) => {
     setPageState(prev => ({ ...prev, dirty }));
   };
 
-  // Action: Save Draft
-  const handleSaveDraft = async () => {
+  // Action Requests (State machine signals)
+  const requestValidation = () => {
+    setPageState(prev => ({ ...prev, validationRequested: true }));
+  };
+
+  const requestPublishConfirm = () => {
+    // Transition to publish confirm view
+    setPageState(prev => ({
+      ...prev,
+      centerMode: 'publish_confirm',
+      rightPanelMode: 'publish_check'
+    }));
+  };
+
+  const requestPublish = () => {
+    setPageState(prev => ({ ...prev, publishRequested: true }));
+  };
+
+  const cancelPublish = () => {
+    // Transition back to edit mode
+    setPageState(prev => ({
+      ...prev,
+      centerMode: 'edit',
+      rightPanelMode: 'validation' // or help
+    }));
+  };
+
+  const requestDiff = () => {
+    setPageState(prev => ({ ...prev, diffRequested: true }));
+  };
+
+  const handleSaveDraft = () => {
     setSaving(true);
     // Simulate save API
     setTimeout(() => {
@@ -128,79 +268,15 @@ function App() {
     }, 500);
   };
 
-  // Action: Validate
-  const handleValidate = async () => {
-    setValidating(true);
-    try {
-      let parsedParams = {};
-      try {
-        parsedParams = JSON.parse(pageState.draftData.params || '{}');
-      } catch (err) {
-        message.error('Params must be valid JSON');
-        setValidating(false);
-        return;
-      }
-
-      const res = await rulesApi.validateDraft({
-        rule_type: pageState.draftData.rule_type || 'threshold',
-        params: parsedParams,
-      });
-
-      setPageState(prev => ({ 
-        ...prev, 
-        validationResult: res.validation_result,
-        rightPanelMode: 'validation' // Switch right panel to show validation results
-      }));
-
-      if (res.validation_result.valid) {
-        message.success('Validation passed!');
-      } else {
-        message.error('Validation failed');
-      }
-    } catch (error) {
-      console.error(error);
-      message.error('Error during validation');
-    } finally {
-      setValidating(false);
-    }
-  };
-
-  // Action: Publish
-  const handlePublish = async () => {
-    if (!pageState.selectedBaselineId) return;
-    
-    setPublishing(true);
-    try {
-      const res = await rulesApi.publishRules(pageState.selectedBaselineId);
-      message.success(`Published version ${res.version}: ${res.summary}`);
-      
-      // Post-publish flow: clear dirty, switch right panel to diff summary to see changes
-      setPageState(prev => ({
-        ...prev,
-        dirty: false,
-        validationResult: null,
-        rightPanelMode: 'diff_summary',
-      }));
-      
-      // Refresh diff data manually
-      setLoadingDiff(true);
-      const newDiffData = await rulesApi.getBaselineDiff(pageState.selectedBaselineId);
-      setPageState(prev => ({ ...prev, diffData: newDiffData }));
-      setLoadingDiff(false);
-
-    } catch (error) {
-      console.error(error);
-      message.error('Failed to publish rules');
-    } finally {
-      setPublishing(false);
-    }
-  };
-
-  // Action: Jump from Right to Center (e.g. click error field)
+  // Target Jump interactions from Right Panel
   const handleJumpToField = (field: string) => {
-    // Scroll or highlight logic in center column
-    message.info(`Navigating to field: ${field}`);
+    setPageState(prev => ({ ...prev, targetFieldPath: field }));
   };
+
+  const handleJumpToRule = (ruleId: string) => {
+    setPageState(prev => ({ ...prev, targetRuleId: ruleId, centerMode: 'diff' }));
+  };
+
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#1677ff', borderRadius: 6 } }}>
@@ -223,26 +299,31 @@ function App() {
             <BaselineList
               baselines={baselines}
               loading={loadingBaselines}
-              selectedId={pageState.selectedBaselineId}
-              onSelect={handleNavChange}
+              selectedKey={pageState.selectedVersionId ? `${pageState.selectedBaselineId}-${pageState.selectedVersionId}` : undefined}
+              onSelect={handleNavSelect}
             />
           </div>
 
-          {/* Middle Column (Main Editor) */}
-          <div className="flex-1 min-w-[400px] z-10 bg-gray-50 overflow-y-auto p-6 relative">
-            <RuleEditor
+          {/* Middle Column (Main Editor / Views) */}
+          <div className="flex-1 min-w-[400px] z-10 bg-gray-50 overflow-y-auto p-6 relative custom-scrollbar">
+            <CenterContainer
               mode={pageState.centerMode}
               draftData={pageState.draftData}
               dirty={pageState.dirty}
+              validating={validating}
+              saving={saving}
+              publishing={publishing}
+              validationPassed={pageState.validationResult?.valid ?? false}
+              validationResult={pageState.validationResult}
+              diffData={pageState.diffData}
+              targetFieldPath={pageState.targetFieldPath}
+              targetRuleId={pageState.targetRuleId}
               onChange={handleDraftChange}
               onDirtyChange={handleDirtyChange}
-              onValidate={handleValidate}
+              onValidateRequest={requestValidation}
               onSaveDraft={handleSaveDraft}
-              onPublish={handlePublish}
-              validating={validating}
-              publishing={publishing}
-              saving={saving}
-              validationPassed={pageState.validationResult?.valid ?? false}
+              onPublishConfirmRequest={requestPublishConfirm}
+              onCancelPublish={cancelPublish}
             />
           </div>
 
@@ -254,6 +335,8 @@ function App() {
               diffData={pageState.diffData}
               loading={loadingDiff}
               onJumpToField={handleJumpToField}
+              onJumpToRule={handleJumpToRule}
+              onRequestDiff={requestDiff}
             />
           </div>
 

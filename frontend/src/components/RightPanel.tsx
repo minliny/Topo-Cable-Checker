@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Tag, Collapse, Spin, Empty, Typography, Alert, Divider } from 'antd';
-import { GitCommit, Plus, Minus, Edit3, HelpCircle, CheckCircle } from 'lucide-react';
+import { Card, Tag, Collapse, Spin, Empty, Typography, Alert, Divider, Button } from 'antd';
+import { GitCommit, Plus, Minus, Edit3, HelpCircle, CheckCircle, FileSearch } from 'lucide-react';
 import { ValidationResult, DiffResponse } from '../api/rules';
 import { RightPanelMode } from '../types/ui';
 
@@ -13,6 +13,8 @@ interface RightPanelProps {
   diffData: DiffResponse | null;
   loading: boolean;
   onJumpToField?: (field: string) => void;
+  onJumpToRule?: (ruleId: string) => void;
+  onRequestDiff?: () => void;
 }
 
 const RightPanel: React.FC<RightPanelProps> = ({
@@ -20,7 +22,9 @@ const RightPanel: React.FC<RightPanelProps> = ({
   validationResult,
   diffData,
   loading,
-  onJumpToField
+  onJumpToField,
+  onJumpToRule,
+  onRequestDiff
 }) => {
 
   const renderHelp = () => (
@@ -32,7 +36,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
         showIcon
       />
       <Card size="small" title="Threshold Rule Example" className="shadow-sm">
-        <pre className="text-xs bg-gray-50 p-2 rounded">
+        <pre className="text-xs bg-gray-50 p-2 rounded font-mono">
 {`{
   "threshold": 10,
   "severity": "warning"
@@ -40,7 +44,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
         </pre>
       </Card>
       <Card size="small" title="Pattern Match Example" className="shadow-sm">
-        <pre className="text-xs bg-gray-50 p-2 rounded">
+        <pre className="text-xs bg-gray-50 p-2 rounded font-mono">
 {`{
   "regex": "^[a-z]+$",
   "field": "username"
@@ -65,8 +69,20 @@ const RightPanel: React.FC<RightPanelProps> = ({
             description={
               <ul className="list-disc pl-4 m-0">
                 {validationResult.errors?.map((err, i) => (
-                  <li key={i} className="cursor-pointer hover:underline text-red-600" onClick={() => onJumpToField?.(err)}>
-                    {err}
+                  <li 
+                    key={i} 
+                    className="cursor-pointer hover:underline text-red-600 hover:text-red-800 transition-colors" 
+                    onClick={() => {
+                      // Try to extract field name from error message (e.g. "Missing params")
+                      const fieldMatch = err.match(/parameters|params|rule_type/i);
+                      if (fieldMatch) {
+                         onJumpToField?.(fieldMatch[0] === 'rule_type' ? 'rule_type' : 'params');
+                      } else {
+                         onJumpToField?.('params'); // default jump
+                      }
+                    }}
+                  >
+                    {err} <span className="text-xs ml-1 opacity-60">(click to locate)</span>
                   </li>
                 ))}
               </ul>
@@ -131,7 +147,22 @@ const RightPanel: React.FC<RightPanelProps> = ({
             </div>
             <Collapse expandIconPosition="end" ghost className="bg-orange-50 border border-orange-200 rounded-md">
               {diffData.modified_rules.map((rule, i) => (
-                <Panel key={i} header={<Text strong className="text-orange-700">{rule.rule_id}</Text>} className="border-b border-orange-100 last:border-b-0">
+                <Panel 
+                  key={i} 
+                  header={
+                    <div 
+                      className="flex items-center justify-between w-full hover:bg-orange-100 px-2 rounded cursor-pointer group"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onJumpToRule?.(rule.rule_id);
+                      }}
+                    >
+                      <Text strong className="text-orange-700">{rule.rule_id}</Text>
+                      <FileSearch size={14} className="text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  } 
+                  className="border-b border-orange-100 last:border-b-0"
+                >
                   <div className="mb-3">
                     <Text type="secondary" className="text-xs uppercase tracking-wider block mb-1">Changed Fields</Text>
                     <div className="bg-white p-2 rounded border border-orange-100">
@@ -145,15 +176,6 @@ const RightPanel: React.FC<RightPanelProps> = ({
                       ))}
                     </div>
                   </div>
-
-                  {rule.evidence && (
-                    <div>
-                      <Text type="secondary" className="text-xs uppercase tracking-wider block mb-1">Evidence</Text>
-                      <pre className="bg-gray-800 text-gray-200 p-2 rounded text-xs font-mono overflow-x-auto m-0 shadow-inner">
-                        {JSON.stringify(rule.evidence, null, 2)}
-                      </pre>
-                    </div>
-                  )}
                 </Panel>
               ))}
             </Collapse>
@@ -169,11 +191,22 @@ const RightPanel: React.FC<RightPanelProps> = ({
     );
   };
 
+  const renderVersionMeta = () => (
+    <Card className="shadow-sm border-gray-200">
+      <Alert message="Viewing Historical Version" type="info" showIcon className="mb-4" />
+      <Button block type="primary" icon={<GitCommit size={16} />} onClick={onRequestDiff}>
+        View Full Diff Analysis
+      </Button>
+    </Card>
+  );
+
   const getTitleIcon = () => {
     switch (mode) {
       case 'help': return <HelpCircle size={20} className="text-blue-600" />;
       case 'validation': return <CheckCircle size={20} className="text-blue-600" />;
       case 'diff_summary': return <GitCommit size={20} className="text-blue-600" />;
+      case 'version_meta': return <Archive size={20} className="text-blue-600" />;
+      case 'publish_check': return <UploadCloud size={20} className="text-blue-600" />;
       default: return <HelpCircle size={20} className="text-blue-600" />;
     }
   };
@@ -182,7 +215,9 @@ const RightPanel: React.FC<RightPanelProps> = ({
     switch (mode) {
       case 'help': return 'Assistant / Help';
       case 'validation': return 'Validation Results';
-      case 'diff_summary': return 'Baseline Diff';
+      case 'diff_summary': return 'Baseline Diff Summary';
+      case 'version_meta': return 'Version Info';
+      case 'publish_check': return 'Publish Check';
       default: return 'Assistant';
     }
   };
@@ -198,6 +233,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
         {mode === 'help' && renderHelp()}
         {mode === 'validation' && renderValidation()}
         {mode === 'diff_summary' && renderDiffSummary()}
+        {mode === 'version_meta' && renderVersionMeta()}
       </div>
     </div>
   );

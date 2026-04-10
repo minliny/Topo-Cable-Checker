@@ -1,21 +1,98 @@
-import React from 'react';
-import { List, Tag, Spin, Typography } from 'antd';
+import React, { useMemo } from 'react';
+import { Tree, Spin, Typography } from 'antd';
+import { Database, GitBranch, Edit3, Archive } from 'lucide-react';
 import { Baseline } from '../api/rules';
-import { Database } from 'lucide-react';
+import { BaselineTreeNode } from '../types/ui';
+import type { DataNode } from 'antd/es/tree';
 
 interface BaselineListProps {
   baselines: Baseline[];
   loading: boolean;
-  selectedId?: string;
-  onSelect: (id: string) => void;
+  selectedKey?: string;
+  onSelect: (node: BaselineTreeNode) => void;
 }
 
 const BaselineList: React.FC<BaselineListProps> = ({ 
   baselines, 
   loading, 
-  selectedId, 
+  selectedKey, 
   onSelect 
 }) => {
+  
+  // Transform flat baselines array into tree data
+  const treeData = useMemo(() => {
+    return baselines.map((baseline): BaselineTreeNode => {
+      // Mock history versions based on baseline.id for MVP
+      const versions: BaselineTreeNode[] = [
+        {
+          key: `${baseline.id}-draft`,
+          title: 'Draft',
+          isLeaf: true,
+          baselineId: baseline.id,
+          versionId: 'draft',
+          status: 'draft',
+        },
+        {
+          key: `${baseline.id}-v1.1`,
+          title: 'v1.1 (Testing)',
+          isLeaf: true,
+          baselineId: baseline.id,
+          versionId: 'v1.1',
+          status: 'testing',
+        },
+        {
+          key: `${baseline.id}-v1.0`,
+          title: 'v1.0 (Prod)',
+          isLeaf: true,
+          baselineId: baseline.id,
+          versionId: 'v1.0',
+          status: 'published',
+        }
+      ];
+
+      return {
+        key: baseline.id,
+        title: baseline.name,
+        baselineId: baseline.id,
+        versionId: 'root',
+        children: versions
+      };
+    });
+  }, [baselines]);
+
+  // Recursively map our Custom Tree Nodes to Ant Design Tree DataNodes
+  const renderTreeNodes = (data: BaselineTreeNode[]): DataNode[] => {
+    return data.map((item) => {
+      let icon = <Database size={14} className="text-gray-500" />;
+      if (item.versionId === 'draft') icon = <Edit3 size={14} className="text-orange-500" />;
+      else if (item.versionId !== 'root') icon = <Archive size={14} className="text-green-600" />;
+      else icon = <GitBranch size={14} className="text-blue-600" />;
+
+      return {
+        key: item.key,
+        title: (
+          <span className="flex items-center text-sm gap-2">
+            {icon}
+            <span className="truncate w-full">{item.title}</span>
+          </span>
+        ),
+        isLeaf: item.isLeaf,
+        children: item.children ? renderTreeNodes(item.children) : undefined,
+        // attach original node info for event handling
+        _originalNode: item 
+      } as DataNode & { _originalNode: BaselineTreeNode };
+    });
+  };
+
+  const handleSelect = (selectedKeys: React.Key[], info: any) => {
+    if (selectedKeys.length === 0) return; // Prevent deselecting
+    
+    const nodeData = info.node._originalNode as BaselineTreeNode;
+    if (nodeData) {
+      onSelect(nodeData);
+    }
+  };
+
   return (
     <div className="h-full bg-white flex flex-col p-4">
       <div className="flex items-center space-x-2 mb-6 pb-2 border-b border-gray-100">
@@ -28,35 +105,16 @@ const BaselineList: React.FC<BaselineListProps> = ({
           <Spin />
         </div>
       ) : (
-        <List
-          itemLayout="horizontal"
-          dataSource={baselines}
-          renderItem={(item) => (
-            <List.Item
-              onClick={() => onSelect(item.id)}
-              className={`cursor-pointer rounded-md mb-2 px-3 py-2 transition-colors ${
-                selectedId === item.id 
-                  ? 'bg-blue-50 border border-blue-200' 
-                  : 'hover:bg-gray-50 border border-transparent'
-              }`}
-            >
-              <List.Item.Meta
-                title={
-                  <div className="font-medium text-gray-800 truncate" title={item.name}>
-                    {item.name}
-                  </div>
-                }
-                description={
-                  <div className="mt-1">
-                    <Tag color={item.status === 'published' ? 'green' : item.status === 'draft' ? 'orange' : 'blue'}>
-                      {item.status.toUpperCase()}
-                    </Tag>
-                  </div>
-                }
-              />
-            </List.Item>
-          )}
-        />
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <Tree
+            showLine
+            defaultExpandAll
+            selectedKeys={selectedKey ? [selectedKey] : []}
+            onSelect={handleSelect}
+            treeData={renderTreeNodes(treeData)}
+            className="text-gray-700 bg-transparent"
+          />
+        </div>
       )}
     </div>
   );
