@@ -214,5 +214,29 @@
     "created_at": "2026-04-10 01:43:50.428267",
     "latest_run_id": null,
     "parent_task_id": null
+  },
+  "06196ca8-7e30-44e0-a727-f66b48e64d33": {
+    "task_id": "06196ca8-7e30-44e0-a727-f66b48e64d33",
+    "task_name": "Task_test.xlsx",
+    "source_file_ref": "test.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.3",
+    "task_status": "check_completed",
+    "created_at": "2026-04-10 01:57:49.500136",
+    "latest_run_id": "012645f8-e5c4-43ed-9fc0-6b50cb57d8ab",
+    "parent_task_id": null
+  },
+  "0413b268-32d8-487f-9c35-b05ef05c8425": {
+    "task_id": "0413b268-32d8-487f-9c35-b05ef05c8425",
+    "task_name": "Task_test_network_data.xlsx",
+    "source_file_ref": "test_network_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.4",
+    "task_status": "recognized",
+    "created_at": "2026-04-10 01:58:39.885972",
+    "latest_run_id": null,
+    "parent_task_id": null
   }
 }

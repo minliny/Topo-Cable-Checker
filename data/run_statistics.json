@@ -138,5 +138,25 @@
       "Switch": 3,
       "Firewall": 1
     }
+  },
+  "507b2f6b-47be-40c4-8c80-d841c9ad6baf": {
+    "run_id": "507b2f6b-47be-40c4-8c80-d841c9ad6baf",
+    "total_devices": 4,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Router": 1
+    }
+  },
+  "012645f8-e5c4-43ed-9fc0-6b50cb57d8ab": {
+    "run_id": "012645f8-e5c4-43ed-9fc0-6b50cb57d8ab",
+    "total_devices": 4,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Router": 1
+    }
   }
 }
