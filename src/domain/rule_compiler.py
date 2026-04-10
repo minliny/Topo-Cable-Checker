@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from src.domain.rule_engine.compiled_rule import CompiledRule
 from src.domain.rule_engine.parameter_schema_registry import ParameterSchemaRegistry
 from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry
+from src.domain.rule_engine.rule_capability_registry import RuleCapabilityRegistry
 
 class RuleCompileError(Exception):
     """
@@ -185,6 +186,10 @@ class RuleCompiler:
             
         target_type = scope_selector.pop("target_type", "devices")
         
+        capability = RuleCapabilityRegistry.infer_capability(executor_type, params)
+        if not capability:
+            raise RuleCompileError(rule_id, "unknown_rule_capability", f"Could not infer capability for executor '{executor_type}' with params {params}")
+            
         return CompiledRule(
             rule_id=rule_id,
             rule_type="dsl",
@@ -194,6 +199,7 @@ class RuleCompiler:
             severity=compiled_rule_dict["severity"],
             params=params,
             rule_meta=rule_meta,
+            capability=capability,
             # Backward compatibility attributes
             scope_selector={"target_type": target_type, **scope_selector},
             **params
@@ -237,6 +243,10 @@ class RuleCompiler:
             if p in params:
                 compiled_rule_params[p] = params[p]
                 
+        capability = RuleCapabilityRegistry.infer_capability(executor_type, compiled_rule_params)
+        if not capability:
+            raise RuleCompileError(rule_id, "unknown_rule_capability", f"Could not infer capability for executor '{executor_type}' with params {compiled_rule_params}")
+            
         return CompiledRule(
             rule_id=rule_id,
             rule_type="template",
@@ -246,6 +256,7 @@ class RuleCompiler:
             severity=rule_def.get("severity", "medium"),
             params=compiled_rule_params,
             rule_meta=rule_meta,
+            capability=capability,
             # Backward compatibility attributes
             scope_selector={"target_type": target_type, **scope_selector},
             **compiled_rule_params

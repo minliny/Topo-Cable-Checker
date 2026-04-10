@@ -1,5 +1,6 @@
 from typing import Dict, Any, Optional
 from src.domain.rule_engine.rule_meta_registry import RuleMeta
+from src.domain.rule_engine.rule_capability_registry import RuleCapability
 
 class RuleValidationError(Exception):
     def __init__(self, message: str):
@@ -16,6 +17,7 @@ class CompiledRule:
         severity: str = "medium",
         params: Optional[Dict[str, Any]] = None,
         rule_meta: Optional[RuleMeta] = None,
+        capability: Optional[RuleCapability] = None,
         **kwargs
     ):
         self.rule_id = rule_id
@@ -26,6 +28,7 @@ class CompiledRule:
         self.severity = severity
         self.params = params or {}
         self.rule_meta = rule_meta
+        self.capability = capability
         
         # Store other arbitrary properties that might be needed
         self._extra = kwargs

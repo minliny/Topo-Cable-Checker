@@ -3,6 +3,7 @@ from src.domain.rule_compiler import RuleCompiler, RuleCompileError
 from src.domain.rule_engine.compiled_rule import CompiledRule, RuleValidationError
 from src.domain.rule_engine.parameter_schema_registry import ParameterSchemaRegistry
 from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry, RuleMeta
+from src.domain.rule_engine.rule_capability_registry import RuleCapabilityRegistry, RuleCapability
 from src.domain.rule_engine.engine import RuleEngine
 from src.domain.baseline_model import BaselineProfile
 from src.domain.fact_model import NormalizedDataset
