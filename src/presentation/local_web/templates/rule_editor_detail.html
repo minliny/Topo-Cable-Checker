@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rule Editor - {{ draft.rule_id }}</title>
+    <style>
+        .container { display: flex; }
+        .editor-panel { flex: 1; padding: 20px; border-right: 1px solid #ccc; }
+        .preview-panel { flex: 1; padding: 20px; background-color: #f9f9f9; }
+        .error { color: red; border: 1px solid red; padding: 10px; margin-bottom: 10px; }
+        .success { color: green; }
+        textarea { width: 100%; height: 200px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h2>Editing Rule: {{ draft.rule_id }} ({{ draft.source_form }})</h2>
+    <a href="/rule-editor/{{ baseline_id }}">Back to Baseline</a>
+    
+    <div class="container">
+        <div class="editor-panel">
+            <h3>Definition</h3>
+            <form action="/rule-editor/{{ baseline_id }}/save-draft" method="post">
+                <input type="hidden" name="rule_id" value="{{ draft.rule_id }}">
+                
+                <label>Language Version:</label><br>
+                <input type="text" name="language_version" value="{{ draft.language_version }}"><br><br>
+                
+                <label>Target Type:</label><br>
+                <input type="text" name="target_type" value="{{ draft.target_type }}"><br><br>
+                
+                <label>Severity:</label><br>
+                <input type="text" name="severity" value="{{ draft.severity }}"><br><br>
+                
+                <label>Enabled:</label>
+                <input type="checkbox" name="enabled" {% if draft.enabled %}checked{% endif %}><br><br>
+                
+                <label>Raw Definition (JSON):</label><br>
+                <textarea name="raw_definition_json">{{ raw_json }}</textarea><br><br>
+                
+                <button type="submit" name="action" value="save">Save Draft</button>
+                <button type="submit" name="action" value="validate">Validate</button>
+                <button type="submit" name="action" value="preview">Compile Preview</button>
+            </form>
+        </div>
+        
+        <div class="preview-panel">
+            <h3>Compile Preview</h3>
+            
+            {% if validation_result %}
+                {% if validation_result.is_valid %}
+                    <p class="success">Validation Passed.</p>
+                {% else %}
+                    <p class="error">Validation Failed!</p>
+                {% endif %}
+            {% endif %}
+            
+            {% if compile_preview %}
+                {% if compile_preview.compile_status == "error" %}
+                    <h4>Compile Errors:</h4>
+                    {% for err in compile_preview.compile_errors %}
+                        <div class="error">[{{ err.error_type }}] {{ err.message }}</div>
+                    {% endfor %}
+                {% else %}
+                    <h4 class="success">Compile Success!</h4>
+                    <pre>{{ compile_preview.compiled_rule | tojson(indent=2) }}</pre>
+                {% endif %}
+            {% else %}
+                <p>Click "Compile Preview" to see the compiled executor config.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

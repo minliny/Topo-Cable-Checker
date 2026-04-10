@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head><title>Rule Detail</title></head>
+<body>
+    <a href="/rules?baseline_id={{ baseline_id }}">Back to List</a>
+    <hr>
+    {% if not definition %}
+        <h2>Rule not found.</h2>
+    {% else %}
+        <h2>Rule Detail: {{ definition.rule_id }}</h2>
+        <p><strong>Baseline Version:</strong> {{ definition.baseline_version }}</p>
+        <p><strong>Language Version:</strong> {{ definition.language_version }}</p>
+        <p><strong>Source Form:</strong> {{ definition.source_form }}</p>
+
+        <h3>Raw Definition:</h3>
+        <pre style="background:#f4f4f4; padding:10px;">{{ definition.raw_definition | tojson(indent=2) }}</pre>
+
+        {% if error %}
+            <h3 style="color:red">Compile Error</h3>
+            <div style="border:1px solid red; padding:10px; color:red">
+                <strong>Error Type:</strong> {{ error.error_type }}<br>
+                <strong>Message:</strong> {{ error.message }}
+            </div>
+        {% else %}
+            <h3 style="color:green">Compiled Result</h3>
+            <p><strong>Executor:</strong> {{ compiled.compiled_executor }}</p>
+            <p><strong>Parameter Source:</strong> {{ compiled.parameter_source }}</p>
+            <p><strong>Threshold Source:</strong> {{ compiled.threshold_source }}</p>
+            <pre style="background:#eef4ee; padding:10px;">{{ compiled.compiled_config | tojson(indent=2) }}</pre>
+        {% endif %}
+    {% endif %}
+</body>
+</html>

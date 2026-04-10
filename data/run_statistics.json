@@ -118,5 +118,25 @@
       "Switch": 3,
       "Firewall": 1
     }
+  },
+  "009d2c72-7cef-4f73-97ff-c829bf32a10a": {
+    "run_id": "009d2c72-7cef-4f73-97ff-c829bf32a10a",
+    "total_devices": 4,
+    "total_ports": 0,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Firewall": 1
+    }
+  },
+  "96a448ff-9523-47af-a20d-9a3316a04d84": {
+    "run_id": "96a448ff-9523-47af-a20d-9a3316a04d84",
+    "total_devices": 4,
+    "total_ports": 0,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Switch": 3,
+      "Firewall": 1
+    }
   }
 }

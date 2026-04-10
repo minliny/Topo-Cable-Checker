@@ -72,3 +72,99 @@ class ExportArtifactDTO:
     format: str
     filename: str
     download_url: str
+
+@dataclass
+class RuleDefinitionDTO:
+    rule_id: str
+    rule_type: str
+    language_version: str
+    target_type: str
+    source_form: str
+    severity: str
+    enabled: bool
+    baseline_version: str
+    raw_definition: Dict[str, Any]
+
+@dataclass
+class CompiledRuleDTO:
+    rule_id: str
+    compiled_executor: str
+    compiled_type: str
+    scope_selector: Dict[str, Any]
+    parameter_source: str
+    threshold_source: str
+    compiled_config: Dict[str, Any]
+
+@dataclass
+class CompileErrorDTO:
+    rule_id: str
+    error_type: str
+    message: str
+    language_version: str
+
+@dataclass
+class TemplateRegistryDTO:
+    template_name: str
+    target_executor: str
+    supported_params: List[str]
+    validation_rules: List[str]
+
+@dataclass
+class RuleEditorBaselineDTO:
+    baseline_id: str
+    baseline_name: str
+    baseline_version: str
+    baseline_status: str
+    language_version: str
+    draft_rule_count: int
+    published_rule_count: int
+
+@dataclass
+class RuleEditorDraftDTO:
+    rule_id: str
+    source_form: str
+    language_version: str
+    target_type: str
+    severity: str
+    enabled: bool
+    raw_definition: Dict[str, Any]
+    draft_status: str
+    is_dirty: bool
+    compile_status: str
+
+@dataclass
+class RuleValidationResultDTO:
+    rule_id: str
+    is_valid: bool
+    compile_errors: List[CompileErrorDTO]
+
+@dataclass
+class RuleCompilePreviewDTO:
+    rule_id: str
+    compile_status: str
+    compiled_rule: Optional[Dict[str, Any]]
+    compile_errors: List[CompileErrorDTO]
+
+@dataclass
+class RuleDiffItemDTO:
+    rule_id: str
+    change_type: str # "added", "removed", "modified"
+    changed_fields: List[str]
+    before: Optional[Dict[str, Any]]
+    after: Optional[Dict[str, Any]]
+
+@dataclass
+class BaselineDiffDTO:
+    baseline_id: str
+    version_1: str
+    version_2: str
+    added_rules: List[RuleDiffItemDTO]
+    removed_rules: List[RuleDiffItemDTO]
+    modified_rules: List[RuleDiffItemDTO]
+
+@dataclass
+class BaselineVersionDTO:
+    baseline_id: str
+    baseline_version: str
+    rule_count: int
+    created_at: str # Placeholder for metadata

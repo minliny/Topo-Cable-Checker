@@ -8,9 +8,9 @@ class GroupConsistencyExecutor(RuleExecutor):
     def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
                 parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
         issues = []
-        
-        target_type = rule_def.get("scope_selector", {}).get("target_type")
-        
+
+        target_type = rule_def.get("scope_selector", {}).get("target_type") or rule_def.get("target_type")
+
         # Resolve parameters either from rule_def or parameter_profile
         param_key = rule_def.get("parameter_key")
         if param_key and param_key in parameter_profile:

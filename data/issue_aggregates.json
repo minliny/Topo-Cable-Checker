@@ -1049,5 +1049,173 @@
     "by_severity": {
       "warning": 1
     }
+  },
+  "009d2c72-7cef-4f73-97ff-c829bf32a10a": {
+    "run_id": "009d2c72-7cef-4f73-97ff-c829bf32a10a",
+    "issues": [
+      {
+        "issue_id": "e9172182-0c21-4459-a459-ac81083db591",
+        "message": "Rule R1_scoped (group_consistency) failed: Group 'Switch' has inconsistent 'status'. Expected 'active', got 'offline'.",
+        "evidence": {
+          "rule_id": "R1_scoped",
+          "group_key": "Switch",
+          "comparison_field": "status",
+          "item_data": {
+            "device_name": "SW-03",
+            "device_type": "Switch",
+            "status": "offline",
+            "_source_sheet": "Devices"
+          },
+          "parameter_source": "parameter_profile"
+        },
+        "expected": "active",
+        "actual": "offline",
+        "details": {
+          "target_type": "devices",
+          "affected_items": [
+            {
+              "device_name": "SW-01",
+              "device_type": "Switch",
+              "status": "active",
+              "_source_sheet": "Devices"
+            },
+            {
+              "device_name": "SW-02",
+              "device_type": "Switch",
+              "status": "active",
+              "_source_sheet": "Devices"
+            },
+            {
+              "device_name": "SW-03",
+              "device_type": "Switch",
+              "status": "offline",
+              "_source_sheet": "Devices"
+            }
+          ]
+        },
+        "source_row": 3,
+        "severity": "warning",
+        "category": "group_consistency"
+      }
+    ],
+    "by_device": {
+      "SW-03": 1
+    },
+    "by_rule": {
+      "R1_scoped": 1
+    },
+    "by_severity": {
+      "warning": 1
+    }
+  },
+  "96a448ff-9523-47af-a20d-9a3316a04d84": {
+    "run_id": "96a448ff-9523-47af-a20d-9a3316a04d84",
+    "issues": [
+      {
+        "issue_id": "cc3739b8-53c7-4355-b966-a3ccae7fe87c",
+        "message": "Rule R1_scoped (group_consistency) failed: Group 'Switch' has inconsistent 'status'. Expected 'active', got 'offline'.",
+        "evidence": {
+          "rule_id": "R1_scoped",
+          "group_key": "Switch",
+          "comparison_field": "status",
+          "item_data": {
+            "device_name": "SW-03",
+            "device_type": "Switch",
+            "status": "offline",
+            "_source_sheet": "Devices"
+          },
+          "parameter_source": "parameter_profile"
+        },
+        "expected": "active",
+        "actual": "offline",
+        "details": {
+          "target_type": "devices",
+          "affected_items": [
+            {
+              "device_name": "SW-01",
+              "device_type": "Switch",
+              "status": "active",
+              "_source_sheet": "Devices"
+            },
+            {
+              "device_name": "SW-02",
+              "device_type": "Switch",
+              "status": "active",
+              "_source_sheet": "Devices"
+            },
+            {
+              "device_name": "SW-03",
+              "device_type": "Switch",
+              "status": "offline",
+              "_source_sheet": "Devices"
+            }
+          ]
+        },
+        "source_row": 3,
+        "severity": "warning",
+        "category": "group_consistency"
+      },
+      {
+        "issue_id": "728c987d-6522-4472-9a24-5fcf1f3e9f2f",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 4. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 4,
+          "compare_operator": "between",
+          "scope": {
+            "target_type": "devices"
+          },
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 4,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check"
+      },
+      {
+        "issue_id": "07b6284e-bfa3-4311-bb75-01871bc0511b",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {
+            "target_type": "devices"
+          },
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check"
+      }
+    ],
+    "by_device": {
+      "SW-03": 1,
+      "Unknown": 2
+    },
+    "by_rule": {
+      "R1_scoped": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1
+    },
+    "by_severity": {
+      "warning": 1,
+      "error": 2
+    }
   }
 }

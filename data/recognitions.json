@@ -896,5 +896,85 @@
       },
       "warnings": []
     }
+  },
+  "ba716a2b-5190-4d47-b2ec-e422db14ee12": {
+    "task_id": "ba716a2b-5190-4d47-b2ec-e422db14ee12",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "FW-01",
+            "Device Type": "Firewall",
+            "Status": "offline"
+          }
+        ]
+      },
+      "warnings": []
+    }
+  },
+  "4ec74d76-e162-4baa-af7a-bfc8b17b3dab": {
+    "task_id": "4ec74d76-e162-4baa-af7a-bfc8b17b3dab",
+    "recognized_data": {
+      "recognized_sheets": [
+        "Devices"
+      ],
+      "header_mapping": {
+        "Devices": [
+          "Device Name",
+          "Device Type",
+          "Status"
+        ]
+      },
+      "row_data": {
+        "Devices": [
+          {
+            "Device Name": "SW-01",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-02",
+            "Device Type": "Switch",
+            "Status": "active"
+          },
+          {
+            "Device Name": "SW-03",
+            "Device Type": "Switch",
+            "Status": "offline"
+          },
+          {
+            "Device Name": "FW-01",
+            "Device Type": "Firewall",
+            "Status": "offline"
+          }
+        ]
+      },
+      "warnings": []
+    }
   }
 }

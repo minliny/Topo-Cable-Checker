@@ -8,8 +8,8 @@ class ThresholdExecutor(RuleExecutor):
     def execute(self, rule_id: str, rule_def: Dict[str, Any], filtered_dataset: Dict[str, List[Any]], 
                 parameter_profile: Dict[str, Any], threshold_profile: Dict[str, Any]) -> List[IssueItem]:
         issues = []
-        
-        target_type = rule_def.get("scope_selector", {}).get("target_type")
+
+        target_type = rule_def.get("scope_selector", {}).get("target_type") or rule_def.get("target_type")
         metric_type = rule_def.get("metric_type", "count") # count, distinct_count
         metric_field = rule_def.get("metric_field")
         
@@ -18,12 +18,12 @@ class ThresholdExecutor(RuleExecutor):
         if thresh_key and thresh_key in threshold_profile:
             t_def = threshold_profile[thresh_key]
             compare_operator = t_def.get("operator", "eq")
-            expected_val = t_def.get("value")
+            expected_val = t_def.get("expected_value", t_def.get("value"))
             min_val = t_def.get("min_value")
             max_val = t_def.get("max_value")
         else:
             compare_operator = rule_def.get("operator", "eq")
-            expected_val = rule_def.get("expected")
+            expected_val = rule_def.get("expected_value", rule_def.get("expected"))
             min_val = rule_def.get("min_value")
             max_val = rule_def.get("max_value")
             
@@ -73,19 +73,24 @@ class ThresholdExecutor(RuleExecutor):
             
         # 3. Report
         if is_failed:
+            evidence = {
+                "rule_id": rule_id,
+                "metric_key": f"{target_type}.{metric_type}",
+                "metric_field": metric_field,
+                "actual_value": actual_value,
+                "compare_operator": compare_operator,
+                "scope": rule_def.get("scope_selector", {}),
+                "threshold_source": "threshold_profile" if thresh_key else "inline"
+            }
+            if compare_operator in ("between", "outside"):
+                evidence["expected_range"] = expected_repr
+            else:
+                evidence["expected_value"] = expected_repr
+
             issues.append(IssueItem(
                 issue_id=generate_id(),
                 message=f"Rule {rule_id} (threshold) failed: Metric '{metric_type}' on '{target_type}' is {actual_value}. {message}.",
-                evidence={
-                    "rule_id": rule_id,
-                    "metric_key": f"{target_type}.{metric_type}",
-                    "metric_field": metric_field,
-                    "actual_value": actual_value,
-                    "expected_range": expected_repr,
-                    "compare_operator": compare_operator,
-                    "scope": rule_def.get("scope_selector", {}),
-                    "threshold_source": "threshold_profile" if thresh_key else "inline"
-                },
+                evidence=evidence,
                 expected=expected_repr,
                 actual=actual_value,
                 details={"target_type": target_type},
@@ -93,5 +98,5 @@ class ThresholdExecutor(RuleExecutor):
                 severity=severity,
                 category="threshold_check"
             ))
-            
+
         return issues

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Template Registry</title></head>
+<body>
+    <h1>Template Registry</h1>
+    <a href="/rules">Back to Rules</a>
+    <hr>
+    <table border="1">
+        <tr>
+            <th>Template Name</th>
+            <th>Target Executor</th>
+            <th>Supported Params</th>
+            <th>Validation Rules</th>
+        </tr>
+        {% for t in registry %}
+        <tr>
+            <td>{{ t.template_name }}</td>
+            <td>{{ t.target_executor }}</td>
+            <td>{{ t.supported_params | join(', ') }}</td>
+            <td>{{ t.validation_rules | join(', ') }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

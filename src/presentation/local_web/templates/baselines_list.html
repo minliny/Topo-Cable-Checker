@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><title>Baseline History</title></head>
+<body>
+    <h1>Baseline History: {{ baseline_id }}</h1>
+    <a href="/rule-editor/{{ baseline_id }}">Back to Editor</a>
+    <hr>
+    <ul>
+        {% for v in versions %}
+            <li>
+                <strong>{{ v.baseline_version }}</strong> (Rules: {{ v.rule_count }}, {{ v.created_at }})
+                <a href="/baselines/{{ v.baseline_version }}?baseline_id={{ v.baseline_id }}">View</a>
+                {% if v.created_at != "current" %}
+                    <form action="/baselines/rollback" method="post" style="display:inline;">
+                        <input type="hidden" name="baseline_id" value="{{ v.baseline_id }}">
+                        <input type="hidden" name="version" value="{{ v.baseline_version }}">
+                        <button type="submit">Rollback to this</button>
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
