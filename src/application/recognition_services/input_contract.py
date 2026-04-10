@@ -37,10 +37,14 @@ class SheetConfig:
 class InputContractConfig:
     sheets: List[SheetConfig]
     version: str = "v1"
+    source_type: str = "built_in"  # e.g., "built_in", "external"
+    source_name: str = "default_contract"
 
 # The default built-in contract
 DEFAULT_CONTRACT = InputContractConfig(
     version="v1",
+    source_type="built_in",
+    source_name="default_contract_v1",
     sheets=[
         SheetConfig(
             sheet_type="device",
