@@ -46,10 +46,12 @@ function App() {
       setLoadingBaselines(true);
       try {
         const data = await rulesApi.getBaselines();
-        setBaselines(data);
-        if (data.length > 0) {
+        // Ensure data is an array before setting baselines and checking length
+        const baselinesList = Array.isArray(data) ? data : (data as any)?.baselines || [];
+        setBaselines(baselinesList);
+        if (baselinesList.length > 0) {
           // Init select first draft
-          switchNavContext(data[0].id, 'draft');
+          switchNavContext(baselinesList[0].id, 'draft');
         }
       } catch (error) {
         console.error('Failed to fetch baselines', error);

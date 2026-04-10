@@ -30,7 +30,7 @@ const PublishConfirmView: React.FC<PublishConfirmViewProps> = ({
 
         {validationResult?.valid ? (
           <Alert
-            message="Pre-flight checks passed"
+            title="Pre-flight checks passed"
             description="The rule draft is valid and ready to be deployed."
             type="success"
             showIcon
@@ -39,7 +39,7 @@ const PublishConfirmView: React.FC<PublishConfirmViewProps> = ({
           />
         ) : (
           <Alert
-            message="Pre-flight checks failed"
+            title="Pre-flight checks failed"
             description="The rule draft has validation errors. Please return to edit mode and fix them before publishing."
             type="error"
             showIcon

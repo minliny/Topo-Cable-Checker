@@ -30,7 +30,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
   const renderHelp = () => (
     <div className="space-y-4">
       <Alert
-        message="Editing Rules"
+        title="Editing Rules"
         description="Select a rule type and input the parameters in JSON format. The required parameters depend on the selected rule type."
         type="info"
         showIcon
@@ -62,10 +62,10 @@ const RightPanel: React.FC<RightPanelProps> = ({
     return (
       <Card title="Validation Result" size="small" className="shadow-sm border-gray-200">
         {validationResult.valid ? (
-          <Alert message="Rule is valid" type="success" showIcon className="mb-4" />
+          <Alert title="Rule is valid" type="success" showIcon className="mb-4" />
         ) : (
           <Alert
-            message="Validation Errors"
+            title="Validation Errors"
             description={
               <ul className="list-disc pl-4 m-0">
                 {validationResult.errors?.map((err, i) => (
@@ -193,7 +193,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
 
   const renderVersionMeta = () => (
     <Card className="shadow-sm border-gray-200">
-      <Alert message="Viewing Historical Version" type="info" showIcon className="mb-4" />
+      <Alert title="Viewing Historical Version" type="info" showIcon className="mb-4" />
       <Button block type="primary" icon={<GitCommit size={16} />} onClick={onRequestDiff}>
         View Full Diff Analysis
       </Button>
