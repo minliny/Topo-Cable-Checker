@@ -113,8 +113,13 @@
 ### 4.9 差异分析与回滚
 支持规则版本 diff、历史追踪和回滚，降低规则升级风险。
 
-### 4.10 AI 辅助规则生成
-在规则治理体系成熟后，引入自然语言生成规则草稿、参数补全和候选摘要生成能力。
+### 4.10 AI 辅助规则生成 (Natural Language -> Rule Draft MVP)
+在规则治理体系成熟后，引入自然语言生成规则草稿能力。当前阶段已完成最小闭环：
+- 接收自然语言输入
+- 基于 RuleCatalog 构建强约束 prompt
+- 调用 LLM Gateway 抽象接口获取结构化输出
+- 通过现有的 RuleEditorMVPService 验证链路确保输出合法
+- 避免 AI 绕过业务规则系统，实现 GUI 和 Agent 消费统一的 RuleDraft 验证主链路。
 
 ---
 
@@ -199,7 +204,13 @@
    - 发布候选摘要基础
 
 ### 正在进入的阶段
-5. 发布治理闭环  
+5. AI 辅助规则生成 MVP (Natural Language -> Rule Draft)
+   - Rule Catalog Context Prompt Builder
+   - 抽象 LLM Gateway
+   - 自然语言 -> 结构化 Draft
+   - 验证闭环与错误反馈
+
+6. 发布治理闭环  
    - 草稿发布为 baseline
    - baseline version 生成
    - 发布摘要

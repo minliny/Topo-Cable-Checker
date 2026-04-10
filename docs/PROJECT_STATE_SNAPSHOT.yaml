@@ -7,9 +7,10 @@ architecture_audit:
   result_pipeline_status: "6-layer structured result models defined, populated with real Excel data, and persisted."
   rule_engine_status: "RuleEngine upgraded with CompiledRule strong validation, RuleMeta, ParameterSchema, and Capability inferencing. RuleCatalog service abstracts domain registry for upper layers."
   cli_status: "Full CLI implemented covering all lifecycle commands."
-  ui_status: "Local Web UI implemented using FastAPI+Jinja2. Features read-only Governance and MVP Rule Editor (Validate, Preview, Save Draft, Publish). Backend support for semantic rule-catalog-driven dynamic forms, diff analysis, and rollback is ready."
+  ui_status: "Local Web UI implemented using FastAPI+Jinja2. Features read-only Governance and MVP Rule Editor (Validate, Preview, Save Draft, Publish). Backend support for semantic rule-catalog-driven dynamic forms, diff analysis, rollback, and AI Rule Generation Agent MVP is ready."
   ui_ready_decision: "System is stable and ready for UI iteration. No direct Domain/Repository access from Presentation."
-  next_step: "Rule Publish Workflow MVP"
+  ai_agent_status: "Natural Language -> Rule Draft MVP closed loop completed. Model output -> Catalog-constrained prompt -> LLM -> RuleEditorMVPService validation -> Validated RuleDraftView."
+  next_step: "Rule Publish Workflow MVP / Integration with real LLM providers"
   future_enhancements:
     - diff
     - rollback
