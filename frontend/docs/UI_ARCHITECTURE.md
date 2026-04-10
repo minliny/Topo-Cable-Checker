@@ -98,36 +98,58 @@ Diff 状态现已不再是简单的 mode，它依赖完整的上下文环境：
 
 ---
 
-## 四、真实后端 API 与 DTO 契约映射图
+## 五、真实后端 API 与 Adapter 适配层 (API Integration & Dual Channel)
 
-为保障后端联调顺利，基于 `src/types/dto.ts`，明确了 API、DTO 与 UI 状态的映射流向。
+为保障后端联调顺利，系统采用了**API 适配层 (Adapter)** 和 **Mock/Real 双通道策略**，前端 UI 层与 Reducer 绝不直接消费后端原始数据。
 
-### 1. 左栏树加载
+### 1. Mock / Real 双通道策略
+- 通过环境变量 `VITE_USE_MOCK_API=true/false` 切换 `src/api/client.ts` 中的 Axios Mock Adapter 拦截。
+- 不管走哪条通道，API 返回的数据都必须经过 `src/api/adapters.ts` 进行规范化处理。这样在真实接口异常或格式变更时，能快速定位是 Network 还是 Adapter 层的问题。
+
+### 2. API -> Adapter -> DTO -> Reducer 数据流
+
+所有接口均已配备专属 `normalize` 函数，处理缺省值、格式错位与兜底降级：
+
+#### (1) 左栏树加载
 - **API**: `GET /api/baselines`
+- **Adapter**: `normalizeBaselineTreeResponse`
 - **DTO**: `BaselineNodeDTO[]`
-- **UI State**: `baselines` 列表。UI 会基于 `type` (root/draft/published/rollback_candidate) 渲染图标，利用 `source_version_id` 追踪回滚来源。
+- **UI State**: `baselines` 列表。UI 会基于 `type` (root/draft/published/rollback_candidate) 渲染图标，利用 `source_version_id` 追踪回滚来源。若缺失 ID，Adapter 会生成 fallback-id 防止 React Key 报错。
 
-### 2. 版本元数据加载 (右栏)
+#### (2) 版本元数据加载 (右栏)
 - **API**: `GET /api/baselines/{id}/versions/{version_id}`
+- **Adapter**: `normalizeVersionDetailResponse`
 - **DTO**: `VersionMetaDTO`
 - **UI State**: 当 `centerMode = history_detail` 时，填入右栏 `version_meta` 面板展示发布者与日志。
 
-### 3. 草稿校验
+#### (3) 草稿校验
 - **API**: `POST /api/rules/draft/validate`
+- **Adapter**: `normalizeValidationResponse` (兼容后端新旧版本 `{valid}` vs `{validation_result: {valid}}` 嵌套)
 - **DTO**: `ValidationResultDTO` -> 包含 `ValidationIssueDTO[]`
-- **UI State**: `validationResult`。当点击某条 `issue` 时，读取 `field_path` 并派发 `JUMP_TO_FIELD` 实现物理滚动。
+- **UI State**: `validationResult`。当点击某条 `issue` 时，读取 `field_path` 并派发 `JUMP_TO_FIELD` 实现物理滚动。若后端仅返回字符串错误，Adapter 会封装为 `field_path: 'unknown'`。
 
-### 4. 版本发布
+#### (4) 版本发布
 - **API**: `POST /api/rules/publish/{baseline_id}`
+- **Adapter**: `normalizePublishResponse`
 - **DTO**: `PublishResultDTO`
 - **UI State**:
   - 成功：更新左栏，返回 `version_id` 用于触发后续的 `TRIGGER_POST_PUBLISH_NAVIGATION`。
   - 阻断：解析 `blocked_issues` 并填充 `publishBlockedIssues` 触发 `publish_blocked` 视图。
 
-### 5. 差异对比
+#### (5) 回滚生成
+- **API**: `POST /api/rules/rollback`
+- **Adapter**: `normalizeRollbackCandidateResponse`
+- **DTO**: `RollbackCandidateDTO`
+- **UI State**: 触发 `ROLLBACK_READY`。Adapter 会强行提取 `draft_data` 与 `source_version_id` 供 UI 恢复。
+
+#### (6) 差异对比
 - **API**: `GET /api/baselines/{id}/diff?source={id}&target={id}`
+- **Adapter**: `normalizeDiffResponse`
 - **DTO**: `DiffSourceTargetDTO` -> 包含 `DiffRuleDTO[]`
-- **UI State**: 写入 `diffData`。右栏基于 `diff_summary` 绘制摘要，中栏基于 `rules` 绘制增删改代码块。
+- **UI State**: 写入 `diffData`。右栏基于 `diff_summary` 绘制摘要，中栏基于 `rules` 绘制增删改代码块。Adapter 负责将后端分散的 added/removed/modified 数组聚合成统一的 Rule 列表，或直接消费统一的列表。
+
+### 3. 前端容错与已知联调缺口
+- 详见 `docs/API_INTEGRATION_CHECKLIST.md`。重点关注：真实后端的 validation 必须包含 `field_path`；真实后端的 publish 拦截必须包含 `blocked_issues`，否则高级反向定位和拦截面板将退化为普通 Error Toast。
 
 ## 四、脏数据守卫 (Dirty Guard)
 - **触发条件**：当 `dirty = true` 时，用户尝试切换左栏节点，或者尝试从中栏编辑态切出。

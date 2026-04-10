@@ -4,9 +4,10 @@ import { DatabaseZap } from 'lucide-react';
 import BaselineList from './components/BaselineList';
 import CenterContainer from './components/CenterViews';
 import RightPanel from './components/RightPanel';
-import { rulesApi, Baseline } from './api/rules';
+import { rulesApi } from './api/rules';
 import { PageState, DraftData, BaselineTreeNode } from './types/ui';
 import { pageReducer } from './store/pageReducer';
+import { BaselineNodeDTO } from './types/dto';
 import './api/mock';
 
 const { Header, Content } = Layout;
@@ -29,7 +30,7 @@ function App() {
     diffData: null,
   });
 
-  const [baselines, setBaselines] = useState<Baseline[]>([]);
+  const [baselines, setBaselines] = useState<BaselineNodeDTO[]>([]);
   const [loadingBaselines, setLoadingBaselines] = useState(true);
   
   // Local Loading States
@@ -137,9 +138,9 @@ function App() {
         params: parsedParams,
       });
 
-      dispatch({ type: 'VALIDATION_SUCCESS', payload: { result: res.validation_result } });
+      dispatch({ type: 'VALIDATION_SUCCESS', payload: { result: res } });
 
-      if (res.validation_result.valid) {
+      if (res.valid) {
         message.success('Validation passed!');
       } else {
         message.error('Validation failed');
@@ -161,21 +162,26 @@ function App() {
     dispatch({ type: 'REQUEST_PUBLISH' });
     
     try {
-      const res = await rulesApi.publishRules(pageState.selectedBaselineId!);
+      // Simulate real publish payload
+      const draftPayload = {
+        rule_type: pageState.draftData.rule_type,
+        params: pageState.draftData.params ? JSON.parse(pageState.draftData.params) : {}
+      };
       
-      // Check for blocked issues (simulated)
-      if (pageState.draftData.params?.includes('block')) {
-        dispatch({ type: 'PUBLISH_BLOCKED', payload: { issues: [{ field_path: 'params', message: 'Contains forbidden keyword block' }] } });
+      const res = await rulesApi.publishRules(pageState.selectedBaselineId!, draftPayload);
+      
+      if (!res.success) {
+        dispatch({ type: 'PUBLISH_BLOCKED', payload: { issues: res.blocked_issues || [] } });
         message.error('Publish blocked by validation rules');
         return;
       }
 
-      message.success(`Published version ${res.version}: ${res.summary}`);
-      dispatch({ type: 'PUBLISH_SUCCESS', payload: { versionId: res.version } });
+      message.success(`Published version ${res.version_label}: ${res.summary}`);
+      dispatch({ type: 'PUBLISH_SUCCESS', payload: { versionId: res.version_id! } });
       
       // After a short delay to show "published" success view, auto-navigate to history
       setTimeout(() => {
-         dispatch({ type: 'TRIGGER_POST_PUBLISH_NAVIGATION', payload: { versionId: res.version } });
+         dispatch({ type: 'TRIGGER_POST_PUBLISH_NAVIGATION', payload: { versionId: res.version_id! } });
       }, 1500);
       
     } catch (error) {
@@ -224,24 +230,29 @@ function App() {
     }
   };
 
-  const confirmRollback = () => {
+  const confirmRollback = async () => {
     dispatch({ type: 'REQUEST_ROLLBACK' });
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const res = await rulesApi.createRollbackCandidate(pageState.selectedBaselineId!, pageState.selectedVersionId!);
+      
       dispatch({ 
         type: 'ROLLBACK_READY', 
         payload: { 
           draftData: { 
-            rule_type: 'threshold', 
-            params: '{\n  "threshold": 5,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + pageState.selectedVersionId + '"\n}' 
+            rule_type: res.draft_data?.rule_type || 'threshold', 
+            params: typeof res.draft_data?.params === 'string' ? res.draft_data.params : JSON.stringify(res.draft_data?.params || {}, null, 2)
           },
-          sourceVersionId: pageState.selectedVersionId!,
-          sourceVersionLabel: pageState.selectedVersionId!
+          sourceVersionId: res.source_version_id,
+          sourceVersionLabel: res.source_version_label
         } 
       });
-      message.success(`Successfully created rollback candidate from version ${pageState.selectedVersionId}`);
-    }, 1000);
+      message.success(`Successfully created rollback candidate from version ${res.source_version_label}`);
+    } catch (error) {
+      console.error(error);
+      message.error('Failed to create rollback candidate');
+      dispatch({ type: 'CANCEL_ROLLBACK' });
+    }
   };
 
   const cancelRollback = () => {
