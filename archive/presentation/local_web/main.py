@@ -2,19 +2,28 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 import os
+import json
 from src.application.query_services import QueryService
 from src.application.recognition_services.recognition_service import RecognitionService
 from src.application.rule_governance_service import RuleGovernanceService
-
 from src.application.rule_editor_service import RuleEditorService
-import json
+from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository
+from src.infrastructure.excel_reader import ExcelReader
 
 app = FastAPI(title="CheckTool Local UI")
 templates = Jinja2Templates(directory="src/presentation/local_web/templates")
-query_service = QueryService()
-recognition_service = RecognitionService()
-rule_governance = RuleGovernanceService()
-rule_editor = RuleEditorService()
+
+# Initialize repositories (Composition Root)
+task_repo = TaskRepository()
+baseline_repo = BaselineRepository()
+result_repo = ResultRepository()
+excel_reader = ExcelReader()
+
+# Initialize services with injected dependencies
+query_service = QueryService(task_repo=task_repo, result_repo=result_repo)
+recognition_service = RecognitionService(task_repo=task_repo, result_repo=result_repo, excel_reader=excel_reader)
+rule_governance = RuleGovernanceService(baseline_repo=baseline_repo)
+rule_editor = RuleEditorService(repo=baseline_repo)
 
 @app.get("/")
 async def task_list(request: Request):
@@ -180,7 +189,7 @@ async def rollback_baseline(request: Request, baseline_id: str = Form(...), vers
 async def baseline_version_detail(request: Request, version: str, baseline_id: str = "B001"):
     # Reusing rule_governance list_rule_definitions would need adaptation to read historical versions.
     # For MVP, we will use a quick list representation.
-    baseline = query_service.repo.get_by_id(baseline_id)
+    baseline = baseline_repo.get_by_id(baseline_id)
     rules_dict = rule_editor._get_rule_set_for_version(baseline, version)
     return templates.TemplateResponse(request=request, name="baseline_version_detail.html", context={"version": version, "rules": rules_dict, "baseline_id": baseline_id})
 

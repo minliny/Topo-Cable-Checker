@@ -1,0 +1,1356 @@
+diff --git a/docs/ARCHITECTURE_STATUS.md b/docs/ARCHITECTURE_STATUS.md
+index 47317e4..6615073 100644
+--- a/docs/ARCHITECTURE_STATUS.md
++++ b/docs/ARCHITECTURE_STATUS.md
+@@ -1,11 +1,11 @@
+ # Architecture Status
+ 
+ The current architecture follows a strict 5-layer model:
+-1. **Presentation**: CLI entrypoints in `src/presentation/cli` and Local Web UI in `src/presentation/local_web`. Both interact only with the Application layer using DTOs.
++1. **Presentation**: CLI entrypoints in `src/presentation/cli`, Local Web UI in `src/presentation/local_web`, and `result_delivery.py` for result output formatting and delivery. Both interact only with the Application layer using DTOs.
+ 2. **Application**: Orchestration services and Query services. Query services act as an anti-corruption layer (ACL) mapping Domain entities to DTOs.
+ 3. **Domain**: Core business logic and models in `src/domain/`. Includes Rule Engine, Facts, and structured Result models.
+ 4. **Infrastructure**: Adapters for external dependencies. Includes `ExcelReader` (openpyxl) and JSON-based `Repository`.
+-5. **Cross-cutting**: Common utilities (logging, errors, config, etc.) in `src/crosscutting/`.
++5. **Cross-cutting**: Common utilities (logging, errors, config, clipboard, ide_launcher, temp_files) in `src/crosscutting/`.
+ 
+ **Current System Boundaries:**
+ - The Presentation layer cannot read or modify the Repository directly.
+diff --git a/docs/CLI_USAGE.md b/docs/CLI_USAGE.md
+index c67f2f4..bfa40e1 100644
+--- a/docs/CLI_USAGE.md
++++ b/docs/CLI_USAGE.md
+@@ -11,3 +11,42 @@ Use `checktool` commands to orchestrate checks:
+ - `python src/presentation/cli/main.py review --run <run_id> --device <name>`
+ - `python src/presentation/cli/main.py diff --task <task_id> --prev <prev_id> --curr <curr_id>`
+ - `python src/presentation/cli/main.py export --run <run_id> --format json`
++
++## `run` Command Advanced Parameters
++
++The `run` command now supports result delivery options:
++
++| Parameter | Description | Default |
++| --- | --- | --- |
++| `--copy-result` | Copy result to clipboard | Enabled |
++| `--no-copy-result` | Disable clipboard copy | - |
++| `--open-result` | Open result file in PyCharm/IDE | Enabled |
++| `--no-open-result` | Disable IDE opening | - |
++| `--result-format` | Result output format (markdown/text) | markdown |
++| `--max-issues` | Maximum issues to display | 20 |
++
++### Minimal Examples
++
++```bash
++# Default behavior: Copy to clipboard + Open in PyCharm
++python src/presentation/cli/main.py run --task <task_id>
++
++# Disable all result delivery
++python src/presentation/cli/main.py run --task <task_id> --no-copy-result --no-open-result
++
++# Only copy, don't open
++python src/presentation/cli/main.py run --task <task_id> --no-open-result
++
++# Text format
++python src/presentation/cli/main.py run --task <task_id> --result-format text
++```
++
++### Degradation Behavior
++
++| Scenario | Behavior |
++| --- | --- |
++| Clipboard copy fails | Logs a warning, continues to write temp file and open it |
++| Temp file write fails | Logs a warning, does not block the successful check result |
++| PyCharm not found | Falls back to system default editor |
++| PyCharm open fails | Logs a warning, does not block main flow |
++| All deliveries fail | Check result still returns normally, CLI exit code remains 0 |
+diff --git a/docs/DIP_AND_STRUCTURE_REFACTOR.md b/docs/DIP_AND_STRUCTURE_REFACTOR.md
+new file mode 100644
+index 0000000..0923df1
+--- /dev/null
++++ b/docs/DIP_AND_STRUCTURE_REFACTOR.md
+@@ -0,0 +1,19 @@
++# DIP 解耦与结构整理报告 (DIP & Structure Refactor)
++
++## 1. 改造背景
++项目已完成 P0 级工程治理，具备了基础运行条件，但架构层面仍存在一个显著缺陷：**Application 层的多个服务直接 `import` 了 Infrastructure 层的具体仓储实现（如 `TaskRepository` 等）**，这违反了领域驱动设计（DDD）中的依赖反转原则（DIP）。此外，目录结构也需要轻量梳理。
++
++## 2. DIP 解耦实施
++- **引入抽象边界**：在 `src/domain/interfaces.py` 中，定义了 `ITaskRepository`, `IBaselineRepository`, `IResultRepository`, `IExcelReader` 等 Protocol 接口。这些接口属于 Domain 层，代表了应用层所需要的仓储与设施能力。
++- **解耦 Application**：全面修改了 `src/application/` 下的所有服务（如 `CheckRunService`, `QueryService`, `TaskService` 等），使其 `__init__` 函数不再强制依赖 `src.infrastructure` 的具体类，而是接受上述 Protocol 类型的依赖注入。为了向下兼容防止炸毁现有代码，保留了对未注入时的后备处理（内部局部导入兜底）。
++- **入口组装 (Composition Root)**：在表现层的两个入口（`src/presentation/cli/main.py` 和 `src/presentation/local_web/main.py`）中，统一进行了依赖项的具体实例化，并将其注入到各个 Application Service 中。此时，整个 Application 实现了与 Infrastructure 的物理脱钩。
++
++## 3. 结构轻量优化
++- 清理了根目录，确保无用脚本不污染环境。
++- `scripts/` 与 `scripts/manual/` 进一步明确了职责：`manual` 用于存放需要手工验证的测试或分析脚本。
++- 新增 `tests/` 下的基础验证结构，并确保 `pytest` 跑通。
++- 新增本说明文件以帮助后续开发者快速理解。
++
++## 4. 遗留问题与接手建议
++- **遗留风险**：当前 Repository 接口使用的是 `Protocol`，并且为兼容性在 Application 层保留了 fallback `import`，以保证最小风险改造。下阶段如果需要彻底更换存储层（例如换成 SQLite），可以直接在入口处传入新实现，无需再动 Application 层代码。
++- **后续接手建议**：下一位开发者可以安全地开始进行**数据持久化层升级**或**规则引擎高级能力演进**。当前的 `src/application` 已经安全隔离，不需要再担心存储方式变化引发连锁反应。
+diff --git a/docs/DIRECTORY_GUIDE.md b/docs/DIRECTORY_GUIDE.md
+index e4ae2a9..beab331 100644
+--- a/docs/DIRECTORY_GUIDE.md
++++ b/docs/DIRECTORY_GUIDE.md
+@@ -2,6 +2,6 @@
+ 
+ - `src/domain/`: Contains `CheckTask`, `TaskStatus`, `BaselineProfile`, and `ResultModels`.
+ - `src/application/`: Service modules (`task_services`, `check_run_services`, etc.) for orchestration.
+-- `src/presentation/cli/`: Minimal CLI `main.py` entrypoint.
++- `src/presentation/`: Entry points including `cli/`, `local_web/`, and `result_delivery.py` for delivering results.
+ - `src/infrastructure/`: Connectors (Excel reader, DB, etc.).
+-- `src/crosscutting/`: Minimal capabilities (`errors`, `logging`, `config`, `ids`, `time`).
++- `src/crosscutting/`: Minimal capabilities (`errors`, `logging`, `config`, `ids`, `time`, `clipboard`, `temp_files`, `ide_launcher`).
+diff --git a/docs/ENGINEERING_P0_FIX.md b/docs/ENGINEERING_P0_FIX.md
+new file mode 100644
+index 0000000..8df05d5
+--- /dev/null
++++ b/docs/ENGINEERING_P0_FIX.md
+@@ -0,0 +1,19 @@
++# 工程治理 P0 修复报告
++
++## 1. 补齐依赖清单
++新增了 `requirements.txt`，补齐了由于缺乏依赖管理导致的“落地即死”问题。涵盖的核心包包括：`fastapi`, `uvicorn`, `jinja2`, `python-multipart`, `openpyxl`, `requests`, `pyyaml`, `pytest`。
++
++## 2. 修复硬编码路径
++修复了 `src/crosscutting/config/settings.py` 中写死绝对路径 `/workspace` 的致命缺陷。现在 `BASE_DIR` 是通过 `Path(__file__).resolve().parent.parent.parent.parent` 向上动态推导的。项目无论被 Clone 到哪个层级的目录下都能正常定位到根目录进行读写。
++
++## 3. 根目录大扫除
++清理了近 20 个散落的测试与辅助脚本。
++- **样本数据**（如 `test_advanced_data.xlsx`）归档到了 `data/samples/`。
++- **辅助生成脚本**（如 `generate_*.py`）归档到了 `scripts/`。
++- **手工执行脚本**（如 `test_engine.py`, `test_flow.sh`）归档到了 `scripts/manual/`。
++现在的根目录非常清爽，只留下 `src/`, `data/`, `docs/`, `scripts/`, `tests/` 和核心配置文件。
++
++## 4. 自动化测试基线 (pytest)
++建立了正规的自动化测试体系基线。
++- 新增 `pytest.ini` 以规范收集路径。
++- 在 `tests/` 下建立了 `test_smoke.py`，成功跑通了配置路径解析与 Domain 核心 `TemplateRegistry` 的可用性校验断言。后续可基于此直接追加业务单测。
+diff --git a/docs/RESULT_DELIVERY.md b/docs/RESULT_DELIVERY.md
+new file mode 100644
+index 0000000..a6c132f
+--- /dev/null
++++ b/docs/RESULT_DELIVERY.md
+@@ -0,0 +1,30 @@
++# Result Delivery Module
++
++The **Result Delivery Module** sits within the Presentation layer and orchestrates the final presentation and delivery of checking results to the end-user.
++
++## 1. Architectural Boundaries
++
++- **`src/presentation/result_delivery.py`**: The main orchestrator (`ResultDeliveryService`). It formats DTOs from `CheckRunService` and `ResultQueryService` into user-friendly text (Markdown or Plain Text). It handles edge cases like missing summaries, empty issue lists, or negative max issue counts.
++- **`src/crosscutting/clipboard.py`**: Provides a cross-platform (Windows/macOS/Linux) implementation for copying text to the clipboard.
++- **`src/crosscutting/ide_launcher.py`**: Attempts to launch an IDE (PyCharm) for viewing result files, with an automatic fallback to the system's default text editor.
++- **`src/crosscutting/temp_files.py`**: Safely creates timestamped result files in the operating system's standard temporary directory (`/tmp`, `%TEMP%`, etc.).
++
++**Crucial Note**: The core formatting logic has no dependencies on the Domain or Infrastructure layer. The module fails gracefully (e.g., if the clipboard is unavailable, it logs a warning but allows the execution to finish successfully).
++
++## 2. Testing Baseline
++
++The module is covered by formal automated tests (`pytest`) in `tests/test_result_delivery.py`.
++The tests cover:
++- Markdown and Plain Text formatting outputs.
++- Edge conditions (e.g., `max_issues <= 0`, empty inputs).
++- Graceful degradation when subprocess calls (clipboard/IDE) fail.
++- Temporary file creation success and cleanup.
++
++Do **not** place manual testing scripts for Result Delivery in `tests/`. All exploratory test scripts belong in `scripts/manual/`.
++
++## 3. Next Steps
++
++If extending the Result Delivery module (e.g., adding Email, Slack, or Webhook integration):
++1. Create new utilities in `src/crosscutting/` (if it's a general capability like an SMTP client) or `src/infrastructure/` (if it relies on specific API implementations).
++2. Expand `ResultDeliveryService.deliver_result()` to accommodate new output modes.
++3. Ensure to follow the strict "Do Not Block Main Flow" rule: delivery failures must only log warnings, not raise unhandled exceptions.
+diff --git a/pytest.ini b/pytest.ini
+new file mode 100644
+index 0000000..d7501c2
+--- /dev/null
++++ b/pytest.ini
+@@ -0,0 +1,4 @@
++[pytest]
++pythonpath = .
++testpaths = tests
++python_files = test_*.py
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..5a2738a
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1,8 @@
++fastapi>=0.100.0
++uvicorn>=0.23.0
++jinja2>=3.1.0
++python-multipart>=0.0.6
++openpyxl>=3.1.0
++requests>=2.31.0
++pyyaml>=6.0.1
++pytest>=7.4.0
+diff --git a/scripts/manual/README.md b/scripts/manual/README.md
+new file mode 100644
+index 0000000..a3180c6
+--- /dev/null
++++ b/scripts/manual/README.md
+@@ -0,0 +1,9 @@
++# Manual Testing Scripts
++
++This directory contains manual execution scripts, legacy test files, and debugging utilities that were used during the early prototyping phases of the project.
++
++**Important Note:**
++- These files are **NOT** part of the formal automated testing suite.
++- Formal automated tests (which run via `pytest`) are located in the `tests/` directory at the root of the repository.
++- Scripts in this directory might be outdated, lack `assert` statements, and rely on `print` outputs for visual verification.
++- They are preserved here purely for historical debugging or ad-hoc flow testing. Do not rely on them for CI/CD checks.
+diff --git a/src/__pycache__/__init__.cpython-314.pyc b/src/__pycache__/__init__.cpython-314.pyc
+index b386ada..6d35ac8 100644
+Binary files a/src/__pycache__/__init__.cpython-314.pyc and b/src/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/__pycache__/__init__.cpython-314.pyc b/src/application/__pycache__/__init__.cpython-314.pyc
+index f0ee5a3..c044a03 100644
+Binary files a/src/application/__pycache__/__init__.cpython-314.pyc and b/src/application/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/__pycache__/dto_models.cpython-314.pyc b/src/application/__pycache__/dto_models.cpython-314.pyc
+index b5a3921..3a61146 100644
+Binary files a/src/application/__pycache__/dto_models.cpython-314.pyc and b/src/application/__pycache__/dto_models.cpython-314.pyc differ
+diff --git a/src/application/__pycache__/query_services.cpython-314.pyc b/src/application/__pycache__/query_services.cpython-314.pyc
+index 2395774..29d90bc 100644
+Binary files a/src/application/__pycache__/query_services.cpython-314.pyc and b/src/application/__pycache__/query_services.cpython-314.pyc differ
+diff --git a/src/application/__pycache__/rule_editor_service.cpython-314.pyc b/src/application/__pycache__/rule_editor_service.cpython-314.pyc
+index ba77098..6f3df07 100644
+Binary files a/src/application/__pycache__/rule_editor_service.cpython-314.pyc and b/src/application/__pycache__/rule_editor_service.cpython-314.pyc differ
+diff --git a/src/application/__pycache__/rule_governance_service.cpython-314.pyc b/src/application/__pycache__/rule_governance_service.cpython-314.pyc
+index 292ad15..311f888 100644
+Binary files a/src/application/__pycache__/rule_governance_service.cpython-314.pyc and b/src/application/__pycache__/rule_governance_service.cpython-314.pyc differ
+diff --git a/src/application/baseline_services/__pycache__/__init__.cpython-314.pyc b/src/application/baseline_services/__pycache__/__init__.cpython-314.pyc
+index 4c75a09..d61b5bb 100644
+Binary files a/src/application/baseline_services/__pycache__/__init__.cpython-314.pyc and b/src/application/baseline_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/baseline_services/__pycache__/baseline_service.cpython-314.pyc b/src/application/baseline_services/__pycache__/baseline_service.cpython-314.pyc
+index 01b035c..cd01305 100644
+Binary files a/src/application/baseline_services/__pycache__/baseline_service.cpython-314.pyc and b/src/application/baseline_services/__pycache__/baseline_service.cpython-314.pyc differ
+diff --git a/src/application/baseline_services/baseline_service.py b/src/application/baseline_services/baseline_service.py
+index 7d14ac8..ed2b30f 100644
+--- a/src/application/baseline_services/baseline_service.py
++++ b/src/application/baseline_services/baseline_service.py
+@@ -1,10 +1,14 @@
+-from src.infrastructure.repository import BaselineRepository
++from src.domain.interfaces import IBaselineRepository
+ from src.domain.baseline_model import BaselineProfile
+ from typing import List
+ 
+ class BaselineService:
+-    def __init__(self):
+-        self.repo = BaselineRepository()
++    def __init__(self, repo: IBaselineRepository = None):
++        if repo is None:
++            from src.infrastructure.repository import BaselineRepository
++            self.repo = repo or BaselineRepository()
++        else:
++            self.repo = repo
+         
+     def list_baselines(self) -> List[BaselineProfile]:
+         baselines = self.repo.get_all()
+diff --git a/src/application/check_run_services/__pycache__/__init__.cpython-314.pyc b/src/application/check_run_services/__pycache__/__init__.cpython-314.pyc
+index 4b54d75..38e2da2 100644
+Binary files a/src/application/check_run_services/__pycache__/__init__.cpython-314.pyc and b/src/application/check_run_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/check_run_services/__pycache__/check_run_service.cpython-314.pyc b/src/application/check_run_services/__pycache__/check_run_service.cpython-314.pyc
+index 23d9f45..c672fb0 100644
+Binary files a/src/application/check_run_services/__pycache__/check_run_service.cpython-314.pyc and b/src/application/check_run_services/__pycache__/check_run_service.cpython-314.pyc differ
+diff --git a/src/application/check_run_services/check_run_service.py b/src/application/check_run_services/check_run_service.py
+index 943872a..8246a4f 100644
+--- a/src/application/check_run_services/check_run_service.py
++++ b/src/application/check_run_services/check_run_service.py
+@@ -1,4 +1,4 @@
+-from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository
++from src.domain.interfaces import ITaskRepository, IBaselineRepository, IResultRepository
+ from src.application.normalization_services.normalization_service import NormalizationService
+ from src.domain.task_model import TaskStatus
+ from src.domain.rule_engine import rule_engine
+@@ -9,10 +9,16 @@ from src.crosscutting.ids.generator import generate_id
+ from src.crosscutting.errors.exceptions import TaskError
+ 
+ class CheckRunService:
+-    def __init__(self):
+-        self.task_repo = TaskRepository()
+-        self.baseline_repo = BaselineRepository()
+-        self.result_repo = ResultRepository()
++    def __init__(self, task_repo: ITaskRepository = None, baseline_repo: IBaselineRepository = None, result_repo: IResultRepository = None):
++        if task_repo is None or baseline_repo is None or result_repo is None:
++            from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository
++            self.task_repo = task_repo or TaskRepository()
++            self.baseline_repo = baseline_repo or BaselineRepository()
++            self.result_repo = result_repo or ResultRepository()
++        else:
++            self.task_repo = task_repo
++            self.baseline_repo = baseline_repo
++            self.result_repo = result_repo
+         self.normalization_service = NormalizationService()
+         
+     def run_checks(self, task_id: str) -> str:
+diff --git a/src/application/export_services/__pycache__/__init__.cpython-314.pyc b/src/application/export_services/__pycache__/__init__.cpython-314.pyc
+index 4181e5c..ec155d1 100644
+Binary files a/src/application/export_services/__pycache__/__init__.cpython-314.pyc and b/src/application/export_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/export_services/__pycache__/export_service.cpython-314.pyc b/src/application/export_services/__pycache__/export_service.cpython-314.pyc
+index 3772f58..5e77938 100644
+Binary files a/src/application/export_services/__pycache__/export_service.cpython-314.pyc and b/src/application/export_services/__pycache__/export_service.cpython-314.pyc differ
+diff --git a/src/application/export_services/export_service.py b/src/application/export_services/export_service.py
+index 7f16c4d..5b383b0 100644
+--- a/src/application/export_services/export_service.py
++++ b/src/application/export_services/export_service.py
+@@ -1,11 +1,16 @@
+-from src.infrastructure.repository import ResultRepository
++from src.domain.interfaces import IResultRepository
+ from src.domain.result_model import ExportArtifact
+ import json
++import dataclasses
++import datetime
+ 
+ class ExportService:
+-    def __init__(self):
+-        self.result_repo = ResultRepository()
+-        
++    def __init__(self, result_repo: IResultRepository = None):
++        if result_repo is None:
++            from src.infrastructure.repository import ResultRepository
++            self.result_repo = result_repo or ResultRepository()
++        else:
++            self.result_repo = result_repo       
+     def export(self, run_id: str, fmt: str) -> ExportArtifact:
+         issues = self.result_repo.get_issue_aggregate(run_id)
+         if not issues:
+diff --git a/src/application/normalization_services/__pycache__/__init__.cpython-314.pyc b/src/application/normalization_services/__pycache__/__init__.cpython-314.pyc
+index 6d6280b..ec3eb20 100644
+Binary files a/src/application/normalization_services/__pycache__/__init__.cpython-314.pyc and b/src/application/normalization_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/normalization_services/__pycache__/normalization_service.cpython-314.pyc b/src/application/normalization_services/__pycache__/normalization_service.cpython-314.pyc
+index a9863b1..63f72ba 100644
+Binary files a/src/application/normalization_services/__pycache__/normalization_service.cpython-314.pyc and b/src/application/normalization_services/__pycache__/normalization_service.cpython-314.pyc differ
+diff --git a/src/application/query_services.py b/src/application/query_services.py
+index 3010203..c307f0d 100644
+--- a/src/application/query_services.py
++++ b/src/application/query_services.py
+@@ -1,14 +1,20 @@
+ from typing import List, Dict, Any, Optional
+-from src.infrastructure.repository import TaskRepository, ResultRepository
++from src.domain.interfaces import ITaskRepository, IResultRepository
+ from src.application.dto_models import (
+     TaskSummaryDTO, RecognitionSummaryDTO, RunOverviewDTO, 
+     IssueListItemDTO, DeviceReviewDTO, RecheckDiffDTO, ExportArtifactDTO, IssueListResultDTO
+ )
+ 
+ class QueryService:
+-    def __init__(self):
+-        self.task_repo = TaskRepository()
+-        self.result_repo = ResultRepository()
++    def __init__(self, task_repo: ITaskRepository = None, result_repo: IResultRepository = None):
++        if task_repo is None or result_repo is None:
++            # Fallback for backward compatibility if not injected
++            from src.infrastructure.repository import TaskRepository, ResultRepository
++            self.task_repo = task_repo or TaskRepository()
++            self.result_repo = result_repo or ResultRepository()
++        else:
++            self.task_repo = task_repo
++            self.result_repo = result_repo
+ 
+     def get_task_summary(self, task_id: str) -> Optional[TaskSummaryDTO]:
+         task = self.task_repo.get_by_id(task_id)
+diff --git a/src/application/recheck_services/__pycache__/__init__.cpython-314.pyc b/src/application/recheck_services/__pycache__/__init__.cpython-314.pyc
+index f054cba..8e7dd84 100644
+Binary files a/src/application/recheck_services/__pycache__/__init__.cpython-314.pyc and b/src/application/recheck_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/recheck_services/__pycache__/recheck_service.cpython-314.pyc b/src/application/recheck_services/__pycache__/recheck_service.cpython-314.pyc
+index 936f032..2698b9d 100644
+Binary files a/src/application/recheck_services/__pycache__/recheck_service.cpython-314.pyc and b/src/application/recheck_services/__pycache__/recheck_service.cpython-314.pyc differ
+diff --git a/src/application/recheck_services/recheck_service.py b/src/application/recheck_services/recheck_service.py
+index 492c348..e113f4b 100644
+--- a/src/application/recheck_services/recheck_service.py
++++ b/src/application/recheck_services/recheck_service.py
+@@ -1,11 +1,15 @@
+-from src.infrastructure.repository import ResultRepository
++from src.domain.interfaces import IResultRepository
+ from src.domain.result_model import RecheckDiffSnapshot, IssueItem
+ from typing import Dict, Any, Tuple
+ import dataclasses
+ 
+ class RecheckService:
+-    def __init__(self):
+-        self.result_repo = ResultRepository()
++    def __init__(self, result_repo: IResultRepository = None):
++        if result_repo is None:
++            from src.infrastructure.repository import ResultRepository
++            self.result_repo = result_repo or ResultRepository()
++        else:
++            self.result_repo = result_repo
+         
+     def _generate_match_key(self, issue: IssueItem) -> str:
+         """
+diff --git a/src/application/recognition_services/__pycache__/__init__.cpython-314.pyc b/src/application/recognition_services/__pycache__/__init__.cpython-314.pyc
+index a6bd104..a38ae6f 100644
+Binary files a/src/application/recognition_services/__pycache__/__init__.cpython-314.pyc and b/src/application/recognition_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/recognition_services/__pycache__/recognition_service.cpython-314.pyc b/src/application/recognition_services/__pycache__/recognition_service.cpython-314.pyc
+index 55d11e5..8f77b04 100644
+Binary files a/src/application/recognition_services/__pycache__/recognition_service.cpython-314.pyc and b/src/application/recognition_services/__pycache__/recognition_service.cpython-314.pyc differ
+diff --git a/src/application/recognition_services/recognition_service.py b/src/application/recognition_services/recognition_service.py
+index 56c8d5a..1c4683c 100644
+--- a/src/application/recognition_services/recognition_service.py
++++ b/src/application/recognition_services/recognition_service.py
+@@ -1,15 +1,21 @@
+-from src.infrastructure.repository import TaskRepository, ResultRepository
+-from src.infrastructure.excel_reader import ExcelReader
++from src.domain.interfaces import ITaskRepository, IResultRepository, IExcelReader
+ from src.domain.task_model import TaskStatus
+ from src.domain.result_model import RecognitionResultSnapshot
+ from src.crosscutting.errors.exceptions import TaskError
+ from typing import Dict, Any
+ 
+ class RecognitionService:
+-    def __init__(self):
+-        self.task_repo = TaskRepository()
+-        self.result_repo = ResultRepository()
+-        self.excel_reader = ExcelReader()
++    def __init__(self, task_repo: ITaskRepository = None, result_repo: IResultRepository = None, excel_reader: IExcelReader = None):
++        if task_repo is None or result_repo is None or excel_reader is None:
++            from src.infrastructure.repository import TaskRepository, ResultRepository
++            from src.infrastructure.excel_reader import ExcelReader
++            self.task_repo = task_repo or TaskRepository()
++            self.result_repo = result_repo or ResultRepository()
++            self.excel_reader = excel_reader or ExcelReader()
++        else:
++            self.task_repo = task_repo
++            self.result_repo = result_repo
++            self.excel_reader = excel_reader
+         
+     def recognize_data(self, task_id: str) -> Dict[str, Any]:
+         task = self.task_repo.get_by_id(task_id)
+diff --git a/src/application/result_query_services/__pycache__/__init__.cpython-314.pyc b/src/application/result_query_services/__pycache__/__init__.cpython-314.pyc
+index 57d03f9..0054683 100644
+Binary files a/src/application/result_query_services/__pycache__/__init__.cpython-314.pyc and b/src/application/result_query_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/result_query_services/__pycache__/result_query_service.cpython-314.pyc b/src/application/result_query_services/__pycache__/result_query_service.cpython-314.pyc
+index 3d8ff7a..19627af 100644
+Binary files a/src/application/result_query_services/__pycache__/result_query_service.cpython-314.pyc and b/src/application/result_query_services/__pycache__/result_query_service.cpython-314.pyc differ
+diff --git a/src/application/result_query_services/result_query_service.py b/src/application/result_query_services/result_query_service.py
+index a064135..649f19b 100644
+--- a/src/application/result_query_services/result_query_service.py
++++ b/src/application/result_query_services/result_query_service.py
+@@ -1,9 +1,13 @@
+-from src.infrastructure.repository import ResultRepository
++from src.domain.interfaces import IResultRepository
+ from src.domain.result_model import RunSummaryOverview, IssueAggregateSnapshot, RunStatisticsSnapshot
+ 
+ class ResultQueryService:
+-    def __init__(self):
+-        self.result_repo = ResultRepository()
++    def __init__(self, result_repo: IResultRepository = None):
++        if result_repo is None:
++            from src.infrastructure.repository import ResultRepository
++            self.result_repo = result_repo or ResultRepository()
++        else:
++            self.result_repo = result_repo
+         
+     def get_summary(self, run_id: str) -> RunSummaryOverview:
+         return self.result_repo.get_summary(run_id)
+diff --git a/src/application/review_services/__pycache__/__init__.cpython-314.pyc b/src/application/review_services/__pycache__/__init__.cpython-314.pyc
+index 4448670..add6c3b 100644
+Binary files a/src/application/review_services/__pycache__/__init__.cpython-314.pyc and b/src/application/review_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/review_services/__pycache__/review_service.cpython-314.pyc b/src/application/review_services/__pycache__/review_service.cpython-314.pyc
+index 98e9847..a0b208a 100644
+Binary files a/src/application/review_services/__pycache__/review_service.cpython-314.pyc and b/src/application/review_services/__pycache__/review_service.cpython-314.pyc differ
+diff --git a/src/application/review_services/review_service.py b/src/application/review_services/review_service.py
+index bbdef40..11c0588 100644
+--- a/src/application/review_services/review_service.py
++++ b/src/application/review_services/review_service.py
+@@ -1,22 +1,27 @@
+-from src.infrastructure.repository import ResultRepository, TaskRepository, _read_json
++from src.domain.interfaces import IResultRepository, ITaskRepository
+ from src.application.normalization_services.normalization_service import NormalizationService
+ from src.domain.result_model import DeviceReviewContext
+ from src.crosscutting.errors.exceptions import TaskError
+ import dataclasses
+ 
+ class ReviewService:
+-    def __init__(self):
+-        self.result_repo = ResultRepository()
+-        self.task_repo = TaskRepository()
++    def __init__(self, result_repo: IResultRepository = None, task_repo: ITaskRepository = None):
++        if result_repo is None or task_repo is None:
++            from src.infrastructure.repository import ResultRepository, TaskRepository
++            self.result_repo = result_repo or ResultRepository()
++            self.task_repo = task_repo or TaskRepository()
++        else:
++            self.result_repo = result_repo
++            self.task_repo = task_repo
+         self.normalization_service = NormalizationService()
+         
+     def review_issues(self, run_id: str, device_name: str) -> DeviceReviewContext:
+         # 1. Fetch Execution and Task to get Normalized Dataset
+-        execution = _read_json("run_executions.json").get(run_id)
++        execution = self.result_repo.get_run_execution(run_id)
+         if not execution:
+             raise TaskError(f"Run {run_id} not found.")
+             
+-        task_id = execution["task_id"]
++        task_id = execution.task_id
+         rec_snapshot = self.result_repo.get_recognition(task_id)
+         raw_data = rec_snapshot.recognized_data["row_data"]
+         dataset = self.normalization_service.normalize(raw_data)
+diff --git a/src/application/rule_editor_service.py b/src/application/rule_editor_service.py
+index 4c7910d..b9e7293 100644
+--- a/src/application/rule_editor_service.py
++++ b/src/application/rule_editor_service.py
+@@ -10,12 +10,17 @@ from src.application.dto_models import (
+     BaselineDiffDTO,
+     RuleDiffItemDTO
+ )
+-from src.infrastructure.repository import BaselineRepository
++from src.domain.interfaces import IBaselineRepository
+ from src.domain.rule_compiler import RuleCompiler, RuleCompileError, TemplateRegistry
++from typing import Tuple
+ 
+ class RuleEditorService:
+-    def __init__(self):
+-        self.repo = BaselineRepository()
++    def __init__(self, repo: IBaselineRepository = None):
++        if repo is None:
++            from src.infrastructure.repository import BaselineRepository
++            self.repo = repo or BaselineRepository()
++        else:
++            self.repo = repo
+         # Mocking an in-memory draft workspace for the editor
+         # Structure: { baseline_id: { rule_id: rule_definition_dict } }
+         self._draft_workspace: Dict[str, Dict[str, Any]] = {}
+diff --git a/src/application/rule_governance_service.py b/src/application/rule_governance_service.py
+index df74f42..d5069c6 100644
+--- a/src/application/rule_governance_service.py
++++ b/src/application/rule_governance_service.py
+@@ -1,11 +1,15 @@
+ from typing import List, Dict, Any, Optional, Tuple
+ from src.application.dto_models import RuleDefinitionDTO, CompiledRuleDTO, TemplateRegistryDTO, CompileErrorDTO
+-from src.infrastructure.repository import BaselineRepository
++from src.domain.interfaces import IBaselineRepository
+ from src.domain.rule_compiler import RuleCompiler, RuleCompileError, TemplateRegistry
+ 
+ class RuleGovernanceService:
+-    def __init__(self):
+-        self.repo = BaselineRepository()
++    def __init__(self, baseline_repo: IBaselineRepository = None):
++        if baseline_repo is None:
++            from src.infrastructure.repository import BaselineRepository
++            self.repo = baseline_repo or BaselineRepository()
++        else:
++            self.repo = baseline_repo
+         self._compiled_cache: Dict[str, Dict[str, Any]] = {}
+         self._compile_errors: Dict[str, List[CompileErrorDTO]] = {}
+ 
+diff --git a/src/application/task_services/__pycache__/__init__.cpython-314.pyc b/src/application/task_services/__pycache__/__init__.cpython-314.pyc
+index 95f8b31..11cf090 100644
+Binary files a/src/application/task_services/__pycache__/__init__.cpython-314.pyc and b/src/application/task_services/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/application/task_services/__pycache__/task_service.cpython-314.pyc b/src/application/task_services/__pycache__/task_service.cpython-314.pyc
+index 97aa65d..713876c 100644
+Binary files a/src/application/task_services/__pycache__/task_service.cpython-314.pyc and b/src/application/task_services/__pycache__/task_service.cpython-314.pyc differ
+diff --git a/src/application/task_services/task_service.py b/src/application/task_services/task_service.py
+index b73214a..b21d054 100644
+--- a/src/application/task_services/task_service.py
++++ b/src/application/task_services/task_service.py
+@@ -1,13 +1,18 @@
+-from src.infrastructure.repository import TaskRepository, BaselineRepository
++from src.domain.interfaces import ITaskRepository, IBaselineRepository
+ from src.domain.task_model import CheckTask, TaskStatus
+ from src.crosscutting.ids.generator import generate_id
+ from src.crosscutting.time.clock import now
+ from src.crosscutting.errors.exceptions import TaskError
+ 
+ class TaskService:
+-    def __init__(self):
+-        self.task_repo = TaskRepository()
+-        self.baseline_repo = BaselineRepository()
++    def __init__(self, task_repo: ITaskRepository = None, baseline_repo: IBaselineRepository = None):
++        if task_repo is None or baseline_repo is None:
++            from src.infrastructure.repository import TaskRepository, BaselineRepository
++            self.task_repo = task_repo or TaskRepository()
++            self.baseline_repo = baseline_repo or BaselineRepository()
++        else:
++            self.task_repo = task_repo
++            self.baseline_repo = baseline_repo
+ 
+     def create_task(self, baseline_id: str, file_path: str) -> str:
+         baseline = self.baseline_repo.get_by_id(baseline_id)
+diff --git a/src/crosscutting/__init__.py b/src/crosscutting/__init__.py
+index e69de29..1c2b656 100644
+--- a/src/crosscutting/__init__.py
++++ b/src/crosscutting/__init__.py
+@@ -0,0 +1,3 @@
++from .temp_files import create_temp_result_file
++from .clipboard import copy_to_clipboard
++from .ide_launcher import open_in_ide
+diff --git a/src/crosscutting/__pycache__/__init__.cpython-314.pyc b/src/crosscutting/__pycache__/__init__.cpython-314.pyc
+index 95e30d9..bd7c198 100644
+Binary files a/src/crosscutting/__pycache__/__init__.cpython-314.pyc and b/src/crosscutting/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/crosscutting/__pycache__/clipboard.cpython-314.pyc b/src/crosscutting/__pycache__/clipboard.cpython-314.pyc
+new file mode 100644
+index 0000000..0a47514
+Binary files /dev/null and b/src/crosscutting/__pycache__/clipboard.cpython-314.pyc differ
+diff --git a/src/crosscutting/__pycache__/ide_launcher.cpython-314.pyc b/src/crosscutting/__pycache__/ide_launcher.cpython-314.pyc
+new file mode 100644
+index 0000000..576ad57
+Binary files /dev/null and b/src/crosscutting/__pycache__/ide_launcher.cpython-314.pyc differ
+diff --git a/src/crosscutting/__pycache__/temp_files.cpython-314.pyc b/src/crosscutting/__pycache__/temp_files.cpython-314.pyc
+new file mode 100644
+index 0000000..42d3129
+Binary files /dev/null and b/src/crosscutting/__pycache__/temp_files.cpython-314.pyc differ
+diff --git a/src/crosscutting/clipboard.py b/src/crosscutting/clipboard.py
+new file mode 100644
+index 0000000..870e7d6
+--- /dev/null
++++ b/src/crosscutting/clipboard.py
+@@ -0,0 +1,30 @@
++import subprocess
++import sys
++import logging
++
++logger = logging.getLogger(__name__)
++
++def copy_to_clipboard(text: str) -> bool:
++    """Copies text to the system clipboard, returning True on success."""
++    try:
++        if sys.platform == "win32":
++            process = subprocess.Popen(["clip"], stdin=subprocess.PIPE, text=True, encoding="utf-8")
++            process.communicate(text)
++            return process.returncode == 0
++        elif sys.platform == "darwin":
++            process = subprocess.Popen(["pbcopy"], stdin=subprocess.PIPE, text=True, encoding="utf-8")
++            process.communicate(text)
++            return process.returncode == 0
++        else:
++            # Try xclip first, then xsel
++            try:
++                process = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE, text=True, encoding="utf-8")
++                process.communicate(text)
++                return process.returncode == 0
++            except FileNotFoundError:
++                process = subprocess.Popen(["xsel", "--clipboard", "--input"], stdin=subprocess.PIPE, text=True, encoding="utf-8")
++                process.communicate(text)
++                return process.returncode == 0
++    except Exception as e:
++        logger.warning(f"Failed to copy to clipboard: {e}")
++        return False
+diff --git a/src/crosscutting/config/__pycache__/__init__.cpython-314.pyc b/src/crosscutting/config/__pycache__/__init__.cpython-314.pyc
+index ed3eaa7..4b82d76 100644
+Binary files a/src/crosscutting/config/__pycache__/__init__.cpython-314.pyc and b/src/crosscutting/config/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/crosscutting/config/__pycache__/settings.cpython-314.pyc b/src/crosscutting/config/__pycache__/settings.cpython-314.pyc
+index 50e09bc..f7ff995 100644
+Binary files a/src/crosscutting/config/__pycache__/settings.cpython-314.pyc and b/src/crosscutting/config/__pycache__/settings.cpython-314.pyc differ
+diff --git a/src/crosscutting/config/settings.py b/src/crosscutting/config/settings.py
+index ce9e02c..589d2b7 100644
+--- a/src/crosscutting/config/settings.py
++++ b/src/crosscutting/config/settings.py
+@@ -1,7 +1,13 @@
+ import os
++from pathlib import Path
+ 
+ class Settings:
+     def __init__(self):
+-        self.BASE_DIR = os.getenv("CHECKTOOL_BASE_DIR", "/workspace")
++        # Resolve the project root dynamically. 
++        # Since this file is in src/crosscutting/config/, the project root is 3 levels up.
++        _current_dir = Path(__file__).resolve().parent
++        _project_root = _current_dir.parent.parent.parent
++        
++        self.BASE_DIR = os.getenv("CHECKTOOL_BASE_DIR", str(_project_root))
+ 
+ settings = Settings()
+diff --git a/src/crosscutting/errors/__pycache__/__init__.cpython-314.pyc b/src/crosscutting/errors/__pycache__/__init__.cpython-314.pyc
+index d9fbda9..0fc8253 100644
+Binary files a/src/crosscutting/errors/__pycache__/__init__.cpython-314.pyc and b/src/crosscutting/errors/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/crosscutting/errors/__pycache__/exceptions.cpython-314.pyc b/src/crosscutting/errors/__pycache__/exceptions.cpython-314.pyc
+index fc2cf0c..c0ddfb9 100644
+Binary files a/src/crosscutting/errors/__pycache__/exceptions.cpython-314.pyc and b/src/crosscutting/errors/__pycache__/exceptions.cpython-314.pyc differ
+diff --git a/src/crosscutting/ide_launcher.py b/src/crosscutting/ide_launcher.py
+new file mode 100644
+index 0000000..2a21560
+--- /dev/null
++++ b/src/crosscutting/ide_launcher.py
+@@ -0,0 +1,28 @@
++import subprocess
++import sys
++import logging
++import os
++
++logger = logging.getLogger(__name__)
++
++def open_in_ide(file_path: str) -> bool:
++    """Opens a file in PyCharm if available, otherwise falls back to system default."""
++    try:
++        # Try to open with PyCharm (assuming pycharm is in PATH)
++        try:
++            cmd = "pycharm" if sys.platform != "win32" else "pycharm64.exe"
++            subprocess.Popen([cmd, file_path])
++            return True
++        except FileNotFoundError:
++            # Fallback to system default
++            logger.info("PyCharm not found in PATH, falling back to system default editor.")
++            if sys.platform == "win32":
++                os.startfile(file_path)
++            elif sys.platform == "darwin":
++                subprocess.Popen(["open", file_path])
++            else:
++                subprocess.Popen(["xdg-open", file_path])
++            return True
++    except Exception as e:
++        logger.warning(f"Failed to open file in IDE: {e}")
++        return False
+diff --git a/src/crosscutting/ids/__pycache__/__init__.cpython-314.pyc b/src/crosscutting/ids/__pycache__/__init__.cpython-314.pyc
+index 5563036..70708ba 100644
+Binary files a/src/crosscutting/ids/__pycache__/__init__.cpython-314.pyc and b/src/crosscutting/ids/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/crosscutting/ids/__pycache__/generator.cpython-314.pyc b/src/crosscutting/ids/__pycache__/generator.cpython-314.pyc
+index cb6f733..e704e0c 100644
+Binary files a/src/crosscutting/ids/__pycache__/generator.cpython-314.pyc and b/src/crosscutting/ids/__pycache__/generator.cpython-314.pyc differ
+diff --git a/src/crosscutting/logging/__pycache__/__init__.cpython-314.pyc b/src/crosscutting/logging/__pycache__/__init__.cpython-314.pyc
+index 323a73b..ad47e9a 100644
+Binary files a/src/crosscutting/logging/__pycache__/__init__.cpython-314.pyc and b/src/crosscutting/logging/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/crosscutting/logging/__pycache__/logger.cpython-314.pyc b/src/crosscutting/logging/__pycache__/logger.cpython-314.pyc
+index ceb6bd2..8a51daa 100644
+Binary files a/src/crosscutting/logging/__pycache__/logger.cpython-314.pyc and b/src/crosscutting/logging/__pycache__/logger.cpython-314.pyc differ
+diff --git a/src/crosscutting/temp_files.py b/src/crosscutting/temp_files.py
+new file mode 100644
+index 0000000..3dd8c12
+--- /dev/null
++++ b/src/crosscutting/temp_files.py
+@@ -0,0 +1,24 @@
++import os
++import tempfile
++import logging
++from datetime import datetime
++
++logger = logging.getLogger(__name__)
++
++def create_temp_result_file(content: str, ext: str = "md") -> str:
++    """Creates a temporary result file with a timestamped name."""
++    try:
++        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
++        filename = f"topo_checker_result_{timestamp}.{ext}"
++        
++        # Use tempfile.gettempdir() to get the system temp directory
++        temp_dir = tempfile.gettempdir()
++        file_path = os.path.join(temp_dir, filename)
++        
++        with open(file_path, "w", encoding="utf-8") as f:
++            f.write(content)
++            
++        return file_path
++    except Exception as e:
++        logger.warning(f"Failed to create temporary file: {e}")
++        return ""
+diff --git a/src/crosscutting/time/__pycache__/__init__.cpython-314.pyc b/src/crosscutting/time/__pycache__/__init__.cpython-314.pyc
+index 8a9fcb2..e07396e 100644
+Binary files a/src/crosscutting/time/__pycache__/__init__.cpython-314.pyc and b/src/crosscutting/time/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/crosscutting/time/__pycache__/clock.cpython-314.pyc b/src/crosscutting/time/__pycache__/clock.cpython-314.pyc
+index 18bf137..be19ef9 100644
+Binary files a/src/crosscutting/time/__pycache__/clock.cpython-314.pyc and b/src/crosscutting/time/__pycache__/clock.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/__init__.cpython-314.pyc b/src/domain/__pycache__/__init__.cpython-314.pyc
+index 7ad6393..ca6e10a 100644
+Binary files a/src/domain/__pycache__/__init__.cpython-314.pyc and b/src/domain/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/baseline_model.cpython-314.pyc b/src/domain/__pycache__/baseline_model.cpython-314.pyc
+index 6b6567b..703b5ea 100644
+Binary files a/src/domain/__pycache__/baseline_model.cpython-314.pyc and b/src/domain/__pycache__/baseline_model.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/fact_model.cpython-314.pyc b/src/domain/__pycache__/fact_model.cpython-314.pyc
+index cd67184..b284a40 100644
+Binary files a/src/domain/__pycache__/fact_model.cpython-314.pyc and b/src/domain/__pycache__/fact_model.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/interfaces.cpython-314.pyc b/src/domain/__pycache__/interfaces.cpython-314.pyc
+new file mode 100644
+index 0000000..ce64db8
+Binary files /dev/null and b/src/domain/__pycache__/interfaces.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/result_model.cpython-314.pyc b/src/domain/__pycache__/result_model.cpython-314.pyc
+index 01098e8..15c74b7 100644
+Binary files a/src/domain/__pycache__/result_model.cpython-314.pyc and b/src/domain/__pycache__/result_model.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/rule_compiler.cpython-314.pyc b/src/domain/__pycache__/rule_compiler.cpython-314.pyc
+index e5e03ef..3354d4d 100644
+Binary files a/src/domain/__pycache__/rule_compiler.cpython-314.pyc and b/src/domain/__pycache__/rule_compiler.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/rule_engine.cpython-314.pyc b/src/domain/__pycache__/rule_engine.cpython-314.pyc
+index 0713ae2..60ab0ea 100644
+Binary files a/src/domain/__pycache__/rule_engine.cpython-314.pyc and b/src/domain/__pycache__/rule_engine.cpython-314.pyc differ
+diff --git a/src/domain/__pycache__/task_model.cpython-314.pyc b/src/domain/__pycache__/task_model.cpython-314.pyc
+index 5900944..bf3cd74 100644
+Binary files a/src/domain/__pycache__/task_model.cpython-314.pyc and b/src/domain/__pycache__/task_model.cpython-314.pyc differ
+diff --git a/src/domain/executors/__pycache__/__init__.cpython-314.pyc b/src/domain/executors/__pycache__/__init__.cpython-314.pyc
+index 5f55069..8422f06 100644
+Binary files a/src/domain/executors/__pycache__/__init__.cpython-314.pyc and b/src/domain/executors/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/domain/executors/__pycache__/base_executor.cpython-314.pyc b/src/domain/executors/__pycache__/base_executor.cpython-314.pyc
+index ceec543..681ad45 100644
+Binary files a/src/domain/executors/__pycache__/base_executor.cpython-314.pyc and b/src/domain/executors/__pycache__/base_executor.cpython-314.pyc differ
+diff --git a/src/domain/executors/__pycache__/group_consistency_executor.cpython-314.pyc b/src/domain/executors/__pycache__/group_consistency_executor.cpython-314.pyc
+index 0b428a3..2cff0d8 100644
+Binary files a/src/domain/executors/__pycache__/group_consistency_executor.cpython-314.pyc and b/src/domain/executors/__pycache__/group_consistency_executor.cpython-314.pyc differ
+diff --git a/src/domain/executors/__pycache__/single_fact_executor.cpython-314.pyc b/src/domain/executors/__pycache__/single_fact_executor.cpython-314.pyc
+index 957f87b..1d252e7 100644
+Binary files a/src/domain/executors/__pycache__/single_fact_executor.cpython-314.pyc and b/src/domain/executors/__pycache__/single_fact_executor.cpython-314.pyc differ
+diff --git a/src/domain/executors/__pycache__/threshold_executor.cpython-314.pyc b/src/domain/executors/__pycache__/threshold_executor.cpython-314.pyc
+index b0a4165..d947dbd 100644
+Binary files a/src/domain/executors/__pycache__/threshold_executor.cpython-314.pyc and b/src/domain/executors/__pycache__/threshold_executor.cpython-314.pyc differ
+diff --git a/src/domain/executors/__pycache__/topology_executor.cpython-314.pyc b/src/domain/executors/__pycache__/topology_executor.cpython-314.pyc
+index 3a85a19..6ddf5e8 100644
+Binary files a/src/domain/executors/__pycache__/topology_executor.cpython-314.pyc and b/src/domain/executors/__pycache__/topology_executor.cpython-314.pyc differ
+diff --git a/src/domain/interfaces.py b/src/domain/interfaces.py
+new file mode 100644
+index 0000000..bacfcd7
+--- /dev/null
++++ b/src/domain/interfaces.py
+@@ -0,0 +1,38 @@
++from typing import Dict, List, Any, Protocol
++from src.domain.baseline_model import BaselineProfile
++from src.domain.task_model import CheckTask
++from src.domain.result_model import (
++    RecognitionResultSnapshot, RunExecutionSnapshot, RunStatisticsSnapshot,
++    IssueAggregateSnapshot, RunSummaryOverview, RecheckDiffSnapshot,
++    DeviceReviewContext, ExportArtifact
++)
++
++class IBaselineRepository(Protocol):
++    def get_all(self) -> List[BaselineProfile]: ...
++    def get_by_id(self, baseline_id: str) -> BaselineProfile: ...
++    def save(self, profile: BaselineProfile): ...
++
++class ITaskRepository(Protocol):
++    def get_by_id(self, task_id: str) -> CheckTask: ...
++    def save(self, task: CheckTask): ...
++
++class IResultRepository(Protocol):
++    def save_recognition(self, snap: RecognitionResultSnapshot): ...
++    def get_recognition(self, task_id: str) -> RecognitionResultSnapshot: ...
++    def save_run_execution(self, snap: RunExecutionSnapshot): ...
++    def get_run_execution(self, run_id: str) -> RunExecutionSnapshot: ...
++    def save_statistics(self, snap: RunStatisticsSnapshot): ...
++    def get_statistics(self, run_id: str) -> RunStatisticsSnapshot: ...
++    def save_issue_aggregate(self, snap: IssueAggregateSnapshot): ...
++    def get_issue_aggregate(self, run_id: str) -> IssueAggregateSnapshot: ...
++    def save_summary(self, summary: RunSummaryOverview): ...
++    def get_summary(self, run_id: str) -> RunSummaryOverview: ...
++    def save_diff(self, snap: RecheckDiffSnapshot): ...
++    def save_review(self, snap: DeviceReviewContext): ...
++    def get_diff(self, prev_run_id: str, curr_run_id: str) -> RecheckDiffSnapshot: ...
++    def get_review(self, run_id: str, device_name: str) -> DeviceReviewContext: ...
++    def save_export(self, snap: ExportArtifact): ...
++    def get_exports(self, run_id: str) -> List[ExportArtifact]: ...
++
++class IExcelReader(Protocol):
++    def read(self, file_path: str) -> Dict[str, Any]: ...
+diff --git a/src/infrastructure/__pycache__/__init__.cpython-314.pyc b/src/infrastructure/__pycache__/__init__.cpython-314.pyc
+index 289372a..65a40da 100644
+Binary files a/src/infrastructure/__pycache__/__init__.cpython-314.pyc and b/src/infrastructure/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/infrastructure/__pycache__/excel_reader.cpython-314.pyc b/src/infrastructure/__pycache__/excel_reader.cpython-314.pyc
+index 85ff5a9..cb04ac3 100644
+Binary files a/src/infrastructure/__pycache__/excel_reader.cpython-314.pyc and b/src/infrastructure/__pycache__/excel_reader.cpython-314.pyc differ
+diff --git a/src/infrastructure/__pycache__/repository.cpython-314.pyc b/src/infrastructure/__pycache__/repository.cpython-314.pyc
+index 14518dd..dcdb689 100644
+Binary files a/src/infrastructure/__pycache__/repository.cpython-314.pyc and b/src/infrastructure/__pycache__/repository.cpython-314.pyc differ
+diff --git a/src/infrastructure/repository.py b/src/infrastructure/repository.py
+index 7706931..9de4e9e 100644
+--- a/src/infrastructure/repository.py
++++ b/src/infrastructure/repository.py
+@@ -74,6 +74,17 @@ class ResultRepository:
+         d[snap.run_id] = snap.__dict__
+         _write_json("run_executions.json", d)
+ 
++    def get_run_execution(self, run_id: str) -> RunExecutionSnapshot:
++        d = _read_json("run_executions.json")
++        if run_id in d:
++            snap_data = d[run_id]
++            if isinstance(snap_data.get('started_at'), str):
++                snap_data['started_at'] = datetime.datetime.fromisoformat(snap_data['started_at'])
++            if isinstance(snap_data.get('completed_at'), str):
++                snap_data['completed_at'] = datetime.datetime.fromisoformat(snap_data['completed_at'])
++            return RunExecutionSnapshot(**snap_data)
++        return None
++
+     def save_statistics(self, snap: RunStatisticsSnapshot):
+         d = _read_json("run_statistics.json")
+         d[snap.run_id] = snap.__dict__
+diff --git a/src/presentation/__init__.py b/src/presentation/__init__.py
+index e69de29..d5f922f 100644
+--- a/src/presentation/__init__.py
++++ b/src/presentation/__init__.py
+@@ -0,0 +1 @@
++from .result_delivery import ResultDeliveryService
+diff --git a/src/presentation/__pycache__/__init__.cpython-314.pyc b/src/presentation/__pycache__/__init__.cpython-314.pyc
+new file mode 100644
+index 0000000..fcb0fcf
+Binary files /dev/null and b/src/presentation/__pycache__/__init__.cpython-314.pyc differ
+diff --git a/src/presentation/__pycache__/result_delivery.cpython-314.pyc b/src/presentation/__pycache__/result_delivery.cpython-314.pyc
+new file mode 100644
+index 0000000..bdfe871
+Binary files /dev/null and b/src/presentation/__pycache__/result_delivery.cpython-314.pyc differ
+diff --git a/src/presentation/cli/main.py b/src/presentation/cli/main.py
+index cec2799..3ed87d9 100755
+--- a/src/presentation/cli/main.py
++++ b/src/presentation/cli/main.py
+@@ -11,7 +11,25 @@ from src.application.review_services.review_service import ReviewService
+ from src.application.recheck_services.recheck_service import RecheckService
+ from src.application.export_services.export_service import ExportService
+ from src.crosscutting.errors.exceptions import CheckToolBaseError
+-from src.infrastructure.repository import TaskRepository
++from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository
++from src.infrastructure.excel_reader import ExcelReader
++
++def get_services():
++    task_repo = TaskRepository()
++    baseline_repo = BaselineRepository()
++    result_repo = ResultRepository()
++    excel_reader = ExcelReader()
++    
++    return {
++        "baseline_service": BaselineService(baseline_repo),
++        "task_service": TaskService(task_repo, baseline_repo),
++        "recognition_service": RecognitionService(task_repo, result_repo, excel_reader),
++        "check_run_service": CheckRunService(task_repo, baseline_repo, result_repo),
++        "result_query_service": ResultQueryService(result_repo),
++        "review_service": ReviewService(result_repo, task_repo),
++        "recheck_service": RecheckService(result_repo),
++        "export_service": ExportService(result_repo),
++    }
+ 
+ def main():
+     parser = argparse.ArgumentParser(prog="checktool", description="CheckTool CLI")
+@@ -38,6 +56,12 @@ def main():
+     # run
+     run_parser = subparsers.add_parser("run", help="Run checks")
+     run_parser.add_argument("--task", required=True, help="Task ID")
++    run_parser.add_argument("--copy-result", dest="copy_result", action="store_true", default=True, help="Copy result to clipboard (default)")
++    run_parser.add_argument("--no-copy-result", dest="copy_result", action="store_false", help="Disable clipboard copy")
++    run_parser.add_argument("--open-result", dest="open_result", action="store_true", default=True, help="Open result file in IDE (default)")
++    run_parser.add_argument("--no-open-result", dest="open_result", action="store_false", help="Disable opening in IDE")
++    run_parser.add_argument("--result-format", default="markdown", choices=["markdown", "text"], help="Output result format")
++    run_parser.add_argument("--max-issues", type=int, default=20, help="Max number of issues to display")
+ 
+     # summary
+     summary_parser = subparsers.add_parser("summary", help="View summary")
+@@ -78,35 +102,62 @@ def main():
+         sys.exit(1)
+ 
+     try:
++        services = get_services()
++        
+         if args.command == "baseline":
+-            svc = BaselineService()
++            svc = services["baseline_service"]
+             res = svc.list_baselines()
+             print("Baselines:")
+             for b in res:
+                 print(f" - {b.baseline_id} (version: {b.baseline_version})")
+ 
+         elif args.command == "task":
+-            svc = TaskService()
++            svc = services["task_service"]
+             task_id = svc.create_task(args.baseline, args.file)
+             print(f"Task created: {task_id}")
+ 
+         elif args.command == "recognize":
+-            svc = RecognitionService()
++            svc = services["recognition_service"]
+             res = svc.recognize_data(args.task)
+             print(f"Recognized: {res}")
+ 
+         elif args.command == "confirm-recognition":
+-            svc = RecognitionService()
++            svc = services["recognition_service"]
+             res = svc.confirm_recognition(args.task)
+             print(f"Confirmed: {res}")
+ 
+         elif args.command == "run":
+-            svc = CheckRunService()
++            svc = services["check_run_service"]
+             run_id = svc.run_checks(args.task)
+             print(f"Run completed. Run ID: {run_id}")
++            
++            # Fetch details for result delivery
++            query_svc = services["result_query_service"]
++            summary = query_svc.get_summary(run_id)
++            stats = query_svc.get_statistics(run_id)
++            issues = query_svc.get_issues(run_id)
++            
++            from src.presentation.result_delivery import ResultDeliveryService
++            delivery_svc = ResultDeliveryService()
++            formatted = delivery_svc.format_output(
++                task_id=args.task, 
++                run_id=run_id, 
++                summary=summary, 
++                stats=stats, 
++                issues=issues, 
++                max_issues=args.max_issues,
++                fmt=args.result_format
++            )
++            
++            delivery_svc.deliver_result(
++                formatted, 
++                copy=args.copy_result, 
++                open_ide=args.open_result, 
++                fmt=args.result_format
++            )
+ 
+         elif args.command == "summary":
+-            svc = ResultQueryService()
++            svc = services["result_query_service"]
+             summary = svc.get_summary(args.run)
+             if summary:
+                 print(f"Summary for {args.run}: {summary.summary}")
+@@ -114,7 +165,7 @@ def main():
+                 print("Summary not found.")
+ 
+         elif args.command == "statistics":
+-            svc = ResultQueryService()
++            svc = services["result_query_service"]
+             stats = svc.get_statistics(args.run)
+             if stats:
+                 print(f"Statistics for {args.run}:")
+@@ -126,7 +177,7 @@ def main():
+                 print("Statistics not found.")
+ 
+         elif args.command == "issues":
+-            svc = ResultQueryService()
++            svc = services["result_query_service"]
+             issues = svc.get_issues(args.run)
+             if issues:
+                 print(f"Issues for {args.run}: {len(issues.issues)}")
+@@ -137,7 +188,7 @@ def main():
+                 print("Issues not found.")
+ 
+         elif args.command == "review":
+-            svc = ReviewService()
++            svc = services["review_service"]
+             ctx = svc.review_issues(args.run, args.device)
+             print(f"Review context for {args.device}:")
+             print(f"  connected_devices: {ctx.connected_devices}")
+@@ -146,7 +197,7 @@ def main():
+             print(f"  related_issues: {len(ctx.related_issues)}")
+ 
+         elif args.command == "diff":
+-            svc = RecheckService()
++            svc = services["recheck_service"]
+             diff = svc.generate_diff(args.task, args.prev, args.curr)
+             print(f"Diff Summary:")
+             print(f"  new: {diff.diff_data['new']}")
+@@ -159,7 +210,7 @@ def main():
+             print(f"  per_device_diff: {diff.risk_trend['per_device_diff']}")
+ 
+         elif args.command == "export":
+-            svc = ExportService()
++            svc = services["export_service"]
+             art = svc.export(args.run, args.format)
+             print(f"Exported artifact for {args.run}, format {art.format}")
+             
+diff --git a/src/presentation/local_web/main.py b/src/presentation/local_web/main.py
+index 34c7688..2090365 100644
+--- a/src/presentation/local_web/main.py
++++ b/src/presentation/local_web/main.py
+@@ -2,19 +2,28 @@ from fastapi import FastAPI, Request, Form
+ from fastapi.responses import RedirectResponse, FileResponse
+ from fastapi.templating import Jinja2Templates
+ import os
++import json
+ from src.application.query_services import QueryService
+ from src.application.recognition_services.recognition_service import RecognitionService
+ from src.application.rule_governance_service import RuleGovernanceService
+-
+ from src.application.rule_editor_service import RuleEditorService
+-import json
++from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository
++from src.infrastructure.excel_reader import ExcelReader
+ 
+ app = FastAPI(title="CheckTool Local UI")
+ templates = Jinja2Templates(directory="src/presentation/local_web/templates")
+-query_service = QueryService()
+-recognition_service = RecognitionService()
+-rule_governance = RuleGovernanceService()
+-rule_editor = RuleEditorService()
++
++# Initialize repositories (Composition Root)
++task_repo = TaskRepository()
++baseline_repo = BaselineRepository()
++result_repo = ResultRepository()
++excel_reader = ExcelReader()
++
++# Initialize services with injected dependencies
++query_service = QueryService(task_repo=task_repo, result_repo=result_repo)
++recognition_service = RecognitionService(task_repo=task_repo, result_repo=result_repo, excel_reader=excel_reader)
++rule_governance = RuleGovernanceService(baseline_repo=baseline_repo)
++rule_editor = RuleEditorService(repo=baseline_repo)
+ 
+ @app.get("/")
+ async def task_list(request: Request):
+@@ -180,7 +189,7 @@ async def rollback_baseline(request: Request, baseline_id: str = Form(...), vers
+ async def baseline_version_detail(request: Request, version: str, baseline_id: str = "B001"):
+     # Reusing rule_governance list_rule_definitions would need adaptation to read historical versions.
+     # For MVP, we will use a quick list representation.
+-    baseline = query_service.repo.get_by_id(baseline_id)
++    baseline = baseline_repo.get_by_id(baseline_id)
+     rules_dict = rule_editor._get_rule_set_for_version(baseline, version)
+     return templates.TemplateResponse(request=request, name="baseline_version_detail.html", context={"version": version, "rules": rules_dict, "baseline_id": baseline_id})
+ 
+diff --git a/src/presentation/result_delivery.py b/src/presentation/result_delivery.py
+new file mode 100644
+index 0000000..bb20449
+--- /dev/null
++++ b/src/presentation/result_delivery.py
+@@ -0,0 +1,101 @@
++import logging
++from typing import Dict, Any, List
++from src.crosscutting.clipboard import copy_to_clipboard
++from src.crosscutting.ide_launcher import open_in_ide
++from src.crosscutting.temp_files import create_temp_result_file
++
++logger = logging.getLogger(__name__)
++
++class ResultDeliveryService:
++    def format_output(self, task_id: str, run_id: str, summary: Any, stats: Any, issues: Any, max_issues: int = 20, fmt: str = "markdown") -> str:
++        """Formats the result data into a string (markdown or text)."""
++        
++        # Boundary handling for max_issues
++        if max_issues < 0:
++            max_issues = 0
++
++        lines = []
++        is_md = (fmt == "markdown")
++        
++        h1 = "# " if is_md else ""
++        h2 = "## " if is_md else ""
++        h3 = "### " if is_md else ""
++        bold = "**" if is_md else ""
++        list_item = "- "
++        
++        lines.append(f"{h1}检查执行结果\n")
++        
++        # Basic Info
++        lines.append(f"{h2}基本信息\n")
++        lines.append(f"{list_item}{bold}任务ID{bold}: {task_id}")
++        lines.append(f"{list_item}{bold}运行ID{bold}: {run_id}")
++        lines.append("")
++        
++        # Execution Summary
++        lines.append(f"{h2}执行摘要\n")
++        
++        total_issues = issues.total_issues if issues and hasattr(issues, 'total_issues') else 0
++        lines.append(f"{list_item}{bold}问题总数{bold}: {total_issues}")
++        
++        if issues and hasattr(issues, "by_severity") and issues.by_severity:
++            for sev, count in issues.by_severity.items():
++                lines.append(f"  {list_item}{sev}: {count}")
++        lines.append("")
++        
++        # Overview Summary
++        lines.append(f"{h2}总览摘要\n")
++        if summary and hasattr(summary, "summary"):
++            lines.append(f"{summary.summary}\n")
++        else:
++            lines.append("无总览信息\n")
++            
++        # Issues List
++        lines.append(f"{h2}问题清单\n")
++        if issues and hasattr(issues, "issues") and issues.issues and max_issues > 0:
++            display_issues = issues.issues[:max_issues]
++            lines.append(f"{bold}显示前 {len(display_issues)} 条，共 {len(issues.issues)} 条问题{bold}\n")
++            
++            for i, issue in enumerate(display_issues, 1):
++                rule_id = getattr(issue, 'rule_id', 'Unknown')
++                severity = getattr(issue, 'severity', 'Unknown')
++                device_name = getattr(issue, 'device_name', 'Unknown')
++                actual_value = getattr(issue, 'actual_value', 'Unknown')
++                
++                lines.append(f"{h3}{i}. [{severity}] {rule_id}")
++                lines.append(f"{list_item}{bold}设备名称{bold}: {device_name}")
++                lines.append(f"{list_item}{bold}实际值{bold}: {actual_value}")
++                lines.append("")
++        elif max_issues == 0:
++            lines.append("问题显示被禁用 (max_issues=0)。\n")
++        else:
++            lines.append("没有发现问题。\n")
++            
++        import datetime
++        if is_md:
++            lines.append("---")
++        else:
++            lines.append("-" * 20)
++        lines.append(f"生成时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
++        
++        return "\n".join(lines)
++
++    def deliver_result(self, formatted_text: str, copy: bool = True, open_ide: bool = True, fmt: str = "markdown"):
++        """Delivers the formatted text according to requested options."""
++        ext = "md" if fmt == "markdown" else "txt"
++        
++        if copy:
++            success = copy_to_clipboard(formatted_text)
++            if success:
++                logger.info("Result copied to clipboard successfully.")
++            else:
++                logger.warning("Failed to copy result to clipboard.")
++                
++        if open_ide:
++            temp_file = create_temp_result_file(formatted_text, ext)
++            if temp_file:
++                logger.info(f"Temporary result file created at: {temp_file}")
++                success = open_in_ide(temp_file)
++                if not success:
++                    logger.warning("Failed to open IDE.")
++            else:
++                logger.warning("Failed to create temporary result file.")
+diff --git a/tests/__pycache__/test_result_delivery.cpython-314-pytest-9.0.2.pyc b/tests/__pycache__/test_result_delivery.cpython-314-pytest-9.0.2.pyc
+new file mode 100644
+index 0000000..7c6cbd9
+Binary files /dev/null and b/tests/__pycache__/test_result_delivery.cpython-314-pytest-9.0.2.pyc differ
+diff --git a/tests/__pycache__/test_smoke.cpython-314-pytest-9.0.2.pyc b/tests/__pycache__/test_smoke.cpython-314-pytest-9.0.2.pyc
+new file mode 100644
+index 0000000..62af803
+Binary files /dev/null and b/tests/__pycache__/test_smoke.cpython-314-pytest-9.0.2.pyc differ
+diff --git a/tests/test_result_delivery.py b/tests/test_result_delivery.py
+new file mode 100644
+index 0000000..2db9da0
+--- /dev/null
++++ b/tests/test_result_delivery.py
+@@ -0,0 +1,132 @@
++import pytest
++import os
++from unittest.mock import patch
++from src.presentation.result_delivery import ResultDeliveryService
++
++class MockSummary:
++    def __init__(self, text):
++        self.summary = text
++
++class MockStats:
++    def __init__(self, devices, ports):
++        self.total_devices = devices
++        self.total_ports = ports
++
++class MockIssue:
++    def __init__(self, rule_id, severity, device_name, actual_value):
++        self.rule_id = rule_id
++        self.severity = severity
++        self.device_name = device_name
++        self.actual_value = actual_value
++
++class MockIssues:
++    def __init__(self, issues_list):
++        self.issues = issues_list
++        self.total_issues = len(issues_list)
++        self.by_severity = {}
++        for issue in issues_list:
++            self.by_severity[issue.severity] = self.by_severity.get(issue.severity, 0) + 1
++
++@pytest.fixture
++def delivery_service():
++    return ResultDeliveryService()
++
++def test_format_output_markdown(delivery_service):
++    issues = MockIssues([
++        MockIssue("rule1", "error", "DeviceA", "val1"),
++        MockIssue("rule2", "warning", "DeviceB", "val2")
++    ])
++    
++    res = delivery_service.format_output(
++        task_id="task-123", 
++        run_id="run-456", 
++        summary=MockSummary("Test summary"), 
++        stats=MockStats(2, 4), 
++        issues=issues, 
++        max_issues=10, 
++        fmt="markdown"
++    )
++    
++    assert "# 检查执行结果" in res
++    assert "**任务ID**: task-123" in res
++    assert "error: 1" in res
++    assert "Test summary" in res
++    assert "### 1. [error] rule1" in res
++    assert "**设备名称**: DeviceA" in res
++
++def test_format_output_text(delivery_service):
++    issues = MockIssues([
++        MockIssue("rule1", "error", "DeviceA", "val1")
++    ])
++    res = delivery_service.format_output(
++        task_id="t1", run_id="r1", summary=MockSummary("Sum"), stats=None, issues=issues, fmt="text"
++    )
++    
++    assert "检查执行结果" in res
++    assert "# 检查执行结果" not in res
++    assert "**任务ID**" not in res
++    assert "- 任务ID: t1" in res
++
++def test_format_output_edge_cases(delivery_service):
++    # Empty issues, None stats, None summary
++    res = delivery_service.format_output("t1", "r1", None, None, None)
++    assert "无总览信息" in res
++    assert "没有发现问题" in res
++    
++    # max_issues = 0
++    issues = MockIssues([MockIssue("rule1", "error", "DeviceA", "val1")])
++    res2 = delivery_service.format_output("t1", "r1", None, None, issues, max_issues=0)
++    assert "问题显示被禁用" in res2
++    assert "DeviceA" not in res2
++
++    # max_issues < 0
++    res3 = delivery_service.format_output("t1", "r1", None, None, issues, max_issues=-5)
++    assert "问题显示被禁用" in res3
++
++@patch('src.presentation.result_delivery.copy_to_clipboard')
++@patch('src.presentation.result_delivery.open_in_ide')
++@patch('src.presentation.result_delivery.create_temp_result_file')
++def test_deliver_result_success(mock_create_temp, mock_open_ide, mock_copy, delivery_service):
++    mock_copy.return_value = True
++    mock_create_temp.return_value = "/tmp/fake.md"
++    mock_open_ide.return_value = True
++    
++    delivery_service.deliver_result("content", copy=True, open_ide=True, fmt="markdown")
++    
++    mock_copy.assert_called_once_with("content")
++    mock_create_temp.assert_called_once_with("content", "md")
++    mock_open_ide.assert_called_once_with("/tmp/fake.md")
++
++@patch('src.presentation.result_delivery.copy_to_clipboard')
++@patch('src.presentation.result_delivery.open_in_ide')
++@patch('src.presentation.result_delivery.create_temp_result_file')
++def test_deliver_result_fallback_failures(mock_create_temp, mock_open_ide, mock_copy, delivery_service):
++    mock_copy.return_value = False
++    mock_create_temp.return_value = "/tmp/fake.txt"
++    mock_open_ide.return_value = False
++    
++    # Should not raise exception
++    delivery_service.deliver_result("content", copy=True, open_ide=True, fmt="text")
++    
++    mock_copy.assert_called_once_with("content")
++    mock_create_temp.assert_called_once_with("content", "txt")
++    mock_open_ide.assert_called_once_with("/tmp/fake.txt")
++
++@patch('src.presentation.result_delivery.copy_to_clipboard')
++@patch('src.presentation.result_delivery.open_in_ide')
++@patch('src.presentation.result_delivery.create_temp_result_file')
++def test_deliver_result_disabled(mock_create_temp, mock_open_ide, mock_copy, delivery_service):
++    delivery_service.deliver_result("content", copy=False, open_ide=False)
++    
++    mock_copy.assert_not_called()
++    mock_create_temp.assert_not_called()
++    mock_open_ide.assert_not_called()
++
++def test_temp_file_creation():
++    from src.crosscutting.temp_files import create_temp_result_file
++    path = create_temp_result_file("hello world", "md")
++    assert path != ""
++    assert os.path.exists(path)
++    with open(path, "r", encoding="utf-8") as f:
++        assert f.read() == "hello world"
++    os.remove(path)
+diff --git a/tests/test_smoke.py b/tests/test_smoke.py
+new file mode 100644
+index 0000000..105b732
+--- /dev/null
++++ b/tests/test_smoke.py
+@@ -0,0 +1,16 @@
++import pytest
++import os
++from src.crosscutting.config.settings import settings
++from src.domain.rule_compiler import TemplateRegistry
++
++def test_settings_path_resolution():
++    """Test that settings resolves BASE_DIR correctly and is not hardcoded to /workspace"""
++    assert settings.BASE_DIR is not None
++    assert os.path.isabs(settings.BASE_DIR), "BASE_DIR should be an absolute path"
++    
++def test_template_registry_availability():
++    """Test that Domain layer logic can be imported and executed"""
++    template = TemplateRegistry.get_template("group_consistency")
++    assert template is not None
++    assert template["target_executor"] == "group_consistency"
++    assert "supported_params" in template

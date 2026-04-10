@@ -1,11 +1,15 @@
-from src.infrastructure.repository import ResultRepository
+from src.domain.interfaces import IResultRepository
 from src.domain.result_model import RecheckDiffSnapshot, IssueItem
 from typing import Dict, Any, Tuple
 import dataclasses
 
 class RecheckService:
-    def __init__(self):
-        self.result_repo = ResultRepository()
+    def __init__(self, result_repo: IResultRepository = None):
+        if result_repo is None:
+            from src.infrastructure.repository import ResultRepository
+            self.result_repo = result_repo or ResultRepository()
+        else:
+            self.result_repo = result_repo
         
     def _generate_match_key(self, issue: IssueItem) -> str:
         """

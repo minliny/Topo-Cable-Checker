@@ -1,15 +1,21 @@
-from src.infrastructure.repository import TaskRepository, ResultRepository
-from src.infrastructure.excel_reader import ExcelReader
+from src.domain.interfaces import ITaskRepository, IResultRepository, IExcelReader
 from src.domain.task_model import TaskStatus
 from src.domain.result_model import RecognitionResultSnapshot
 from src.crosscutting.errors.exceptions import TaskError
 from typing import Dict, Any
 
 class RecognitionService:
-    def __init__(self):
-        self.task_repo = TaskRepository()
-        self.result_repo = ResultRepository()
-        self.excel_reader = ExcelReader()
+    def __init__(self, task_repo: ITaskRepository = None, result_repo: IResultRepository = None, excel_reader: IExcelReader = None):
+        if task_repo is None or result_repo is None or excel_reader is None:
+            from src.infrastructure.repository import TaskRepository, ResultRepository
+            from src.infrastructure.excel_reader import ExcelReader
+            self.task_repo = task_repo or TaskRepository()
+            self.result_repo = result_repo or ResultRepository()
+            self.excel_reader = excel_reader or ExcelReader()
+        else:
+            self.task_repo = task_repo
+            self.result_repo = result_repo
+            self.excel_reader = excel_reader
         
     def recognize_data(self, task_id: str) -> Dict[str, Any]:
         task = self.task_repo.get_by_id(task_id)

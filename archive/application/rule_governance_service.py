@@ -1,11 +1,15 @@
 from typing import List, Dict, Any, Optional, Tuple
 from src.application.dto_models import RuleDefinitionDTO, CompiledRuleDTO, TemplateRegistryDTO, CompileErrorDTO
-from src.infrastructure.repository import BaselineRepository
+from src.domain.interfaces import IBaselineRepository
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError, TemplateRegistry
 
 class RuleGovernanceService:
-    def __init__(self):
-        self.repo = BaselineRepository()
+    def __init__(self, baseline_repo: IBaselineRepository = None):
+        if baseline_repo is None:
+            from src.infrastructure.repository import BaselineRepository
+            self.repo = baseline_repo or BaselineRepository()
+        else:
+            self.repo = baseline_repo
         self._compiled_cache: Dict[str, Dict[str, Any]] = {}
         self._compile_errors: Dict[str, List[CompileErrorDTO]] = {}
 
