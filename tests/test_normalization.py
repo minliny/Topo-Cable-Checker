@@ -65,8 +65,22 @@ def test_normalization_row_constraints():
                 ],
                 row_constraints=[
                     RowConstraint(
+                        id="R_FW_STATUS",
+                        name="Firewall Status Check",
+                        description="Firewalls must not be Inactive",
                         condition=lambda row: not (row.get("device_type") == "Firewall" and row.get("status") == "Inactive"),
-                        error_message="Firewalls cannot be Inactive"
+                        error_message="Firewalls cannot be Inactive",
+                        severity="error",
+                        enabled=True
+                    ),
+                    RowConstraint(
+                        id="R_RACK_ID",
+                        name="Rack ID Check",
+                        description="Rack ID must be provided",
+                        condition=lambda row: bool(row.get("rack_id")),
+                        error_message="Rack ID is missing",
+                        severity="warning",
+                        enabled=False
                     )
                 ]
             )
@@ -90,6 +104,12 @@ def test_normalization_row_constraints():
     assert len(issues) == 1
     assert issues[0].category == "constraint_violation"
     assert issues[0].stage == "normalization"
+    assert issues[0].severity == "error"
+    assert issues[0].evidence["rule_id"] == "R_FW_STATUS"
+    assert issues[0].evidence["rule_name"] == "Firewall Status Check"
+    assert "Firewalls cannot be Inactive" in issues[0].message
+    assert issues[0].source_row == 3
+
 def test_normalization_enum_type_issues():
     svc = NormalizationService()
     # Overwrite contract for testing

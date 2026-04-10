@@ -95,18 +95,21 @@ class NormalizationService:
         # Phase 2: RowConstraint Validation (Cross-field validation)
         if sheet_config and hasattr(sheet_config, "row_constraints"):
             for constraint in sheet_config.row_constraints:
+                if not constraint.enabled:
+                    continue
+                    
                 try:
                     is_valid = constraint.condition(normalized_row)
                     if not is_valid:
                         issues.append(IssueItem(
                             issue_id=generate_id(),
                             message=f"Constraint violation in sheet '{source_sheet}' row {source_row}: {constraint.error_message}",
-                            evidence={"sheet": source_sheet, "row": source_row},
+                            evidence={"sheet": source_sheet, "row": source_row, "rule_id": constraint.id, "rule_name": constraint.name},
                             expected="Constraint satisfied",
                             actual="Constraint violated",
-                            details={"row_data": normalized_row, "error_message": constraint.error_message},
+                            details={"row_data": normalized_row, "error_message": constraint.error_message, "rule_id": constraint.id},
                             source_row=source_row,
-                            severity="high",
+                            severity=constraint.severity,
                             category="constraint_violation",
                             stage="normalization"
                         ))
@@ -114,10 +117,10 @@ class NormalizationService:
                     issues.append(IssueItem(
                         issue_id=generate_id(),
                         message=f"Error evaluating constraint in sheet '{source_sheet}' row {source_row}: {str(e)}",
-                        evidence={"sheet": source_sheet, "row": source_row},
+                        evidence={"sheet": source_sheet, "row": source_row, "rule_id": constraint.id},
                         expected="Evaluation success",
                         actual="Exception",
-                        details={"row_data": normalized_row, "error": str(e)},
+                        details={"row_data": normalized_row, "error": str(e), "rule_id": constraint.id},
                         source_row=source_row,
                         severity="high",
                         category="constraint_violation",

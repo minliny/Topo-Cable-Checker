@@ -13,9 +13,15 @@ class HeaderMapping:
 
 @dataclass
 class RowConstraint:
+    id: str
+    name: str
+    description: str
     # A function that takes a row dict and returns True if the constraint is satisfied
     condition: Callable[[Dict[str, Any]], bool]
     error_message: str
+    severity: str = "warning"  # warning or error
+    enabled: bool = True
+    group: str = "validation"  # e.g., "validation", "compliance"
     required_fields: Optional[List[str]] = None
     allowed_combinations: Optional[List[Dict[str, Any]]] = None
 

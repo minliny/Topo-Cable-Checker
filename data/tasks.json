@@ -262,5 +262,17 @@
     "created_at": "2026-04-10 03:51:31.762779",
     "latest_run_id": "d6c73a00-0f6d-4bb8-aacc-fd002424c4df",
     "parent_task_id": null
+  },
+  "fcda4615-f624-4290-9d29-e7beb7116aec": {
+    "task_id": "fcda4615-f624-4290-9d29-e7beb7116aec",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.4",
+    "task_status": "check_completed",
+    "created_at": "2026-04-10 03:58:13.336579",
+    "latest_run_id": "5298a551-e5ff-473b-aef3-774c0d8ede81",
+    "parent_task_id": null
   }
 }

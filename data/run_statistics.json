@@ -175,5 +175,12 @@
     "total_ports": 1,
     "total_links": 0,
     "device_type_distribution": {}
+  },
+  "5298a551-e5ff-473b-aef3-774c0d8ede81": {
+    "run_id": "5298a551-e5ff-473b-aef3-774c0d8ede81",
+    "total_devices": 0,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {}
   }
 }
