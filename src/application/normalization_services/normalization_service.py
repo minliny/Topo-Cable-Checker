@@ -5,6 +5,13 @@ class NormalizationService:
     """
     Converts raw excel row data into normalized Domain Facts:
     DeviceFact, PortFact, LinkFact
+    
+    TODO: Currently this service only performs basic field mapping.
+    Future enhancements required:
+    - Type validation for all fields
+    - Handling of missing or null values
+    - Exception blocking for malformed row data
+    - Application of domain-specific cleaning rules
     """
     def normalize(self, raw_data: Dict[str, Any]) -> NormalizedDataset:
         devices = []

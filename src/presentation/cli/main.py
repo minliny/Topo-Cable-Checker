@@ -214,12 +214,9 @@ def main():
             print(f"Exported artifact for {args.run}, format {art.format}")
             
         elif args.command == "status":
-            repo = TaskRepository()
-            task = repo.get_by_id(args.task)
-            if task:
-                print(f"Task {args.task} status: {task.task_status.value}")
-            else:
-                print(f"Task {args.task} not found")
+            svc = services["task_service"]
+            status = svc.get_task_status(args.task)
+            print(f"Task {args.task} status: {status}")
 
     except CheckToolBaseError as e:
         print(f"Error: {e}")

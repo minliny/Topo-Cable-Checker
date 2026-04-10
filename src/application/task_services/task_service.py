@@ -31,3 +31,9 @@ class TaskService:
         )
         self.task_repo.save(task)
         return task.task_id
+
+    def get_task_status(self, task_id: str) -> str:
+        task = self.task_repo.get_by_id(task_id)
+        if not task:
+            raise TaskError(f"Task {task_id} not found.")
+        return task.task_status.value

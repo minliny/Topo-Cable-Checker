@@ -1,3 +1,8 @@
+# [OPTIONAL_MODULE]
+# This module provides optional external-environment integration.
+# It is not part of the core port-checking flow.
+# Behavior may depend on OS / desktop / local environment setup.
+
 import logging
 from typing import Dict, Any, List
 from src.crosscutting.clipboard import copy_to_clipboard
