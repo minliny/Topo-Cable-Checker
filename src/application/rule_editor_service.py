@@ -10,12 +10,17 @@ from src.application.dto_models import (
     BaselineDiffDTO,
     RuleDiffItemDTO
 )
-from src.infrastructure.repository import BaselineRepository
+from src.domain.interfaces import IBaselineRepository
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError, TemplateRegistry
+from typing import Tuple
 
 class RuleEditorService:
-    def __init__(self):
-        self.repo = BaselineRepository()
+    def __init__(self, repo: IBaselineRepository = None):
+        if repo is None:
+            from src.infrastructure.repository import BaselineRepository
+            self.repo = repo or BaselineRepository()
+        else:
+            self.repo = repo
         # Mocking an in-memory draft workspace for the editor
         # Structure: { baseline_id: { rule_id: rule_definition_dict } }
         self._draft_workspace: Dict[str, Dict[str, Any]] = {}

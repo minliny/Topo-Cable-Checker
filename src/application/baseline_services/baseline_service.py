@@ -1,10 +1,14 @@
-from src.infrastructure.repository import BaselineRepository
+from src.domain.interfaces import IBaselineRepository
 from src.domain.baseline_model import BaselineProfile
 from typing import List
 
 class BaselineService:
-    def __init__(self):
-        self.repo = BaselineRepository()
+    def __init__(self, repo: IBaselineRepository = None):
+        if repo is None:
+            from src.infrastructure.repository import BaselineRepository
+            self.repo = repo or BaselineRepository()
+        else:
+            self.repo = repo
         
     def list_baselines(self) -> List[BaselineProfile]:
         baselines = self.repo.get_all()

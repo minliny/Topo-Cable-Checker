@@ -1,14 +1,20 @@
 from typing import List, Dict, Any, Optional
-from src.infrastructure.repository import TaskRepository, ResultRepository
+from src.domain.interfaces import ITaskRepository, IResultRepository
 from src.application.dto_models import (
     TaskSummaryDTO, RecognitionSummaryDTO, RunOverviewDTO, 
     IssueListItemDTO, DeviceReviewDTO, RecheckDiffDTO, ExportArtifactDTO, IssueListResultDTO
 )
 
 class QueryService:
-    def __init__(self):
-        self.task_repo = TaskRepository()
-        self.result_repo = ResultRepository()
+    def __init__(self, task_repo: ITaskRepository = None, result_repo: IResultRepository = None):
+        if task_repo is None or result_repo is None:
+            # Fallback for backward compatibility if not injected
+            from src.infrastructure.repository import TaskRepository, ResultRepository
+            self.task_repo = task_repo or TaskRepository()
+            self.result_repo = result_repo or ResultRepository()
+        else:
+            self.task_repo = task_repo
+            self.result_repo = result_repo
 
     def get_task_summary(self, task_id: str) -> Optional[TaskSummaryDTO]:
         task = self.task_repo.get_by_id(task_id)

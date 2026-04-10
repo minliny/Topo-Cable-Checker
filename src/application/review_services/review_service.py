@@ -1,22 +1,27 @@
-from src.infrastructure.repository import ResultRepository, TaskRepository, _read_json
+from src.domain.interfaces import IResultRepository, ITaskRepository
 from src.application.normalization_services.normalization_service import NormalizationService
 from src.domain.result_model import DeviceReviewContext
 from src.crosscutting.errors.exceptions import TaskError
 import dataclasses
 
 class ReviewService:
-    def __init__(self):
-        self.result_repo = ResultRepository()
-        self.task_repo = TaskRepository()
+    def __init__(self, result_repo: IResultRepository = None, task_repo: ITaskRepository = None):
+        if result_repo is None or task_repo is None:
+            from src.infrastructure.repository import ResultRepository, TaskRepository
+            self.result_repo = result_repo or ResultRepository()
+            self.task_repo = task_repo or TaskRepository()
+        else:
+            self.result_repo = result_repo
+            self.task_repo = task_repo
         self.normalization_service = NormalizationService()
         
     def review_issues(self, run_id: str, device_name: str) -> DeviceReviewContext:
         # 1. Fetch Execution and Task to get Normalized Dataset
-        execution = _read_json("run_executions.json").get(run_id)
+        execution = self.result_repo.get_run_execution(run_id)
         if not execution:
             raise TaskError(f"Run {run_id} not found.")
             
-        task_id = execution["task_id"]
+        task_id = execution.task_id
         rec_snapshot = self.result_repo.get_recognition(task_id)
         raw_data = rec_snapshot.recognized_data["row_data"]
         dataset = self.normalization_service.normalize(raw_data)

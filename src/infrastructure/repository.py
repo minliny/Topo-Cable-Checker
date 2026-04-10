@@ -74,6 +74,17 @@ class ResultRepository:
         d[snap.run_id] = snap.__dict__
         _write_json("run_executions.json", d)
 
+    def get_run_execution(self, run_id: str) -> RunExecutionSnapshot:
+        d = _read_json("run_executions.json")
+        if run_id in d:
+            snap_data = d[run_id]
+            if isinstance(snap_data.get('started_at'), str):
+                snap_data['started_at'] = datetime.datetime.fromisoformat(snap_data['started_at'])
+            if isinstance(snap_data.get('completed_at'), str):
+                snap_data['completed_at'] = datetime.datetime.fromisoformat(snap_data['completed_at'])
+            return RunExecutionSnapshot(**snap_data)
+        return None
+
     def save_statistics(self, snap: RunStatisticsSnapshot):
         d = _read_json("run_statistics.json")
         d[snap.run_id] = snap.__dict__
