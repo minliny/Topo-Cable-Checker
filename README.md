@@ -1,146 +1,178 @@
-# 连线端口检查工具
+# 规则治理工作台（Rule Governance Workbench）
 
-一个面向工程场景的本地化连线/端口检查与规则治理平台。
-
-它不只是一个临时的 Excel 校验脚本，而是一个支持 **数据导入、规则检查、问题输出、规则编辑、编译校验、版本发布与持续演进** 的工程质检系统。
+一个面向高风险规则配置场景的治理系统，提供规则编辑、校验、版本管理、差异对比、发布控制与安全回滚能力。
 
 ---
 
-## 项目定位
+## 项目简介
 
-本项目聚焦于设备、端口、链路、拓扑关系等工程数据的自动化检查，目标是把“写死在代码里的检查逻辑”升级为“可管理、可发布、可治理的规则平台”。
+本项目将“直接修改配置文件”的流程升级为**可验证、可追溯、可回滚的规则治理流程**，适用于对规则变更安全性要求较高的场景，例如：
 
-一句话概括：
+* 风控规则
+* 告警/阈值策略
+* 网络/拓扑检查规则
+* 任意高风险配置系统
 
-> 以端口/链路检查为核心，以规则引擎为基础，以规则编辑与治理为长期能力方向的工程检查平台。
+当前版本为 **MVP（最小可用产品）**，已具备完整端到端闭环能力。
 
 ---
 
 ## 核心能力
 
-- 工程表格数据导入与识别
-- 数据标准化与基础契约校验
-- 设备 / 端口 / 链路 / 拓扑规则检查
-- 结构化问题输出与结果聚合
-- Rule Catalog 驱动的规则定义与消费
-- 规则编辑器（表单化创建规则）
-- 草稿预编译与字段级错误映射
-- 规则发布、版本治理、差异分析与回滚
-- 后续支持 AI 辅助规则生成
+* **规则编辑工作台**：三栏结构（导航 / 主视图 / 辅助面板）
+* **结构化校验**：发布前拦截非法配置
+* **字段级定位**：错误可反向定位到具体输入位置
+* **版本化管理**：每次发布生成可追踪版本
+* **差异对比（Diff）**：查看规则新增 / 删除 / 修改
+* **安全回滚**：回滚生成候选草稿，不直接覆盖线上
+* **状态机驱动 UI**：复杂流程可推导、可恢复、可测试
 
 ---
 
-## 当前进度
+## 系统架构
 
-当前项目已完成或基本完成以下骨架能力：
+```text
+前端（React + TypeScript）
+  ↓
+API 层（FastAPI + DTO）
+  ↓
+应用层（发布 / 校验 / Diff / 回滚）
+  ↓
+领域层（规则模型 / 基线模型）
+  ↓
+基础设施层（JSON 持久化）
+```
 
-- 底层规则协议重构
-- `CompiledRule` 统一结构
-- `RuleMeta / Capability` 语义定义
-- `Rule Catalog` 目录与消费层
-- `RuleEditor MVP`
-- 表单校验与规则草稿生成
-- 编辑器到治理链路桥接 (Governance Bridge)
-- 草稿预编译 (compile preview)
-- 编译与结构校验联通
-- 字段级错误映射 (field-level error mapping)
-- 发布候选摘要基础
+设计原则：
 
-当前阶段判断：
-
-> 项目已经完成规则平台基础骨架，正从“架构验证期”进入“产品闭环期”。
-
----
-
-## 下一步重点
-
-当前最关键的下一步是：
-
-### Rule Publish Workflow MVP
-
-目标是把“规则草稿”真正发布为“正式 baseline”，建立最小可用的发布闭环，包括：
-
-- 发布前 compile + validate
-- baseline 版本生成
-- 发布摘要
-- 发布记录
-- 为 diff / 回滚打基础
+* 前后端解耦（API + DTO）
+* 状态机驱动 UI
+* 领域逻辑与接口分离
+* 数据持久化具备安全写入能力
 
 ---
 
-## 安装与配置
+## 项目结构
 
-1. **环境要求**: Python 3.8+
-2. **安装依赖**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```text
+frontend/        前端工作台
+src/             后端（应用 / 领域 / API）
+data/            基线与版本数据
+tests/           API 与集成测试
+docs/            文档（架构 / 验收 / 路线图）
+```
+
+---
 
 ## 快速开始
 
-使用 CLI 入口点进行各种操作：
+### 启动后端
 
 ```bash
-# 1. 查看基线列表
-python src/presentation/cli/main.py baseline list
-
-# 2. 创建检查任务
-python src/presentation/cli/main.py task create --baseline <id> --file <path>
-
-# 3. 执行识别
-python src/presentation/cli/main.py recognize --task <task_id>
-
-# 4. 确认识别结果
-python src/presentation/cli/main.py confirm-recognition --task <task_id>
-
-# 5. 执行检查规则并交付结果
-python src/presentation/cli/main.py run --task <task_id>
+./start_api.sh
 ```
 
-### 结果交付高级选项
-
-`run` 命令支持多种结果交付相关的参数控制：
+### 启动前端
 
 ```bash
-# 默认行为：将结果复制到剪贴板，并在 PyCharm/IDE 中打开 Markdown 格式报告
-python src/presentation/cli/main.py run --task <task_id>
-
-# 禁用所有交付行为（不复制剪贴板，不打开 IDE）
-python src/presentation/cli/main.py run --task <task_id> --no-copy-result --no-open-result
-
-# 指定输出为纯文本格式，并限制最多显示 10 个 Issue
-python src/presentation/cli/main.py run --task <task_id> --result-format text --max-issues 10
+./start_frontend.sh
 ```
+
+### 手动方式
+
+后端：
+
+```bash
+pip install fastapi uvicorn pydantic pytest httpx
+uvicorn src.presentation.api.main:app --reload
+```
+
+前端：
+
+```bash
+cd frontend
+npm install
+VITE_USE_MOCK_API=false VITE_API_BASE_URL=http://localhost:8000/api npm run dev
+```
+
+---
+
+## 基本使用流程
+
+```text
+编辑规则
+  → 校验
+  → 发布确认
+  → 发布成功 / 阻断
+  → 版本记录
+  → 差异对比
+  → 回滚候选
+```
+
+---
+
+## 测试与验收
+
+运行测试：
+
+```bash
+pytest -v
+```
+
+手工验收：
+
+* [docs/ACCEPTANCE_CHECKLIST.md](docs/ACCEPTANCE_CHECKLIST.md)
+
+演示流程：
+
+* [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
+
+---
+
+## 文档
+
+建议阅读顺序：
+
+1. [docs/PROJECT_STATUS_SUMMARY.md](docs/PROJECT_STATUS_SUMMARY.md)
+2. [docs/PROJECT_POSITIONING.md](docs/PROJECT_POSITIONING.md)
+3. [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
+4. [docs/ACCEPTANCE_CHECKLIST.md](docs/ACCEPTANCE_CHECKLIST.md)
+
+---
+
+## 已知限制
+
+* 当前未接入用户身份与权限体系
+* Diff 可进一步增强可读性
+* 大规模配置输入体验仍可优化
+* 持久化仍基于 JSON 文件（未接入数据库）
+
+详见：
+
+* [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)
 
 ---
 
 ## 路线图
 
-### 阶段 1：核心检查闭环
-数据输入、输入契约、规则执行、基础结果输出
+下一阶段重点：
 
-### 阶段 2：规则平台化
-`CompiledRule`、`RuleMeta / Capability`、`Rule Catalog`
-
-### 阶段 3：RuleEditor MVP
-规则类型选择、表单渲染、草稿生成、表单校验
-
-### 阶段 4：治理桥接 (Governance Bridge)
-草稿预编译 (compile preview)、compile + validate 联调、字段级错误映射 (field-level error mapping)
-
-### 阶段 5：发布治理闭环 (Rule Publish Workflow MVP)
-发布服务、baseline 版本生成、发布摘要、发布记录
-
-### 阶段 6：差异分析与回滚
-版本 diff、历史版本、回滚机制、影响分析
-
-### 阶段 7：产品增强与 AI 能力
-GUI 集成、结果展示增强、AI 辅助规则生成
+* 优化规则输入体验（如 Monaco Editor）
+* 提升 Diff 可读性
+* 引入权限与审批机制
+* 引入数据库与并发控制
 
 ---
 
-## 项目愿景
+## 项目定位
 
-长期来看，本项目将从“端口检查工具”演进为：
+> 一个具备规则发布、防错校验、版本追踪与安全回滚能力的规则治理工作台 MVP。
 
-**一个面向工程设备、端口、链路与拓扑数据的本地规则平台，支持从数据导入、结构化检查，到规则编辑、编译校验、版本发布、差异追踪与 AI 辅助生成的完整闭环。**
+---
+
+适用于：
+
+* 规则治理系统开发
+* 高风险配置管理场景
+* 状态机驱动 UI 架构参考
+* 前后端分离工作台设计参考

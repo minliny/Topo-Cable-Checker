@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import dataclasses
 from typing import Any, Dict, List
 from src.domain.task_model import CheckTask, TaskStatus
@@ -23,18 +24,34 @@ def _read_json(file_name: str) -> Dict:
 
 def _write_json(file_name: str, data: Dict):
     path = os.path.join(DATA_DIR, file_name)
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2, default=str)
+    # Safe atomic write to prevent corruption
+    fd, temp_path = tempfile.mkstemp(dir=DATA_DIR)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, default=str)
+        os.replace(temp_path, path)
+    except Exception as e:
+        os.remove(temp_path)
+        raise e
 
 class BaselineRepository:
     def get_all(self) -> List[BaselineProfile]:
         data = _read_json("baselines.json")
-        return [BaselineProfile(**v) for v in data.values()]
+        # Ensure fallback for newly added extension fields
+        profiles = []
+        for k, v in data.items():
+            if "version_history_meta" not in v:
+                v["version_history_meta"] = {}
+            profiles.append(BaselineProfile(**v))
+        return profiles
         
     def get_by_id(self, baseline_id: str) -> BaselineProfile:
         data = _read_json("baselines.json")
         if baseline_id in data:
-            return BaselineProfile(**data[baseline_id])
+            v = data[baseline_id]
+            if "version_history_meta" not in v:
+                v["version_history_meta"] = {}
+            return BaselineProfile(**v)
         return None
 
     def save(self, profile: BaselineProfile):
