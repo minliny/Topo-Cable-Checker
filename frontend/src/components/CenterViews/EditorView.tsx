@@ -49,14 +49,39 @@ const EditorView: React.FC<EditorViewProps> = ({
     });
   }, [draftData, form]);
 
-  // Jump to field driven by state
+  // Scroll to target field if requested
   useEffect(() => {
-    if (targetFieldPath && formRef.current) {
-      // Very basic highlight simulation
-      formRef.current.scrollToField(targetFieldPath);
-      // Note: In a real app, you might apply a temporary CSS class to highlight the field
+    if (targetFieldPath) {
+      // First attempt to use Ant Design's native scrollToField
+      try {
+        form.scrollToField(targetFieldPath, { behavior: 'smooth', block: 'center' });
+      } catch (e) {
+        // Ignore native error if field is not registered natively
+      }
+      
+      // Fallback: Manually try to scroll to the DOM element representing the field 
+      // Antd usually prefixes id with the form name or directly uses the field path as id
+      // Since our main inputs are "rule_type" and "params", we can target those IDs.
+      const elementId = targetFieldPath.includes('.') 
+        ? targetFieldPath.split('.')[0]  // "params.threshold" -> "params"
+        : targetFieldPath;
+        
+      const domEl = document.getElementById(elementId) || document.querySelector(`[data-field-path="${elementId}"]`);
+      
+      if (domEl) {
+        domEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Add a temporary highlight flash effect
+        const parentItem = domEl.closest('.ant-form-item');
+        if (parentItem) {
+          parentItem.classList.add('ring-2', 'ring-red-400', 'ring-offset-2', 'transition-all', 'duration-300');
+          setTimeout(() => {
+            parentItem.classList.remove('ring-2', 'ring-red-400', 'ring-offset-2');
+          }, 1500);
+        }
+      }
     }
-  }, [targetFieldPath]);
+  }, [targetFieldPath, form]);
 
   const handleValuesChange = (_changedValues: any, allValues: any) => {
     onChange(allValues);

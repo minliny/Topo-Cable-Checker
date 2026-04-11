@@ -162,9 +162,11 @@ The API contracts are strictly aligned with the Frontend's `src/types/dto.ts`.
 5. `src/presentation/api/routers/rules.py`: Endpoints for Validate, Publish, Rollback. *(Publish now persists via `BaselineRepository`)*
 
 ## 4. Current Integration Status
-- `GET /baselines`: OK
-- `GET /versions/{version_id}`: OK (Uses persisted `version_history_meta`)
-- `GET /diff`: OK (Upgraded from mock to real recursive dict comparison)
-- `POST /validate`: OK (Provides extracted `field_path`)
-- `POST /publish`: OK (Upgraded from simulated to real JSON persistence)
-- `POST /rollback`: OK (Hydrates configuration perfectly)
+All endpoints have graduated from "Simulated/Mocked" to **Real JSON Persistence / Real Domain Logic**.
+
+- `GET /baselines`: **Stable/Real** (Dynamically aggregates trees from file-based repository)
+- `GET /versions/{version_id}`: **Stable/Real** (Reads persisted `version_history_meta`)
+- `GET /diff`: **Stable/Real** (Computes real recursive dictionary comparison using Domain `RuleBaselineHistoryService`)
+- `POST /validate`: **Stable/Real** (Extracts strict `field_path` from underlying `RuleCompileError`)
+- `POST /publish`: **Stable/Real** (Persists JSON snapshots with atomic safety, automatically bumps semantic versioning)
+- `POST /rollback`: **Stable/Real** (Hydrates authentic configurations from deep historical snapshots)
