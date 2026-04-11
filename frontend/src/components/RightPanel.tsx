@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Tag, Collapse, Spin, Empty, Typography, Alert, Divider, Button } from 'antd';
 import { GitCommit, Plus, Minus, Edit3, HelpCircle, CheckCircle, FileSearch, Archive, UploadCloud } from 'lucide-react';
-import { ValidationResult, DiffResponse } from '../api/rules';
+import { ValidationResultDTO, DiffSourceTargetDTO } from '../types/dto';
 import { RightPanelMode } from '../types/ui';
 
 const { Panel } = Collapse;
@@ -9,8 +9,8 @@ const { Title, Text } = Typography;
 
 interface RightPanelProps {
   mode: RightPanelMode;
-  validationResult: ValidationResult | null;
-  diffData: DiffResponse | null;
+  validationResult: ValidationResultDTO | null;
+  diffData: DiffSourceTargetDTO | null;
   loading: boolean;
   onJumpToField?: (field: string) => void;
   onJumpToRule?: (ruleId: string) => void;

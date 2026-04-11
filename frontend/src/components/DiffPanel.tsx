@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Tag, Collapse, Spin, Empty, Typography } from 'antd';
 import { GitCommit, Plus, Minus, Edit3 } from 'lucide-react';
-import { rulesApi, DiffResponse } from '../api/rules';
+import { rulesApi } from '../api/rules';
+import { DiffSourceTargetDTO } from '../types/dto';
 
 const { Panel } = Collapse;
 const { Title, Text } = Typography;
@@ -13,7 +14,7 @@ interface DiffPanelProps {
 
 const DiffPanel: React.FC<DiffPanelProps> = ({ baselineId, refreshTrigger = 0 }) => {
   const [loading, setLoading] = useState(false);
-  const [diffData, setDiffData] = useState<DiffResponse | null>(null);
+  const [diffData, setDiffData] = useState<DiffSourceTargetDTO | null>(null);
 
   useEffect(() => {
     if (!baselineId) return;
@@ -21,7 +22,7 @@ const DiffPanel: React.FC<DiffPanelProps> = ({ baselineId, refreshTrigger = 0 })
     const fetchDiff = async () => {
       setLoading(true);
       try {
-        const data = await rulesApi.getBaselineDiff(baselineId);
+        const data = await rulesApi.getBaselineDiff(baselineId, 'draft', 'previous_version');
         setDiffData(data);
       } catch (error) {
         console.error('Failed to fetch diff', error);

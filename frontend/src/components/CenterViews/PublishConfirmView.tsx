@@ -1,12 +1,12 @@
 import React from 'react';
 import { Card, Typography, Button, Space, Alert } from 'antd';
 import { UploadCloud, CheckCircle } from 'lucide-react';
-import { ValidationResult } from '../../api/rules';
+import { ValidationResultDTO } from '../../types/dto';
 
 const { Title, Text } = Typography;
 
 interface PublishConfirmViewProps {
-  validationResult: ValidationResult | null;
+  validationResult: ValidationResultDTO | null;
   publishing: boolean;
   onPublishConfirmRequest: () => void;
   onCancelPublish: () => void;

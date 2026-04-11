@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { Tree, Spin, Typography } from 'antd';
 import { Database, GitBranch, Edit3, Archive, History } from 'lucide-react';
-import { Baseline } from '../api/rules';
+import { BaselineNodeDTO } from '../types/dto';
 import { BaselineTreeNode, BaselineNodeType } from '../types/ui';
 import type { DataNode } from 'antd/es/tree';
 
 interface BaselineListProps {
-  baselines: Baseline[];
+  baselines: BaselineNodeDTO[];
   loading: boolean;
   selectedKey?: string;
   selectedNodeType?: BaselineNodeType;
@@ -23,63 +23,43 @@ const BaselineList: React.FC<BaselineListProps> = ({
   
   // Transform flat baselines array into tree data
   const treeData = useMemo(() => {
-    return baselines.map((baseline): BaselineTreeNode => {
-      // Mock history versions based on baseline.id for MVP
-      const versions: BaselineTreeNode[] = [
-        {
-          key: `${baseline.id}-draft`,
-          title: 'Draft',
-          type: 'working_draft',
-          isLeaf: true,
-          baselineId: baseline.id,
-          parentId: baseline.id,
-          versionId: 'draft',
-          status: 'draft',
-        },
-        // Simulate a rollback candidate
-        {
-          key: `${baseline.id}-rollback-candidate`,
-          title: 'Rollback Candidate (v1.0)',
-          type: 'rollback_candidate',
-          isLeaf: true,
-          baselineId: baseline.id,
-          parentId: baseline.id,
-          versionId: 'draft',
-          sourceVersionId: 'v1.0',
-          sourceVersionLabel: 'v1.0 (Prod)',
-          status: 'draft',
-        },
-        {
-          key: `${baseline.id}-v1.1`,
-          title: 'v1.1 (Testing)',
-          type: 'published_version',
-          isLeaf: true,
-          baselineId: baseline.id,
-          parentId: baseline.id,
-          versionId: 'v1.1',
-          status: 'testing',
-        },
-        {
-          key: `${baseline.id}-v1.0`,
-          title: 'v1.0 (Prod)',
-          type: 'published_version',
-          isLeaf: true,
-          baselineId: baseline.id,
-          parentId: baseline.id,
-          versionId: 'v1.0',
-          status: 'published',
-        }
-      ];
-
-      return {
-        key: baseline.id,
-        title: baseline.name,
-        type: 'baseline_root',
-        baselineId: baseline.id,
-        versionId: 'root',
-        children: versions
-      };
+    // 1. Group nodes by baseline_id
+    const grouped = new Map<string, BaselineTreeNode>();
+    
+    baselines.forEach(node => {
+      if (node.type === 'baseline_root') {
+        grouped.set(node.id, {
+          key: node.id,
+          title: node.name,
+          type: 'baseline_root',
+          baselineId: node.baseline_id,
+          versionId: 'root',
+          children: []
+        });
+      }
     });
+
+    baselines.forEach(node => {
+      if (node.type !== 'baseline_root' && node.parent_id) {
+        const parent = grouped.get(node.parent_id);
+        if (parent) {
+          parent.children!.push({
+            key: node.id,
+            title: node.name,
+            type: node.type as BaselineNodeType,
+            isLeaf: true,
+            baselineId: node.baseline_id,
+            parentId: node.parent_id,
+            versionId: node.version_id,
+            sourceVersionId: node.source_version_id,
+            sourceVersionLabel: node.source_version_label,
+            status: node.status as any
+          });
+        }
+      }
+    });
+
+    return Array.from(grouped.values());
   }, [baselines]);
 
   // Recursively map our Custom Tree Nodes to Ant Design Tree DataNodes

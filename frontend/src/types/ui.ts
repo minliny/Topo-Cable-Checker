@@ -1,4 +1,4 @@
-import { ValidationResult, DiffResponse } from '../api/rules';
+import { ValidationResultDTO, DiffSourceTargetDTO } from './dto';
 
 export type CenterMode = 
   | 'empty'
@@ -63,7 +63,7 @@ export interface PageState {
   dirty: boolean;
   
   // Validation / Blocking Info
-  validationResult: ValidationResult | null;
+  validationResult: ValidationResultDTO | null;
   publishBlockedIssues: any[] | null;
   
   // Target positioning
@@ -71,7 +71,7 @@ export interface PageState {
   targetRuleId?: string;
   
   // Diff Info
-  diffData: DiffResponse | null;
+  diffData: DiffSourceTargetDTO | null;
   diffContext?: {
     sourceVersionId: string;
     targetVersionId: string;

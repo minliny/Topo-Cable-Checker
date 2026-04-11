@@ -204,7 +204,7 @@ function App() {
     dispatch({ type: 'REQUEST_DIFF', payload: { sourceVersionId, targetVersionId } });
     setLoadingDiff(true);
     try {
-      const data = await rulesApi.getBaselineDiff(pageState.selectedBaselineId!);
+      const data = await rulesApi.getBaselineDiff(pageState.selectedBaselineId!, sourceVersionId, targetVersionId);
       dispatch({ type: 'DIFF_SUCCESS', payload: { diffData: data } });
     } catch (error) {
       console.error('Failed to fetch diff', error);

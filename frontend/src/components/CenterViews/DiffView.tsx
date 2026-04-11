@@ -1,12 +1,12 @@
 import React from 'react';
 import { Card, Typography, Empty, Button } from 'antd';
 import { GitCommit, ArrowLeft } from 'lucide-react';
-import { DiffResponse } from '../../api/rules';
+import { DiffSourceTargetDTO } from '../../types/dto';
 
 const { Title, Text } = Typography;
 
 interface DiffViewProps {
-  diffData: DiffResponse | null;
+  diffData: DiffSourceTargetDTO | null;
   targetRuleId?: string;
   onClose?: () => void;
 }

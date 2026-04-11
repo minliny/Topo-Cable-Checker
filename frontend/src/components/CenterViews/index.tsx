@@ -1,7 +1,7 @@
 import React from 'react';
 import { CenterMode, DraftData } from '../../types/ui';
-import { ValidationResult, DiffResponse } from '../../api/rules';
-import { Empty, Spin, Result, Button, List } from 'antd';
+import { ValidationResultDTO, DiffSourceTargetDTO } from '../../types/dto';
+import { Spin, Result, Button, Typography, Empty, List } from 'antd';
 import { XCircle, CheckCircle } from 'lucide-react';
 import EditorView from './EditorView';
 import DiffView from './DiffView';
@@ -17,9 +17,9 @@ interface CenterContainerProps {
   saving: boolean;
   publishing: boolean;
   validationPassed: boolean;
-  validationResult: ValidationResult | null;
+  validationResult: ValidationResultDTO | null;
   publishBlockedIssues: any[] | null;
-  diffData: DiffResponse | null;
+  diffData: DiffSourceTargetDTO | null;
   targetFieldPath?: string;
   targetRuleId?: string;
   selectedVersionId?: string;
