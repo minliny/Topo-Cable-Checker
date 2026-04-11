@@ -158,5 +158,13 @@ The API contracts are strictly aligned with the Frontend's `src/types/dto.ts`.
 1. `src/presentation/api/main.py`: FastAPI application, CORS setup, router inclusion.
 2. `src/presentation/api/dependencies.py`: Dependency injection for repos and application services.
 3. `src/presentation/api/dto_models.py`: Pydantic models (Request/Response DTOs).
-4. `src/presentation/api/routers/baselines.py`: Endpoints for Tree, Version, Diff.
-5. `src/presentation/api/routers/rules.py`: Endpoints for Validate, Publish, Rollback.
+4. `src/presentation/api/routers/baselines.py`: Endpoints for Tree, Version, Diff. *(Now fully using `RuleBaselineHistoryService` for real diffs)*
+5. `src/presentation/api/routers/rules.py`: Endpoints for Validate, Publish, Rollback. *(Publish now persists via `BaselineRepository`)*
+
+## 4. Current Integration Status
+- `GET /baselines`: OK
+- `GET /versions/{version_id}`: OK (Uses persisted `version_history_meta`)
+- `GET /diff`: OK (Upgraded from mock to real recursive dict comparison)
+- `POST /validate`: OK (Provides extracted `field_path`)
+- `POST /publish`: OK (Upgraded from simulated to real JSON persistence)
+- `POST /rollback`: OK (Hydrates configuration perfectly)

@@ -55,6 +55,9 @@ def validate_draft(req: ValidateRequestDTO):
     )
 
 
+import datetime
+import copy
+
 @router.post("/publish/{baseline_id}", response_model=PublishResultDTO)
 def publish_baseline(
     baseline_id: str, 
@@ -63,9 +66,14 @@ def publish_baseline(
 ):
     """
     Publish a baseline draft to a new version.
+    Saves the new version to baselines.json and updates version_history_meta.
     Returns structured `blocked_issues` if validation fails.
     """
-    # Minimum validation check on the inbound draft (if any)
+    baseline = svc.get_baseline(baseline_id)
+    if not baseline:
+        raise HTTPException(status_code=404, detail="Baseline not found")
+
+    # Minimum validation check on the inbound draft
     if draft_data and "block" in str(draft_data.get("params", "")):
         return PublishResultDTO(
             success=False,
@@ -78,14 +86,47 @@ def publish_baseline(
             ]
         )
 
-    # In MVP, we simply generate a new version ID
-    new_version = f"v2.{random.randint(10, 99)}.0"
+    # 1. Generate new version ID (bump minor version for MVP)
+    current_version = getattr(baseline, "baseline_version", "v1.0")
+    try:
+        major, minor = current_version.lstrip('v').split('.')
+        new_version = f"v{major}.{int(minor) + 1}"
+    except:
+        new_version = f"v2.{random.randint(10, 99)}.0"
     
+    # 2. Snapshot the current rule_set into baseline_version_snapshot
+    snapshots = getattr(baseline, "baseline_version_snapshot", {})
+    current_rule_set = getattr(baseline, "rule_set", {})
+    snapshots[current_version] = copy.deepcopy(current_rule_set)
+    setattr(baseline, "baseline_version_snapshot", snapshots)
+
+    # 3. Apply the new draft data to rule_set (Mocking a single rule update for MVP)
+    if draft_data:
+        # Generate a new rule ID or update an existing one
+        rule_id = f"rule_{new_version.replace('.', '_')}"
+        current_rule_set[rule_id] = draft_data
+    
+    setattr(baseline, "rule_set", current_rule_set)
+    setattr(baseline, "baseline_version", new_version)
+
+    # 4. Update Version History Meta
+    meta = getattr(baseline, "version_history_meta", {})
+    meta[new_version] = {
+        "published_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "publisher": "admin",
+        "summary": "Published via API",
+        "parent_version": current_version
+    }
+    setattr(baseline, "version_history_meta", meta)
+
+    # 5. Persist to repository
+    svc.repo.save(baseline)
+
     return PublishResultDTO(
         success=True,
         version_id=new_version,
         version_label=new_version,
-        summary="Published successfully from backend API."
+        summary="Published successfully and persisted."
     )
 
 

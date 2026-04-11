@@ -71,13 +71,16 @@ def get_version_meta(baseline_id: str, version_id: str, svc: BaselineService = D
     if not baseline:
         raise HTTPException(status_code=404, detail="Baseline not found")
 
+    meta = getattr(baseline, "version_history_meta", {}).get(version_id, {})
+
     return VersionMetaDTO(
         version_id=version_id,
         baseline_id=baseline_id,
-        version_label=f"{version_id} (Archived)",
-        summary="Retrieved from history",
-        publisher="System",
-        published_at="2026-04-10T00:00:00Z" # Mocked metadata since baseline.json doesn't track this currently
+        version_label=f"{version_id} ({'Prod' if baseline.baseline_version == version_id else 'Archived'})",
+        summary=meta.get("summary", "Retrieved from history"),
+        publisher=meta.get("publisher", "System"),
+        published_at=meta.get("published_at", "2026-04-10T00:00:00Z"),
+        parent_version_id=meta.get("parent_version", None)
     )
 
 
@@ -85,28 +88,54 @@ def get_version_meta(baseline_id: str, version_id: str, svc: BaselineService = D
 def get_baseline_diff(
     baseline_id: str, 
     source: str = "draft", 
-    target: str = "previous_version"
+    target: str = "previous_version",
+    hist_svc: RuleBaselineHistoryService = Depends(get_history_service),
+    svc: BaselineService = Depends(get_baseline_service)
 ):
     """
-    Mocked Diff response. The backend currently has `RecheckService` diff, 
-    but it compares "Runs" not "Baseline Versions".
-    To unblock UI integration, we provide a structured mock matching DTO.
+    Real Diff response using Domain RuleBaselineHistoryService.
+    It compares two snapshots (or the current draft vs snapshot) 
+    and outputs the unified DiffSourceTargetDTO.
     """
+    # If target is abstract "previous_version", find the latest one from metadata
+    baseline = svc.get_baseline(baseline_id)
+    if not baseline:
+        raise HTTPException(status_code=404, detail="Baseline not found")
+        
+    actual_target = target
+    if target == "previous_version":
+        # Usually the previous is the baseline_version unless we are comparing against it
+        actual_target = getattr(baseline, "baseline_version", "v1.0")
+
+    # Use the domain service to perform actual JSON diffing
+    diff_view = hist_svc.diff_versions(baseline_id, source, actual_target)
+    
+    if not diff_view:
+        raise HTTPException(status_code=404, detail="Could not compute diff for versions")
+
+    # Map the Domain DiffView to our API DTO
+    rules = []
+    
+    for r in diff_view.added_rules:
+        rules.append({
+            "rule_id": r.rule_id, "change_type": "added", "changed_fields": [], "old_value": None, "new_value": r.after
+        })
+    for r in diff_view.removed_rules:
+        rules.append({
+            "rule_id": r.rule_id, "change_type": "removed", "changed_fields": [], "old_value": r.before, "new_value": None
+        })
+    for r in diff_view.modified_rules:
+        rules.append({
+            "rule_id": r.rule_id, "change_type": "modified", "changed_fields": r.changed_fields, "old_value": r.before, "new_value": r.after
+        })
+
     return {
         "source_version_id": source,
-        "target_version_id": target,
+        "target_version_id": actual_target,
         "diff_summary": {
-            "added": 1,
-            "removed": 0,
-            "modified": 0
+            "added": len(diff_view.added_rules),
+            "removed": len(diff_view.removed_rules),
+            "modified": len(diff_view.modified_rules)
         },
-        "rules": [
-            {
-                "rule_id": "rule-new-1",
-                "change_type": "added",
-                "changed_fields": [],
-                "old_value": None,
-                "new_value": { "rule_type": "threshold", "params": {"metric_type": "count"} }
-            }
-        ]
+        "rules": rules
     }
