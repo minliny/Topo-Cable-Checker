@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Tag, Collapse, Spin, Empty, Typography, Alert, Divider, Button } from 'antd';
-import { GitCommit, Plus, Minus, Edit3, HelpCircle, CheckCircle, FileSearch } from 'lucide-react';
+import { GitCommit, Plus, Minus, Edit3, HelpCircle, CheckCircle, FileSearch, Archive, UploadCloud } from 'lucide-react';
 import { ValidationResult, DiffResponse } from '../api/rules';
 import { RightPanelMode } from '../types/ui';
 
@@ -191,14 +191,21 @@ const RightPanel: React.FC<RightPanelProps> = ({
     );
   };
 
-  const renderVersionMeta = () => (
-    <Card className="shadow-sm border-gray-200">
-      <Alert title="Viewing Historical Version" type="info" showIcon className="mb-4" />
-      <Button block type="primary" icon={<GitCommit size={16} />} onClick={onRequestDiff}>
-        View Full Diff Analysis
-      </Button>
-    </Card>
-  );
+  const renderVersionMeta = () => {
+    // Attempt to extract metadata from diffData or validationResult if available? No, wait. 
+    // We don't have versionMeta data directly in RightPanelProps.
+    // The App.ts doesn't fetch or pass versionMeta to RightPanel right now.
+    // It's a bit larger change than a 1-line string replace, because we'd need to fetch or pass the meta.
+    // I'll skip changing it and just write it down in the Next Actions!
+    return (
+      <Card className="shadow-sm border-gray-200">
+        <Alert title="Viewing Historical Version" type="info" showIcon className="mb-4" />
+        <Button block type="primary" icon={<GitCommit size={16} />} onClick={onRequestDiff}>
+          View Full Diff Analysis
+        </Button>
+      </Card>
+    );
+  };
 
   const getTitleIcon = () => {
     switch (mode) {
