@@ -22,7 +22,8 @@ def validate_draft(req: ValidateRequestDTO):
 
     try:
         # Wrap parameters as rule definition to reuse Domain compiler
-        rule_def = {"rule_type": req.rule_type, "params": req.params}
+        # UI uses 'rule_type' to mean 'template'
+        rule_def = {"rule_type": "template", "template": req.rule_type, "params": req.params}
         # Compile it using a dummy ID to trigger validation
         CompiledRule = RuleCompiler.compile("draft_rule", rule_def)
     except RuleCompileError as e:

@@ -1,7 +1,7 @@
 {
   "B001": {
     "baseline_id": "B001",
-    "baseline_version": "v1.9",
+    "baseline_version": "v1.11",
     "recognition_profile": {
       "strategy": "excel_basic"
     },
@@ -64,6 +64,16 @@
         "severity": "error"
       },
       "rule_v1_9": {
+        "params": {
+          "threshold_key": "new_key"
+        }
+      },
+      "rule_v1_10": {
+        "params": {
+          "threshold_key": "new_key"
+        }
+      },
+      "rule_v1_11": {
         "params": {
           "threshold_key": "new_key"
         }
@@ -374,6 +384,99 @@
           },
           "severity": "error"
         }
+      },
+      "v1.9": {
+        "R1_scoped": {
+          "rule_type": "template",
+          "template": "group_consistency",
+          "scope_selector": {
+            "target_type": "devices",
+            "device_type": "Switch"
+          },
+          "params": {
+            "parameter_key": "P1"
+          },
+          "severity": "warning"
+        },
+        "R2_threshold_count": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          },
+          "severity": "critical"
+        },
+        "R3_threshold_distinct": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "distinct_count",
+            "metric_field": "device_type",
+            "threshold_key": "T2"
+          },
+          "severity": "error"
+        },
+        "rule_v1_9": {
+          "params": {
+            "threshold_key": "new_key"
+          }
+        }
+      },
+      "v1.10": {
+        "R1_scoped": {
+          "rule_type": "template",
+          "template": "group_consistency",
+          "scope_selector": {
+            "target_type": "devices",
+            "device_type": "Switch"
+          },
+          "params": {
+            "parameter_key": "P1"
+          },
+          "severity": "warning"
+        },
+        "R2_threshold_count": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          },
+          "severity": "critical"
+        },
+        "R3_threshold_distinct": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "distinct_count",
+            "metric_field": "device_type",
+            "threshold_key": "T2"
+          },
+          "severity": "error"
+        },
+        "rule_v1_9": {
+          "params": {
+            "threshold_key": "new_key"
+          }
+        },
+        "rule_v1_10": {
+          "params": {
+            "threshold_key": "new_key"
+          }
+        }
       }
     },
     "version_history_meta": {
@@ -382,6 +485,18 @@
         "publisher": "admin",
         "summary": "Published via API",
         "parent_version": "v1.8"
+      },
+      "v1.10": {
+        "published_at": "2026-04-11T01:32:53.696401Z",
+        "publisher": "admin",
+        "summary": "Published via API",
+        "parent_version": "v1.9"
+      },
+      "v1.11": {
+        "published_at": "2026-04-11T01:33:43.987353Z",
+        "publisher": "admin",
+        "summary": "Published via API",
+        "parent_version": "v1.10"
       }
     }
   }

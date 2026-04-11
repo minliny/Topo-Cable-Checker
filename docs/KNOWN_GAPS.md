@@ -1,44 +1,42 @@
-# Known Gaps & Future Roadmap
+# Known Gaps & Future Enhancements
 
-This document outlines the known gaps that are deliberately left open in the current Rule Editor MVP (Phase 1) implementation. These gaps do not block the functional acceptance of the three-column workbench but should be addressed in subsequent iterations before full production deployment.
+本文档明确区分当前系统中的“已知问题（Known Issues）”与“未来增强（Future Enhancements）”，以确保验收过程和下一阶段规划的清晰性。
 
-## 1. Backend Application & Domain Layer
+## 一、已知问题 (Known Issues)
+这些问题存在于当前版本中，但已确认**不阻断**本次三栏工作台的 MVP 核心主流程验收。
 
-### 1.1 Incomplete User Context (Auth & Identity)
-- **Status**: Hardcoded
-- **Gap**: Currently, the `publish_baseline` API hardcodes the `publisher` field to `"admin"`.
-- **Action Required**: Integrate FastAPI `Depends(get_current_user)` to extract real user tokens (e.g., JWT) and inject the actual username into the `version_history_meta`.
+### 1. 物理定位与复杂嵌套表单滚动 (Frontend)
+- **现象**：当后端返回 `validate` 错误包含深层 `field_path` 时，右栏点击错误能够正确触发 `JUMP_TO_FIELD` 动作，中栏状态机也能正确接收。但由于目前使用简化的 Ant Design 表单或原生 JSON 渲染，物理的 `scrollToField` 在嵌套极深或不可见字段上可能会失效或定位不精准。
+- **影响**：用户体验降级，但不影响错误拦截和重新编辑。
+- **规避方案**：已添加基于 DOM 的兜底高亮动画（CSS Ring）。
 
-### 1.2 Shallow Diff Implementation
-- **Status**: Functional but shallow
-- **Gap**: The current `RuleBaselineHistoryService.diff_versions` calculates added/removed/modified rules correctly, but the `changed_fields` array for modified rules is simply returning a list of keys without deep JSON diffing of the actual rule parameters.
-- **Action Required**: Implement a recursive JSON diff algorithm (like `dictdiffer` or `deepdiff`) inside the domain service to provide exact field-level change paths.
+### 2. Diff 详情仅支持浅层比较 (Backend)
+- **现象**：当前 `GET /api/baselines/{id}/diff` 接口能正确计算规则的 Added / Removed / Modified 状态，但对于 Modified 的规则，`changed_fields` 目前只返回了最外层变化的 Key，未能提供深层嵌套 JSON 的具体差异路径。
+- **影响**：Diff 视图的中栏明细粒度较粗。
+- **规避方案**：暂无，前端已容错，目前仅展示规则级别的变更和前/后快照对比。
 
-### 1.3 No Database (File-based Persistence)
-- **Status**: In-Memory/JSON File
-- **Gap**: The `BaselineRepository` writes to a local `baselines.json` file. While atomic write logic (`tempfile`) was added for safety, this is not suitable for horizontal scaling or concurrent multi-user environments.
-- **Action Required**: Migrate `BaselineRepository` to SQLAlchemy/PostgreSQL.
+### 3. 多人并发编辑冲突 (Backend)
+- **现象**：目前 `publish` 接口未实现基于 `parent_version` 的乐观锁（Optimistic Locking）校验。如果两个用户同时基于 `v1.0` 进行编辑并发布，后发布者会覆盖前者的修改（尽管底层写入是原子的）。
+- **影响**：存在并发覆盖风险。
+- **规避方案**：当前仅作为单用户演示系统，暂不涉及并发操作。
 
 ---
 
-## 2. Frontend UI & UX Enhancements
+## 二、未来增强 (Future Enhancements)
+这些是计划在下一阶段（Phase 2/3）引入的系统级架构与产品化能力提升。
 
-### 2.1 Physical `scrollToField` Integration
-- **Status**: Partially Implemented (Logical only)
-- **Gap**: The state machine correctly dispatches `JUMP_TO_FIELD` and updates the `targetFieldPath` prop in the Reducer. However, the actual Ant Design Form might not scroll if the field is nested deep inside a complex JSON string editor (like a CodeMirror or Monaco editor) rather than standard Antd Form items.
-- **Action Required**: Integrate a real code editor component (e.g., `@monaco-editor/react`) and map the `targetFieldPath` to Monaco line numbers/markers.
+### 1. 接入真实的 RBAC 权限与用户信息
+- **目标**：在 FastAPI 中接入 `Depends(get_current_user)`，提取真实的 JWT Token。
+- **价值**：将 `version_history_meta` 中的 `publisher` 从硬编码的 `"admin"` 替换为真实的用户名，并在前端根据权限控制“发布”与“回滚”按钮的亮起状态。
 
-### 2.2 Debounced Draft Autosave
-- **Status**: Sync on every keystroke
-- **Gap**: The `EditorView` currently dispatches `UPDATE_DRAFT` on every change. If the rule parameters JSON grows to thousands of lines, this will cause React rendering jank and state machine bloat.
-- **Action Required**: Introduce a `useDebounce` hook in the editor component to batch keystrokes before syncing to the global Reducer.
+### 2. 引入 Monaco Editor 提升编辑体验
+- **目标**：将中栏 EditorView 中的原生文本域或简易 JSON 表单替换为 `@monaco-editor/react`。
+- **价值**：支持代码高亮、语法检查、折叠，并且能够完美支持将 `validate` 返回的 `field_path` 映射为具体的代码行号和错误波浪线（Markers）。
 
-### 2.3 Internationalization (i18n)
-- **Status**: Hardcoded English
-- **Gap**: All toast messages, modal titles, and button labels are hardcoded.
-- **Action Required**: Introduce `react-i18next` and move all literal strings into locale JSON files.
+### 3. 持久化层迁移至关系型数据库
+- **目标**：将当前的 `baselines.json` 文件存储替换为 PostgreSQL + SQLAlchemy。
+- **价值**：支持海量规则基线、复杂的树状查询优化、事务隔离以及高可用部署。
 
-### 2.4 Error Toast Normalization
-- **Status**: Basic
-- **Gap**: When API calls fail with generic 500s or network timeouts, the UI simply shows "Error during validation" or similar hardcoded strings.
-- **Action Required**: Build a global Axios interceptor or Reducer middleware that parses HTTP error codes into user-friendly actionable messages (e.g., "Network timeout, please retry").
+### 4. 完善发布审批流 (Approval Workflow)
+- **目标**：在 `publish_checking` 和 `published` 之间引入真实的审批状态（Pending Approval）。
+- **价值**：支持企业级的规则发布管控，符合金融/政企客户的合规要求。
