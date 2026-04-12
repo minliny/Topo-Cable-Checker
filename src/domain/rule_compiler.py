@@ -1,9 +1,6 @@
-import re
 from typing import Dict, Any, List
-from src.domain.rule_engine.compiled_rule import CompiledRule
-from src.domain.rule_engine.parameter_schema_registry import ParameterSchemaRegistry
-from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry
-from src.domain.rule_engine.rule_capability_registry import RuleCapabilityRegistry
+import re
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
 
 class RuleCompileError(Exception):
     """
@@ -139,10 +136,6 @@ class RuleCompiler:
                     # Match exists shorthand in when clause: key exists
                     match_exists = re.match(r'^\s*(\w+)\s+exists\s*$', cond)
                     if match_exists:
-                        # In the scope_selector, how should we handle "exists"? 
-                        # Usually scope_selector is a direct equality match.
-                        # For the sake of this DSL expansion, we'll mark a special _exists scope parameter
-                        # which the apply_scope function can handle.
                         if "_exists" not in scope_selector:
                             scope_selector["_exists"] = []
                         scope_selector["_exists"].append(match_exists.group(1))
@@ -155,69 +148,45 @@ class RuleCompiler:
         if not assert_expr:
             raise RuleCompileError(rule_id, "invalid_dsl_expression", "DSL expression must contain an 'assert' clause")
             
-        compiled_rule_dict = {
-            "executor": "single_fact",
-            "scope_selector": scope_selector,
-            "severity": rule_def.get("severity", "medium")
-        }
+        target_type = scope_selector.pop("target_type", "devices")
+        target = RuleTarget(type=target_type, filter=scope_selector)
+        
+        params = {}
+        rule_type = ""
         
         if isinstance(assert_expr, str):
             match = re.match(r'^\s*(\w+)\s*==\s*"([^"]+)"\s*$', assert_expr)
             if match:
-                compiled_rule_dict["field"] = match.group(1)
-                compiled_rule_dict["expected"] = match.group(2)
-                compiled_rule_dict["type"] = "field_equals"
+                params["field"] = match.group(1)
+                params["expected"] = match.group(2)
+                rule_type = "field_equals"
             else:
                 raise RuleCompileError(rule_id, "invalid_dsl_expression", f"Unsupported 'assert' string: {assert_expr}")
         elif isinstance(assert_expr, dict):
             if "regex" in assert_expr:
-                compiled_rule_dict["field"] = assert_expr["regex"].get("field")
-                compiled_rule_dict["expected"] = assert_expr["regex"].get("pattern")
-                compiled_rule_dict["type"] = "regex_match"
-                if not compiled_rule_dict["field"] or not compiled_rule_dict["expected"]:
+                params["field"] = assert_expr["regex"].get("field")
+                params["expected"] = assert_expr["regex"].get("pattern")
+                rule_type = "regex_match"
+                if not params["field"] or not params["expected"]:
                     raise RuleCompileError(rule_id, "missing_required_param", "regex assert requires 'field' and 'pattern'")
             elif "exists" in assert_expr:
-                compiled_rule_dict["field"] = assert_expr["exists"]
-                compiled_rule_dict["type"] = "missing_value" 
-                # Note: The missing_value executor natively fails if missing. This precisely implements 'exists'
-                compiled_rule_dict["expected"] = None
+                params["field"] = assert_expr["exists"]
+                rule_type = "missing_value" 
+                params["expected"] = None
             else:
                 raise RuleCompileError(rule_id, "invalid_dsl_expression", "Unsupported 'assert' dict keys")
         else:
             raise RuleCompileError(rule_id, "invalid_dsl_expression", "Invalid 'assert' clause format")
             
-        executor_type = compiled_rule_dict["executor"]
+        msg_template = rule_def.get("message_template") or rule_def.get("error_message") or ""
         
-        rule_meta = RuleMetaRegistry.get_meta(executor_type)
-        if not rule_meta:
-            raise RuleCompileError(rule_id, "unknown_rule_meta", f"Unknown executor type: {executor_type}")
-
-        params = {k: v for k, v in compiled_rule_dict.items() if k not in ["executor", "scope_selector", "severity"]}
-        
-        # Schema validation
-        schema_err = ParameterSchemaRegistry.validate(executor_type, params)
-        if schema_err:
-            raise RuleCompileError(rule_id, "invalid_parameter_schema", schema_err)
-            
-        target_type = scope_selector.pop("target_type", "devices")
-        
-        capability = RuleCapabilityRegistry.infer_capability(executor_type, params)
-        if not capability:
-            raise RuleCompileError(rule_id, "unknown_rule_capability", f"Could not infer capability for executor '{executor_type}' with params {params}")
-            
         return CompiledRule(
             rule_id=rule_id,
-            rule_type="dsl",
-            executor={"type": executor_type},
-            target={"type": target_type, "filter": scope_selector if scope_selector else None},
-            message={"template": rule_def.get("message", f"Rule {rule_id} failed")},
-            severity=compiled_rule_dict["severity"],
+            rule_type=rule_type,
+            target=target,
+            executor="single_fact",
             params=params,
-            rule_meta=rule_meta,
-            capability=capability,
-            # Backward compatibility attributes
-            scope_selector={"target_type": target_type, **scope_selector},
-            **params
+            message=RuleMessage(template=msg_template, severity=rule_def.get("severity", "medium"))
         )
         
     @classmethod
@@ -239,40 +208,22 @@ class RuleCompiler:
                 
         template_info = TemplateRegistry.get_template(template_name)
         
-        executor_type = template_info["target_executor"]
-        
-        rule_meta = RuleMetaRegistry.get_meta(executor_type)
-        if not rule_meta:
-            raise RuleCompileError(rule_id, "unknown_rule_meta", f"Unknown executor type: {executor_type}")
-            
-        # Schema validation (for newly supported structure)
-        schema_err = ParameterSchemaRegistry.validate(executor_type, params)
-        if schema_err:
-            raise RuleCompileError(rule_id, "invalid_parameter_schema", schema_err)
-            
-        scope_selector = rule_def.get("scope_selector", {"target_type": rule_def.get("target_type", "devices")}).copy()
+        scope_selector = rule_def.get("scope_selector", {"target_type": rule_def.get("target_type", "devices")})
         target_type = scope_selector.pop("target_type", "devices")
+        target = RuleTarget(type=target_type, filter=scope_selector)
         
-        compiled_rule_params = {}
+        compiled_params = {}
         for p in template_info["supported_params"]:
             if p in params:
-                compiled_rule_params[p] = params[p]
+                compiled_params[p] = params[p]
                 
-        capability = RuleCapabilityRegistry.infer_capability(executor_type, compiled_rule_params)
-        if not capability:
-            raise RuleCompileError(rule_id, "unknown_rule_capability", f"Could not infer capability for executor '{executor_type}' with params {compiled_rule_params}")
-            
+        msg_template = rule_def.get("message_template") or rule_def.get("error_message") or ""
+                
         return CompiledRule(
             rule_id=rule_id,
-            rule_type="template",
-            executor={"type": executor_type},
-            target={"type": target_type, "filter": scope_selector if scope_selector else None},
-            message={"template": rule_def.get("message", f"Rule {rule_id} failed")},
-            severity=rule_def.get("severity", "medium"),
-            params=compiled_rule_params,
-            rule_meta=rule_meta,
-            capability=capability,
-            # Backward compatibility attributes
-            scope_selector={"target_type": target_type, **scope_selector},
-            **compiled_rule_params
+            rule_type=template_name,
+            target=target,
+            executor=template_info["target_executor"],
+            params=compiled_params,
+            message=RuleMessage(template=msg_template, severity=rule_def.get("severity", "medium"))
         )

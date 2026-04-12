@@ -1,36 +1,37 @@
 from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
+from src.domain.compiled_rule_schema import CompiledRule
 from src.crosscutting.ids.generator import generate_id
-from src.domain.rule_engine.execution_context import ExecutionContext
-from src.domain.rule_engine.compiled_rule import CompiledRule
 import dataclasses
 
 class ThresholdExecutor(RuleExecutor):
-    def execute(self, rule_id: str, compiled_rule: CompiledRule, filtered_dataset: Dict[str, List[Any]], 
-                context: ExecutionContext) -> List[IssueItem]:
+    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
         issues = []
-
-        target_type = compiled_rule.target.get("type")
-        metric_type = compiled_rule.get("metric_type", "count") # count, distinct_count
-        metric_field = compiled_rule.get("metric_field")
+        
+        rule_id = compiled_rule.rule_id
+        target_type = compiled_rule.target.type
+        metric_type = compiled_rule.params.get("metric_type", "count") # count, distinct_count
+        metric_field = compiled_rule.params.get("metric_field")
+        
+        threshold_profile = context.get("threshold_profile", {})
         
         # Read threshold definitions
-        thresh_key = compiled_rule.get("threshold_key")
-        if thresh_key and thresh_key in context.threshold_profile:
-            t_def = context.threshold_profile[thresh_key]
+        thresh_key = compiled_rule.params.get("threshold_key")
+        if thresh_key and thresh_key in threshold_profile:
+            t_def = threshold_profile[thresh_key]
             compare_operator = t_def.get("operator", "eq")
             expected_val = t_def.get("expected_value", t_def.get("value"))
             min_val = t_def.get("min_value")
             max_val = t_def.get("max_value")
         else:
-            compare_operator = compiled_rule.get("operator", "eq")
-            expected_val = compiled_rule.get("expected_value", compiled_rule.get("expected"))
-            min_val = compiled_rule.get("min_value")
-            max_val = compiled_rule.get("max_value")
+            compare_operator = compiled_rule.params.get("operator", "eq")
+            expected_val = compiled_rule.params.get("expected_value", compiled_rule.params.get("expected"))
+            min_val = compiled_rule.params.get("min_value")
+            max_val = compiled_rule.params.get("max_value")
             
-        severity = compiled_rule.severity
-        target_list = filtered_dataset.get(target_type, [])
+        severity = compiled_rule.message.severity
+        target_list = dataset.get(target_type, [])
         
         # 1. Calculate metric
         actual_value = 0
@@ -81,7 +82,7 @@ class ThresholdExecutor(RuleExecutor):
                 "metric_field": metric_field,
                 "actual_value": actual_value,
                 "compare_operator": compare_operator,
-                "scope": compiled_rule.target.get("filter", {}),
+                "scope": compiled_rule.target.filter,
                 "threshold_source": "threshold_profile" if thresh_key else "inline"
             }
             if compare_operator in ("between", "outside"):
@@ -89,9 +90,11 @@ class ThresholdExecutor(RuleExecutor):
             else:
                 evidence["expected_value"] = expected_repr
 
+            final_message = compiled_rule.message.template or f"Rule {rule_id} (threshold) failed: Metric '{metric_type}' on '{target_type}' is {actual_value}. {message}."
+
             issues.append(IssueItem(
                 issue_id=generate_id(),
-                message=f"Rule {rule_id} (threshold) failed: Metric '{metric_type}' on '{target_type}' is {actual_value}. {message}.",
+                message=final_message,
                 evidence=evidence,
                 expected=expected_repr,
                 actual=actual_value,
@@ -100,5 +103,4 @@ class ThresholdExecutor(RuleExecutor):
                 severity=severity,
                 category="threshold_check"
             ))
-
         return issues

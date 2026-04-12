@@ -1,14 +1,198 @@
 {
-  "0c3b1329-20df-4cc7-8db0-31722dad681d": {
-    "run_id": "0c3b1329-20df-4cc7-8db0-31722dad681d",
-    "summary": "Analysis complete. 4 devices, 2 ports. Found 3 issues."
+  "0713baf2-56b3-452b-8c19-7e69cd9d7e52": {
+    "run_id": "0713baf2-56b3-452b-8c19-7e69cd9d7e52",
+    "summary": "Checked 3 rows, found 2 issues."
   },
-  "7f608ac6-7b59-4b32-adf5-c2d75d923c50": {
-    "run_id": "7f608ac6-7b59-4b32-adf5-c2d75d923c50",
-    "summary": "Analysis complete. 3 devices, 2 ports. Found 4 issues."
+  "57cc9a16-4d01-4b54-aa6f-d472b458748d": {
+    "run_id": "57cc9a16-4d01-4b54-aa6f-d472b458748d",
+    "summary": "Checked 3 rows, found 2 issues."
   },
-  "173a2a9d-9b30-4c23-a23e-6a34b2d5e6b5": {
-    "run_id": "173a2a9d-9b30-4c23-a23e-6a34b2d5e6b5",
-    "summary": "Analysis complete. 3 devices, 2 ports. Found 5 issues."
+  "973908b0-bda5-47d2-9213-c77177bbb66f": {
+    "run_id": "973908b0-bda5-47d2-9213-c77177bbb66f",
+    "summary": "Normalized dataset contains 4 devices, 2 ports, 1 links. Found 0 issues."
+  },
+  "72b82093-eaba-42a9-8e7a-4f0e9e3bdd69": {
+    "run_id": "72b82093-eaba-42a9-8e7a-4f0e9e3bdd69",
+    "summary": "Normalized dataset contains 4 devices, 2 ports, 1 links. Found 4 issues."
+  },
+  "0ffac297-983c-43d5-8361-92a1092409b3": {
+    "run_id": "0ffac297-983c-43d5-8361-92a1092409b3",
+    "summary": "Normalized dataset contains 4 devices, 2 ports, 1 links. Found 4 issues."
+  },
+  "8b7c504c-c58e-4fe9-9f31-5169f7cd0545": {
+    "run_id": "8b7c504c-c58e-4fe9-9f31-5169f7cd0545",
+    "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
+  },
+  "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba": {
+    "run_id": "dbdfa8bd-bee4-478a-a90e-1eae7cf1aaba",
+    "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
+  },
+  "cf7c331c-8909-4353-a23d-867f3153ce24": {
+    "run_id": "cf7c331c-8909-4353-a23d-867f3153ce24",
+    "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
+  },
+  "7dc0d03d-494e-4262-8dbe-e8c7ad151d5f": {
+    "run_id": "7dc0d03d-494e-4262-8dbe-e8c7ad151d5f",
+    "summary": "Analysis complete. 4 devices, 1 ports. Found 3 issues."
+  },
+  "666f8332-0688-4b8f-9252-7dbaae92acbe": {
+    "run_id": "666f8332-0688-4b8f-9252-7dbaae92acbe",
+    "summary": "Analysis complete. 4 devices, 2 ports. Found 4 issues."
+  },
+  "759c1b6f-052e-41ff-9e0b-8da03c8d85a2": {
+    "run_id": "759c1b6f-052e-41ff-9e0b-8da03c8d85a2",
+    "summary": "Analysis complete. 4 devices, 1 ports. Found 7 issues."
+  },
+  "44091ceb-34f7-438f-ab3a-b7324acaacc0": {
+    "run_id": "44091ceb-34f7-438f-ab3a-b7324acaacc0",
+    "summary": "Analysis complete. 4 devices, 0 ports. Found 0 issues."
+  },
+  "d22945b1-5a14-4365-9fdf-4e16f866d6a7": {
+    "run_id": "d22945b1-5a14-4365-9fdf-4e16f866d6a7",
+    "summary": "Analysis complete. 4 devices, 0 ports. Found 0 issues."
+  },
+  "cea71124-d3f4-4985-947a-4db3d58d5925": {
+    "run_id": "cea71124-d3f4-4985-947a-4db3d58d5925",
+    "summary": "Analysis complete. 4 devices, 0 ports. Found 1 issues."
+  },
+  "009d2c72-7cef-4f73-97ff-c829bf32a10a": {
+    "run_id": "009d2c72-7cef-4f73-97ff-c829bf32a10a",
+    "summary": "Analysis complete. 4 devices, 0 ports. Found 1 issues."
+  },
+  "96a448ff-9523-47af-a20d-9a3316a04d84": {
+    "run_id": "96a448ff-9523-47af-a20d-9a3316a04d84",
+    "summary": "Analysis complete. 4 devices, 0 ports. Found 3 issues."
+  },
+  "cb55e3b9-e313-4e7b-808a-f4cf9941ff92": {
+    "run_id": "cb55e3b9-e313-4e7b-808a-f4cf9941ff92",
+    "summary": "Analysis complete. 1 devices, 1 ports. Found 5 issues."
+  },
+  "84cbd783-4805-454f-8742-e265d7d9fdbc": {
+    "run_id": "84cbd783-4805-454f-8742-e265d7d9fdbc",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "29710245-8fd5-4f6f-83be-b947e639138f": {
+    "run_id": "29710245-8fd5-4f6f-83be-b947e639138f",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 4 issues."
+  },
+  "92e03814-c264-4e0a-83d4-b287537c76b7": {
+    "run_id": "92e03814-c264-4e0a-83d4-b287537c76b7",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "d6c73a00-0f6d-4bb8-aacc-fd002424c4df": {
+    "run_id": "d6c73a00-0f6d-4bb8-aacc-fd002424c4df",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "5298a551-e5ff-473b-aef3-774c0d8ede81": {
+    "run_id": "5298a551-e5ff-473b-aef3-774c0d8ede81",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "e4900610-5f8b-45f1-b575-88786d78e951": {
+    "run_id": "e4900610-5f8b-45f1-b575-88786d78e951",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "ffb1d79a-dd14-4fe8-b2d1-711fd38b4bf2": {
+    "run_id": "ffb1d79a-dd14-4fe8-b2d1-711fd38b4bf2",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "0c533193-cd67-474f-9627-24c23b339537": {
+    "run_id": "0c533193-cd67-474f-9627-24c23b339537",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "15909b71-3a45-4eea-925f-2cc74b15d873": {
+    "run_id": "15909b71-3a45-4eea-925f-2cc74b15d873",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "353cd99f-fbb2-49af-84f9-6f602c5bedc8": {
+    "run_id": "353cd99f-fbb2-49af-84f9-6f602c5bedc8",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "86ef248f-69b5-4e13-be4e-290f5b5d5bf0": {
+    "run_id": "86ef248f-69b5-4e13-be4e-290f5b5d5bf0",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "2f9fa98b-04ed-4083-9ad6-4370a1e23bce": {
+    "run_id": "2f9fa98b-04ed-4083-9ad6-4370a1e23bce",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "de3e0690-d1c9-4747-ab9b-99f08381431b": {
+    "run_id": "de3e0690-d1c9-4747-ab9b-99f08381431b",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "4389b38c-e4d9-4f99-8103-8965f243f93f": {
+    "run_id": "4389b38c-e4d9-4f99-8103-8965f243f93f",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "825a5bcc-12c4-4732-bce3-4cc457c52127": {
+    "run_id": "825a5bcc-12c4-4732-bce3-4cc457c52127",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "0421ffde-c599-4d30-84f2-39a7ff8a6202": {
+    "run_id": "0421ffde-c599-4d30-84f2-39a7ff8a6202",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "eadf3d1d-8ca1-40b1-8ad6-7cc91f50822f": {
+    "run_id": "eadf3d1d-8ca1-40b1-8ad6-7cc91f50822f",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "be258dbe-b2aa-4912-8202-a3ee4501d4da": {
+    "run_id": "be258dbe-b2aa-4912-8202-a3ee4501d4da",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "9abb33a0-9ea0-4eae-9cf3-94e69ea1d58e": {
+    "run_id": "9abb33a0-9ea0-4eae-9cf3-94e69ea1d58e",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "21f24ed5-a0cd-4444-90c0-a4494f4f0982": {
+    "run_id": "21f24ed5-a0cd-4444-90c0-a4494f4f0982",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "1e386a56-b1c8-4cb8-9a23-1b93f2d7190f": {
+    "run_id": "1e386a56-b1c8-4cb8-9a23-1b93f2d7190f",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "7fac744c-e563-4c5c-8489-17b5113d0062": {
+    "run_id": "7fac744c-e563-4c5c-8489-17b5113d0062",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "4a149394-14e5-40f9-a587-831f13abba3f": {
+    "run_id": "4a149394-14e5-40f9-a587-831f13abba3f",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "e58750fb-56d8-4353-b6da-423bbaa92338": {
+    "run_id": "e58750fb-56d8-4353-b6da-423bbaa92338",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "93e46e07-2106-4ca0-a16b-9c8f26b58319": {
+    "run_id": "93e46e07-2106-4ca0-a16b-9c8f26b58319",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "0258c10d-34b7-4330-a4b9-017c0b0fad05": {
+    "run_id": "0258c10d-34b7-4330-a4b9-017c0b0fad05",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "2d984df6-e05c-4d94-8765-6ebbd2550c14": {
+    "run_id": "2d984df6-e05c-4d94-8765-6ebbd2550c14",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "00156220-ff26-48d2-9473-87a0ee7bf7c8": {
+    "run_id": "00156220-ff26-48d2-9473-87a0ee7bf7c8",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
+  },
+  "ac9fa842-8b0e-4689-a134-c54666468667": {
+    "run_id": "ac9fa842-8b0e-4689-a134-c54666468667",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "636284ea-751f-42af-9fe1-344aeeeef5d7": {
+    "run_id": "636284ea-751f-42af-9fe1-344aeeeef5d7",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 3 issues."
+  },
+  "ccacbbcf-b851-44e2-a910-f37db3eef90f": {
+    "run_id": "ccacbbcf-b851-44e2-a910-f37db3eef90f",
+    "summary": "Analysis complete. 2 devices, 1 ports. Found 4 issues."
+  },
+  "2ce94e4d-3456-4f0c-ad1c-66a791e4fff6": {
+    "run_id": "2ce94e4d-3456-4f0c-ad1c-66a791e4fff6",
+    "summary": "Analysis complete. 0 devices, 1 ports. Found 5 issues."
   }
 }

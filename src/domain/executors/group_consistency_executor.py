@@ -1,30 +1,31 @@
 from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
+from src.domain.compiled_rule_schema import CompiledRule
 from src.crosscutting.ids.generator import generate_id
-from src.domain.rule_engine.execution_context import ExecutionContext
-from src.domain.rule_engine.compiled_rule import CompiledRule
 import dataclasses
 
 class GroupConsistencyExecutor(RuleExecutor):
-    def execute(self, rule_id: str, compiled_rule: CompiledRule, filtered_dataset: Dict[str, List[Any]], 
-                context: ExecutionContext) -> List[IssueItem]:
+    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
         issues = []
-
-        target_type = compiled_rule.target.get("type")
+        
+        rule_id = compiled_rule.rule_id
+        target_type = compiled_rule.target.type
 
         # Resolve parameters either from rule_def or parameter_profile
-        param_key = compiled_rule.get("parameter_key")
-        if param_key and param_key in context.parameter_profile:
-            group_key_field = context.parameter_profile[param_key].get("group_key")
-            comparison_field = context.parameter_profile[param_key].get("comparison_field")
-        else:
-            group_key_field = compiled_rule.get("group_key")
-            comparison_field = compiled_rule.get("comparison_field")
-            
-        severity = compiled_rule.severity
+        param_key = compiled_rule.params.get("parameter_key")
+        parameter_profile = context.get("parameter_profile", {})
         
-        target_list = filtered_dataset.get(target_type, [])
+        if param_key and param_key in parameter_profile:
+            group_key_field = parameter_profile[param_key].get("group_key")
+            comparison_field = parameter_profile[param_key].get("comparison_field")
+        else:
+            group_key_field = compiled_rule.params.get("group_key")
+            comparison_field = compiled_rule.params.get("comparison_field")
+            
+        severity = compiled_rule.message.severity
+        
+        target_list = dataset.get(target_type, [])
         if not target_list:
             return issues
             
@@ -54,9 +55,10 @@ class GroupConsistencyExecutor(RuleExecutor):
             for i, item in items:
                 actual_val = getattr(item, comparison_field, None)
                 if actual_val != dominant_val:
+                    msg = compiled_rule.message.template or f"Rule {rule_id} (group_consistency) failed: Group '{g_key}' has inconsistent '{comparison_field}'. Expected '{dominant_val}', got '{actual_val}'."
                     issues.append(IssueItem(
                         issue_id=generate_id(),
-                        message=f"Rule {rule_id} (group_consistency) failed: Group '{g_key}' has inconsistent '{comparison_field}'. Expected '{dominant_val}', got '{actual_val}'.",
+                        message=msg,
                         evidence={
                             "rule_id": rule_id, 
                             "group_key": g_key,

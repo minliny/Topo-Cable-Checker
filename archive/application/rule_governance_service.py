@@ -79,18 +79,20 @@ class RuleGovernanceService:
 
         # Determine parameter sources roughly based on executor keys (Governance view purpose)
         parameter_source = "inline"
-        if "parameter_key" in compiled: parameter_source = "parameter_profile"
+        if "parameter_key" in compiled.params: parameter_source = "parameter_profile"
         threshold_source = "inline"
-        if "threshold_key" in compiled: threshold_source = "threshold_profile"
+        if "threshold_key" in compiled.params: threshold_source = "threshold_profile"
+        
+        import dataclasses
 
         return CompiledRuleDTO(
             rule_id=rule_id,
-            compiled_executor=compiled.get("executor", "unknown"),
-            compiled_type=compiled.get("type", "unknown"),
-            scope_selector=compiled.get("scope_selector", {}),
+            compiled_executor=compiled.executor,
+            compiled_type=compiled.rule_type,
+            scope_selector=compiled.target.filter,
             parameter_source=parameter_source,
             threshold_source=threshold_source,
-            compiled_config=compiled
+            compiled_config=dataclasses.asdict(compiled)
         )
 
     def list_compile_errors(self, baseline_id: str) -> List[CompileErrorDTO]:

@@ -1,36 +1,33 @@
 # === Project State Snapshot ===
-# Updated 2026-04-12 — Phase B complete, entering Usage-Driven Optimization Mode
+# Updated 2026-04-12 — Branch convergence: FABBqQ (input contract) + main (rule engine maturity)
 # This file captures the current maturity, all remediation status, and remaining risks.
 # Audit method: local file content only, no speculation, evidence-bound judgments.
 
 project:
   name: "Topo-Cable-Checker"
   identity: "Rule Governance Workbench — 规则治理工作台"
-  status: "L4.0 稳定，0项伪实现，Usage-Driven Optimization Mode"
+  status: "L4.0 稳定，Input Contract + Rule Engine Externalization 已合并"
   last_audit: "2026-04-12"
 
 development_mode:
-  current: usage_driven_optimization
+  current: rule_engine_externalization
   current_maturity: L4
-  iteration_model: pain_log_based
-  roadmap_mode: usage_driven
-  entry_date: "2026-04-12"
+  roadmap_mode: phase_driven
   principles:
     - "所有开发由 USAGE_PAINLOG.md 真实痛点驱动"
     - "新功能准入需 Pain Score ≥ 10"
     - "禁止无 Pain 支撑的预设计划"
-    - "每次迭代记录到 ITERATION_REVIEW.md"
 
 maturity_rating:
   overall: "L4.0"
   dimensions:
-    main_flow_completeness: "L4"        # Draft→Validate→Publish→Diff→Rollback 全链路真实闭环 + Save Draft 真实持久化
-    input_experience: "L2.5"            # RuleEditor 仅 rule_type select + JSON TextArea
-    error_validation_experience: "L4"   # 全局错误处理 + request ID + 验证门
-    diff_publish_rollback_experience: "L4"  # B1: Deep Diff 递归比较 + B2: 完整 Rule Set Rollback
-    data_reliability: "L4+"             # fail-fast + backup + recovery + schema migration + working_draft 持久化 + v1.2 migration
-    self_maintenance: "L3"              # 文档较全，但根目录脚本待归档
-    observability_troubleshooting: "L4" # 文件日志 + 错误码 + request_id + schema version
+    main_flow_completeness: "L4"
+    input_experience: "L3"             # Input Contract with header mapping + row constraints
+    error_validation_experience: "L4"  # 全局错误处理 + request ID + 验证门
+    diff_publish_rollback_experience: "L4"  # Deep Diff + 完整 Rule Set Rollback
+    data_reliability: "L4+"
+    self_maintenance: "L3"
+    observability_troubleshooting: "L4"
   target: "L4 (Production-like Solo Tool)"
 
 architecture_summary:
@@ -39,310 +36,95 @@ architecture_summary:
     domain:
       path: "src/domain/"
       key_classes:
-        - "RuleCompiler (rule_compiler.py:84-278) — 编译 DSL/Template 规则"
-        - "CompiledRule (compiled_rule.py:9-75) — 编译后规则模型+校验"
-        - "RuleEngine (engine.py:16-128) — 编译→校验→作用域→分发"
+        - "RuleCompiler (rule_compiler.py) — 编译 DSL/Template 规则到 CompiledRule dataclass"
+        - "CompiledRule (compiled_rule_schema.py) — 简洁 dataclass 编译后规则模型"
+        - "RuleEngine (engine.py) — 编译→作用域→分发→外部规则注入"
         - "4 Executors: SingleFactExecutor, GroupConsistencyExecutor, ThresholdExecutor, TopologyExecutor"
+        - "ExecutionContext (rule_engine/execution_context.py) — 执行上下文"
+        - "ParameterSchemaRegistry, RuleMetaRegistry, RuleCapabilityRegistry (rule_engine/)"
       protocols:
-        - "IBaselineRepository (interfaces.py:10-13)"
-        - "ITaskRepository (interfaces.py:15-17)"
-        - "IResultRepository (interfaces.py:19-35)"
-        - "IExcelReader (interfaces.py:37-38)"
+        - "IBaselineRepository (interfaces.py)"
+        - "ITaskRepository (interfaces.py)"
+        - "IResultRepository (interfaces.py)"
+        - "IExcelReader (interfaces.py)"
     application:
       path: "src/application/"
       key_services:
-        - "BaselineService (baseline_services/) — 基线列表+默认创建"
-        - "RulePublishWorkflowService (rule_editor_services/) — compile→validate→persist"
-        - "RuleBaselineHistoryService (rule_editor_services/) — 版本列表/diff/rollback + B1: Deep Diff 递归比较 + B2: 空 rule_set 回滚修复"
-        - "RuleEditorGovernanceBridgeService (rule_editor_services/) — 编译桥接"
-        - "RuleEditorMVPService (rule_editor_services/) — 表单驱动MVP"
-        - "RuleDraftSaveService (rule_editor_services/) — A1: Draft 保存/加载/清除"
-        - "RuleDraftValidator (rule_editor_services/) — Schema 驱动校验"
-        - "RuleDraftSchemaBuilder (rule_editor_services/) — Schema 构建"
-        - "CheckRunService, RecognitionService, TaskService, etc. (9 other service dirs)"
+        - "BaselineService — 基线列表+默认创建"
+        - "RulePublishWorkflowService — compile→validate→persist"
+        - "RuleBaselineHistoryService — 版本列表/diff/rollback + Deep Diff"
+        - "CheckRunService — 支持 external_rule_file_path 外部规则注入"
+        - "RecognitionService — Input Contract 驱动的识别（header mapping + validation）"
+        - "NormalizationService — Contract 驱动的规范化（row constraints + type validation）"
+        - "RuleEngineExternalRuleAssembler — 外部规则组装注入"
+        - "RuleDraftSaveService — Draft 保存/加载/清除"
+        - "ContractBuilder, RuleDefinitionRegistry, RuleDefinitionLoader — 规则外部化链路"
     infrastructure:
       path: "src/infrastructure/"
       key_classes:
-        - "BaselineRepository (repository.py) — + schema migration v0→v1.0→v1.1→v1.2"
-        - "TaskRepository (repository.py:417-432)"
-        - "ResultRepository (repository.py:434-534)"
-        - "ExcelReader (excel_reader.py:5-39)"
+        - "BaselineRepository — + schema migration v0→v1.0→v1.1→v1.2"
+        - "TaskRepository, ResultRepository"
+        - "ExcelReader"
     presentation:
       path: "src/presentation/"
       key_classes:
-        - "FastAPI app (api/main.py:6-32) — 2 routers + CORS + middleware"
-        - "baselines router (api/routers/baselines.py) — GET baselines/versions/diff"
-        - "rules router (api/routers/rules.py) — POST validate/publish/rollback"
-        - "error_handler (api/error_handler.py) — 全局异常+RequestIdMiddleware"
-        - "CLI (cli/main.py:34-234) — 10+ commands"
+        - "FastAPI app — 2 routers + CORS + middleware"
+        - "CLI (cli/main.py) — 10+ commands"
     crosscutting:
       path: "src/crosscutting/"
       key_classes:
-        - "ErrorCode (errors/exceptions.py:16-46) — P1xxx/D2xxx/I3xxx/A4xxx/X9000"
-        - "CheckToolBaseError hierarchy (errors/exceptions.py:48-127)"
-        - "RotatingFileHandler logger (logging/logger.py:24-63) — 5MB×3"
+        - "ErrorCode, CheckToolBaseError hierarchy"
+        - "RotatingFileHandler logger"
 
-frontend_summary:
-  framework: "React + TypeScript + Ant Design + Vite"
-  state_management: "useReducer (25 action types — +DRAFT_SAVE_SUCCESS/DRAFT_SAVE_FAILED/DRAFT_LOADED)"
-  key_components:
-    - "App.tsx — 三栏布局 + 事件处理"
-    - "pageReducer.ts — 状态机"
-    - "RuleEditor.tsx — rule_type select + params JSON TextArea"
-    - "BaselineList.tsx — 左侧导航树"
-    - "RightPanel.tsx — 校验结果/Diff摘要/版本元数据"
-    - "CenterViews/ — DiffView, EditorView, HistoryDetailView, PublishConfirmView, RollbackConfirmView"
-  api_layer:
-    - "client.ts — axios + MockAdapter (默认 Real API)"
-    - "rules.ts — 8 API methods (getBaselines/validateDraft/publishRules/getBaselineDiff/createRollbackCandidate/saveDraft/loadDraft/clearDraft)"
-    - "adapters.ts — 6 normalize functions"
-
-api_endpoints_verified:
-  real:
-    - "GET /api/health — 健康检查"
-    - "GET /api/baselines — 基线列表(树结构)"
-    - "GET /api/baselines/{id}/versions/{vid} — 版本元数据"
-    - "GET /api/baselines/{id}/diff — 版本Diff(B1: Deep Diff递归比较+field_changes+human_summary)"
-    - "POST /api/rules/draft/validate — 规则编译校验"
-    - "POST /api/rules/publish/{baseline_id} — 发布(含编译校验门)"
-    - "POST /api/rules/rollback — 创建回滚候选(B2: 返回完整 rule_set)"
-    - "DELETE /api/rules/rollback/{candidate_id} — 丢弃回滚候选(mock)"
-    - "POST /api/rules/draft/save — A1: 保存工作草稿(无编译门)"
-    - "GET /api/rules/draft/{baseline_id} — A1: 加载工作草稿(自动恢复)"
-    - "DELETE /api/rules/draft/{baseline_id} — A1: 清除工作草稿"
-  total_real: 10
-  total_mock: 1
-
-rule_executors_verified:
-  - name: "SingleFactExecutor"
-    file: "src/domain/executors/single_fact_executor.py"
-    subtypes: ["field_equals", "regex_match", "missing_value"]
-    tested: "直接(test_single_fact_executor.py 20 tests) + 间接(test_rule_engine_platform.py)"
-    status: "PASS"
-  - name: "GroupConsistencyExecutor"
-    file: "src/domain/executors/group_consistency_executor.py"
-    subtypes: ["uniformity"]
-    tested: "直接(test_group_consistency_executor.py 19 tests) + 间接(test_rule_engine_platform.py)"
-    status: "PASS"
-  - name: "ThresholdExecutor"
-    file: "src/domain/executors/threshold_executor.py"
-    subtypes: ["7 operators: gt/gte/lt/lte/between/outside/eq"]
-    tested: "直接(test_threshold_executor.py 35 tests) + 间接(test_rule_engine_platform.py)"
-    status: "PASS"
-  - name: "TopologyExecutor"
-    file: "src/domain/executors/topology_executor.py"
-    subtypes: ["duplicate_link", "missing_peer", "topology_assertion(self_loop/isolated_device)"]
-    tested: "直接(test_topology_executor.py 14 tests + test_topology_e2e.py 4 tests)"
-    status: "PASS"
-
-remediation_history:
-  P0-1_topology_executor_fix:
-    status: "DONE"
-    files: ["src/domain/executors/topology_executor.py", "src/domain/executors/threshold_executor.py"]
-    tests: ["tests/test_topology_executor.py (14)", "tests/test_topology_e2e.py (4)"]
-    verified: true
-
-  P0-2_json_corruption_fail_fast:
-    status: "DONE"
-    files: ["src/infrastructure/repository.py", "src/crosscutting/errors/exceptions.py"]
-    tests: ["tests/test_persistence_safety.py (11)"]
-    verified: true
-
-  P0-3_rolling_backup:
-    status: "DONE"
-    files: ["src/infrastructure/repository.py"]
-    verified: true
-
-  P0-4_file_logging:
-    status: "DONE"
-    files: ["src/crosscutting/logging/logger.py"]
-    verified: true
-
-  P0-5_standardized_error_response:
-    status: "DONE"
-    files: ["src/presentation/api/error_handler.py", "src/presentation/api/main.py", "src/crosscutting/errors/exceptions.py"]
-    tests: ["tests/test_error_handler.py (8)"]
-    verified: true
-
-  P0-6_request_id_tracing:
-    status: "DONE"
-    files: ["src/presentation/api/error_handler.py", "src/presentation/api/main.py"]
-    tests: ["tests/test_error_handler.py (8)"]
-    verified: true
-
-  P0-7_capability_audit:
-    status: "DONE"
-    output: "docs/CAPABILITY_AUDIT.md"
-    verified: true
-
-  P1_0-1_publish_body_binding:
-    status: "DONE"
-    files: ["src/presentation/api/dto_models.py", "src/presentation/api/routers/rules.py", "frontend/src/api/rules.ts", "frontend/src/App.tsx"]
-    tests: ["tests/test_publish_validation_gate.py (11)"]
-    verified: true
-
-  P1_0-2_validation_blocks_publish:
-    status: "DONE"
-    files: ["src/presentation/api/routers/rules.py"]
-    tests: ["tests/test_publish_validation_gate.py (6)"]
-    verified: true
-
-  P1_0-3_frontend_default_real_api:
-    status: "DONE"
-    files: ["frontend/src/api/client.ts", "frontend/src/api/mock.ts", "frontend/.env"]
-    verified: true
-
-  P1_1-1_diff_dto_unification:
-    status: "DONE"
-    files: ["src/presentation/api/dto_models.py", "src/presentation/api/routers/baselines.py"]
-    tests: ["tests/test_diff_governance.py"]
-    verified: true
-
-  P1_1-2_diff_field_level_changes:
-    status: "DONE"
-    files: ["src/presentation/api/dto_models.py", "src/presentation/api/routers/baselines.py", "frontend/src/api/adapters.ts"]
-    verified: true
-
-  P1_1-3_schema_version_migration:
-    status: "DONE"
-    files: ["src/infrastructure/repository.py"]
-    tests: ["tests/test_schema_migration.py"]
-    verified: true
-
-  A1_save_draft_real_implementation:
-    status: "DONE"
-    files: ["src/domain/baseline_model.py", "src/infrastructure/repository.py", "src/application/rule_editor_services/rule_draft_save_service.py", "src/presentation/api/dto_models.py", "src/presentation/api/routers/rules.py", "src/presentation/api/dependencies.py", "src/application/rule_editor_services/rule_publish_workflow_service.py", "frontend/src/api/rules.ts", "frontend/src/App.tsx", "frontend/src/store/pageReducer.ts", "frontend/src/types/dto.ts", "frontend/src/api/client.ts"]
-    tests: ["tests/test_draft_save_api.py (16)"]
-    verified: true
-    notes: "Save Draft 不再为伪实现；刷新/重启后草稿可恢复；Invalid draft 可保存但不可发布"
-
-  A2_executor_test_coverage:
-    status: "DONE"
-    files: ["tests/test_threshold_executor.py", "tests/test_single_fact_executor.py", "tests/test_group_consistency_executor.py"]
-    tests: ["test_threshold_executor.py (35)", "test_single_fact_executor.py (20)", "test_group_consistency_executor.py (19)"]
-    verified: true
-    notes: "所有 Executor 均有独立测试文件，子类型/算子全覆盖"
-
-  B1_deep_diff_recursive_comparison:
-    status: "DONE"
-    files: ["src/application/rule_editor_services/rule_baseline_history_service.py", "src/presentation/api/routers/baselines.py", "frontend/src/components/DiffPanel.tsx", "frontend/src/components/CenterViews/DiffView.tsx", "frontend/src/components/RightPanel.tsx"]
-    tests: ["tests/test_deep_diff.py (43)"]
-    verified: true
-    notes: "递归 deep_diff() 替换浅层比较；DeepDiffChange 包含完整 dot-path；changed_fields 向后兼容；前端 field_name 宽度适配嵌套路径"
-
-  B2_rollback_complete_rule_set:
-    status: "DONE"
-    files: ["src/presentation/api/routers/rules.py", "src/presentation/api/dto_models.py", "src/application/rule_editor_services/rule_baseline_history_service.py", "frontend/src/types/dto.ts"]
-    tests: ["tests/test_rollback_completeness.py (11)"]
-    verified: true
-    notes: "RollbackCandidateDTO 增加 rule_set 字段返回完整规则集；_get_rule_set_for_version 返回 None 区分版本不存在 vs 空 rule_set；empty rule_set 回滚不再报错"
-
-capability_illusions_remaining:
-  - id: "FAKE-001"
-    severity: "RESOLVED"
-    description: "handleSaveDraft 仅前端 setTimeout 模拟，无后端 API 调用"
-    evidence: "App.tsx:264-272: setTimeout(() => { setSaving(false); dispatch({ type: 'CLEAR_DIRTY' }); message.success('Draft saved'); }, 500)"
-    fix: "A1: 新增 POST /api/rules/draft/save API + RuleDraftSaveService — 已完成"
-    resolved_by: "Phase A1"
-
-  - id: "FAKE-002"
-    severity: "RESOLVED"
-    description: "Diff 仅顶层 key 比较，嵌套字段变更不报告"
-    evidence: "rule_baseline_history_service.py:126-131: for k, v in rule_def_to.items(): if rule_def_from.get(k) != v: changed_fields.append(k)"
-    fix: "B1: 递归 deep_diff() 替换浅层比较，changed_fields 输出完整 dot-path"
-    resolved_by: "Phase B1"
+rule_externalization_status:
+  completed_features:
+    - "CompiledRule dataclass (compiled_rule_schema.py) — 统一编译后规则模型"
+    - "RuleTarget + RuleMessage dataclasses"
+    - "InputContractConfig with header mapping, row constraints, type validation, enum validation"
+    - "RecognitionService _apply_contract — full header mapping + validation pipeline"
+    - "NormalizationService _validate_and_normalize_row — type/enum/constraint validation"
+    - "RuleDefinitionLoader, RuleDefinitionRegistry, ContractBuilder — 外部规则加载与组装"
+    - "RuleEngineExternalRuleAssembler — 外部规则组装注入到 CheckRunService"
+    - "SingleFactRuleCompiler, ThresholdRuleCompiler — 外部规则编译器"
+    - "CheckRunService 支持 external_rule_file_path 参数"
+  supported_rule_types:
+    - "field_equals"
+    - "field_not_equals"
+    - "regex_match"
+    - "missing_value"
+    - "threshold / threshold_check"
+    - "group_consistency"
+    - "topology / topology_assertion"
+  supported_engine_scopes:
+    - "normalization"
+    - "rule_engine_single_fact"
+    - "rule_engine_threshold"
+  limitations:
+    - "Complex boolean logic trees not yet supported"
+    - "HeaderMapping.normalize_fn is not externalized"
+    - "RuleEngine GroupConsistency/Topology are not externalized at runtime yet"
 
 remaining_risks:
-  - id: "RISK-001"
-    severity: "RESOLVED"
-    description: "Diff 浅层比较 — 嵌套字段变更不可见（同 FAKE-002）— 已由 Phase B1 解决"
-    file: "src/application/rule_editor_services/rule_baseline_history_service.py"
-    resolved_by: "Phase B1"
-
-  - id: "RISK-002"
-    severity: "RESOLVED"
-    description: "handleSaveDraft 无后端持久化（同 FAKE-001）— 已由 Phase A1 解决"
-    file: "frontend/src/App.tsx"
-    resolved_by: "Phase A1"
-
   - id: "RISK-003"
     severity: "P2"
     description: "tasks.json 无 schema 版本迁移（baselines.json 已有）"
     file: "src/infrastructure/repository.py"
-    planned_phase: "C1"
-
   - id: "RISK-004"
     severity: "P2"
     description: "根目录残留一次性脚本（add_tags.py, gen_report.py 等）"
     file: "Root level scripts"
-    planned_phase: "D2"
-
-  - id: "RISK-005"
-    severity: "RESOLVED"
-    description: "3 个 Executor 无独立测试文件 — 已由 Phase A2 解决"
-    file: "tests/"
-    resolved_by: "Phase A2"
-
-  - id: "RISK-006"
-    severity: "RESOLVED"
-    description: "Rollback 仅取第一条规则作为 draft，非完整 rule_set 回滚 — 已由 Phase B2 解决"
-    file: "src/presentation/api/routers/rules.py"
-    resolved_by: "Phase B2"
-
   - id: "RISK-007"
     severity: "P2"
     description: "前端 bundle 体积 >500KB"
     file: "frontend/"
-
   - id: "RISK-008"
     severity: "P3"
     description: "GroupConsistencyExecutor: parameter_key 找不到时 fallback 返回 None 导致 TypeError"
-    file: "src/domain/executors/group_consistency_executor.py:33"
-    notes: "A2测试中发现并记录，非阻断当前阶段"
+    file: "src/domain/executors/group_consistency_executor.py"
 
-pre_existing_failures:
-  - test_file: "tests/test_run_core.py::test_cli_run_without_optional"
-    cause: "CLI subprocess test — task created but not in 'ready' status for run"
-    error: "Task {id} is not ready to check"
-    pre_existing: true
-    introduced_by_p0: false
-
-test_inventory:
-  total_files: 31
-  estimated_total_tests: "272+"
-  pre_existing_failures: 1
-  new_phase_b_tests:
-    - "tests/test_deep_diff.py (43) — B1: Deep Diff 递归比较引擎 + 集成测试"
-    - "tests/test_rollback_completeness.py (11) — B2: 完整 Rule Set 回滚 + 边界用例 + API 集成"
-  coverage_gaps:
-    - "无前端 E2E/组件测试"
-
-dependency_status:
-  backend:
-    - package: "fastapi>=0.100.0"
-      in_requirements: true
-    - package: "uvicorn>=0.23.0"
-      in_requirements: true
-    - package: "pydantic>=2.0.0"
-      in_requirements: true
-    - package: "httpx>=0.24.0"
-      in_requirements: true
-    - package: "openpyxl>=3.1.0"
-      in_requirements: true
-    - package: "requests>=2.31.0"
-      in_requirements: true
-    - package: "pyyaml>=6.0.1"
-      in_requirements: true
-    - package: "jinja2>=3.1.0"
-      in_requirements: true
-    - package: "pytest>=7.4.0"
-      in_requirements: true
-  frontend:
-    - package: "react"
-    - package: "typescript"
-    - package: "antd"
-    - package: "axios"
-    - package: "axios-mock-adapter"
-    - package: "lucide-react"
-
-next_audit_trigger: "下一次迭代审视时（见 ITERATION_REVIEW.md）或 Pain Log 出现 Critical 项时"
+next_steps:
+  - "Externalize runtime for GroupConsistency executor"
+  - "Externalize runtime for Topology executor"
+  - "Introduce a lightweight boolean logic DSL (e.g. AND/OR tree)"
+  - "Rule Publish Workflow MVP"
+  - "AI Integration for rule drafting"
