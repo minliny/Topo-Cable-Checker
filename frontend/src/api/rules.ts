@@ -91,7 +91,7 @@ export const rulesApi = {
 
   // A1-4: Save draft — real API call (replaces setTimeout mock)
   saveDraft: async (data: SaveDraftRequest): Promise<SaveDraftResultDTO> => {
-    const raw = await apiClient.post('/rules/draft/save', data);
+    const raw = await apiClient.post<SaveDraftResultDTO, SaveDraftResultDTO>('/rules/draft/save', data);
     return {
       success: raw.success,
       saved_at: raw.saved_at,
@@ -101,7 +101,7 @@ export const rulesApi = {
 
   // A1-4/A1-6: Load draft — for draft auto-recovery on page init
   loadDraft: async (baselineId: string): Promise<LoadDraftResultDTO> => {
-    const raw = await apiClient.get(`/rules/draft/${baselineId}`);
+    const raw = await apiClient.get<LoadDraftResultDTO, LoadDraftResultDTO>(`/rules/draft/${baselineId}`);
     return {
       has_draft: raw.has_draft,
       draft_data: raw.draft_data,

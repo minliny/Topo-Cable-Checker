@@ -32,6 +32,9 @@ logs/
 data/backups/
 
 # Test / temp artifacts
+.pytest_cache/
+.pnpm-store/
+.trae/
 test_final.txt
 test.xlsx
 diff_output.txt

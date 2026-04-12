@@ -9,6 +9,17 @@ project:
   status: "L4.0 稳定，Input Contract + Rule Engine Externalization 已合并"
   last_audit: "2026-04-12"
 
+branch_state:
+  trusted_mainline: "main"
+  remote_default_branch: "origin/main"
+  local_live_branches:
+    - "main"
+  remote_live_branches:
+    - "origin/main"
+  convergence_status: "历史功能分支成果已汇入 main；当前无其他活跃候选分支需要继续合并"
+  sync_status_at_audit: "local main ahead origin/main by 14 commits; behind 0"
+  mainline_policy: "后续开发应以 main 作为唯一可信主线"
+
 development_mode:
   current: rule_engine_externalization
   current_maturity: L4

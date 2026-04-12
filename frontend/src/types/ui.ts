@@ -23,7 +23,10 @@ export type RightPanelMode =
   | 'version_meta';
 
 export interface DraftData {
+  rule_id?: string;
   rule_type?: string;
+  target_type?: string;
+  severity?: string;
   params?: string;
 }
 
