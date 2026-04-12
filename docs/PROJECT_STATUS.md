@@ -78,9 +78,10 @@
 
 ## GitHub 同步状态
 
-- 审计时点：本地 `main` 相对 `origin/main` 为 `ahead 14 / behind 0`
+- 审计时点：首次分支审视时，本地 `main` 相对 `origin/main` 为 `ahead 14 / behind 0`
 - 同步策略：直接推送 `main` 到 `origin/main`
 - 采用理由：`origin/main` 是本地 `main` 的祖先，属于纯 fast-forward，同步风险最低且不会丢失历史
+- 最终结果：本次收敛提交已推送完成，当前应以 `f5a5ea08` 作为本地与 GitHub 对齐后的主线提交
 
 ---
 

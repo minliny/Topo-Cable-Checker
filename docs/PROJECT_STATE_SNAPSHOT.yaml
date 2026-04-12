@@ -18,6 +18,7 @@ branch_state:
     - "origin/main"
   convergence_status: "历史功能分支成果已汇入 main；当前无其他活跃候选分支需要继续合并"
   sync_status_at_audit: "local main ahead origin/main by 14 commits; behind 0"
+  sync_status_current: "push 完成后，本地 main 与 origin/main 已对齐"
   mainline_policy: "后续开发应以 main 作为唯一可信主线"
 
 development_mode:
