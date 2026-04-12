@@ -1,0 +1,126 @@
+{
+  "_meta": {
+    "dataset_id": "C",
+    "description": "边界与极端输入数据集 — 验证系统在极端数据下的行为",
+    "created": "2026-04-12",
+    "scenarios": ["C-01", "C-02", "C-03", "C-04", "C-05", "C-06", "C-07"]
+  },
+
+  "baseline": {
+    "baseline_id": "SIM_C",
+    "baseline_version": "v1.0",
+    "recognition_profile": { "strategy": "excel_basic" },
+    "naming_profile": { "strategy": "snake_case" },
+    "parameter_profile": {
+      "P1": { "group_key": "device_type", "comparison_field": "status" }
+    },
+    "threshold_profile": {
+      "T1": { "operator": "gt", "expected_value": 0 },
+      "T_missing_ref": { "operator": "gt", "expected_value": 1 }
+    },
+    "rule_set": {},
+    "baseline_version_snapshot": {},
+    "version_history_meta": {}
+  },
+
+  "scenarios": {
+    "C-01_empty_device_list": {
+      "description": "0 条设备数据 — 空数据集",
+      "rules": [
+        { "rule_id": "R_empty", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } }
+      ],
+      "devices": [],
+      "expected": {
+        "R_empty": { "issue_count": 1, "reason": "count=0, not > 0 → threshold fail" }
+      }
+    },
+
+    "C-02_large_device_list": {
+      "description": "10000 条设备数据 — 大数据集（此处仅结构示意，实际生成用脚本）",
+      "rules": [
+        { "rule_id": "R_large", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } }
+      ],
+      "devices": "_generated: 10000 items with device_type=Switch, status=active",
+      "expected": {
+        "R_large": { "issue_count": 0, "reason": "count=10000 > 0, pass" },
+        "_performance_note": "Should complete within 5 seconds"
+      }
+    },
+
+    "C-03_none_field_values": {
+      "description": "字段值为 None — None 安全",
+      "rules": [
+        { "rule_id": "R_none", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "error", "params": { "field": "status", "type": "field_equals", "expected": "active" } },
+        { "rule_id": "R_none_gc", "rule_type": "group_consistency", "template": "group_consistency", "target_type": "devices", "severity": "warning", "params": { "parameter_key": "P1" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": null },
+        { "name": "SW-02", "device_type": "Switch", "status": null },
+        { "name": "SW-03", "device_type": "Switch", "status": "active" }
+      ],
+      "expected": {
+        "R_none": { "issue_count": 2, "reason": "SW-01, SW-02 have status=None != active" },
+        "R_none_gc": { "issue_count": 2, "reason": "None values != 'active' (dominant), or active != None" }
+      }
+    },
+
+    "C-04_empty_string_field_values": {
+      "description": "字段值为空字符串 — 空串 vs None 区分",
+      "rules": [
+        { "rule_id": "R_empty_str", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "error", "params": { "field": "status", "type": "missing_value" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "" },
+        { "name": "SW-02", "device_type": "Switch", "status": null },
+        { "name": "SW-03", "device_type": "Switch", "status": "active" }
+      ],
+      "expected": {
+        "R_empty_str": { "issue_count": 2, "reason": "SW-01 (empty str) and SW-02 (null) are both missing" }
+      }
+    },
+
+    "C-05_missing_threshold_key": {
+      "description": "threshold_key 指向不存在的 T 定义 — 缺失配置降级",
+      "rules": [
+        { "rule_id": "R_no_th", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "NONEXISTENT_T" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" }
+      ],
+      "expected": {
+        "_note": "When threshold_key not found in threshold_profile, executor falls back to inline params. Since no inline operator/expected_value, defaults to eq with expected=None.",
+        "R_no_th": { "behavior": "Graceful degradation — uses inline defaults or produces no-fail result" }
+      }
+    },
+
+    "C-06_invalid_metric_type": {
+      "description": "metric_type 为非法值 — 未知 metric_type",
+      "rules": [
+        { "rule_id": "R_bad_metric", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "sum_values", "threshold_key": "T1" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": "active" }
+      ],
+      "expected": {
+        "_note": "Unknown metric_type defaults to actual_value=0, which may or may not trigger the threshold. Current code only handles 'count' and 'distinct_count'.",
+        "R_bad_metric": { "behavior": "actual_value=0 for unknown metric_type, then operator check applies" }
+      }
+    },
+
+    "C-07_nonexistent_group_key_field": {
+      "description": "group_key 字段在数据中不存在 — 属性缺失",
+      "rules": [
+        { "rule_id": "R_bad_group", "rule_type": "group_consistency", "template": "group_consistency", "target_type": "devices", "severity": "warning", "params": { "parameter_key": "P1" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": "inactive" }
+      ],
+      "expected": {
+        "_note": "P1 uses group_key=device_type, comparison_field=status. If device_type existed, we'd get 1 issue. If the field was entirely missing from the objects, getattr returns None, grouping by None.",
+        "R_bad_group": { "behavior": "Groups by None, checks status consistency within that group" }
+      }
+    }
+  }
+}

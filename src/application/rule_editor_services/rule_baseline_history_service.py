@@ -1,9 +1,105 @@
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import copy
 import datetime
 from src.domain.interfaces import IBaselineRepository
 from src.infrastructure.repository import BaselineRepository
+
+
+# ==========================================
+# B1: Deep Diff — Recursive comparison engine
+# ==========================================
+
+@dataclass
+class DeepDiffChange:
+    """B1: Represents a single field-level change with full path."""
+    field_path: str          # Dot-separated path, e.g. "params.threshold"
+    old_value: Any
+    new_value: Any
+
+
+def deep_diff(old_obj: Any, new_obj: Any, path: str = "") -> List[DeepDiffChange]:
+    """
+    B1: Recursively compare two objects and return a list of DeepDiffChange items.
+    
+    - For dicts: recurse into each key, detect added/removed keys
+    - For lists: compare by index position, detect length changes
+    - For scalars: direct equality check
+    
+    Returns a flat list of changes with full dot-path notation.
+    """
+    changes: List[DeepDiffChange] = []
+    
+    # Same reference or equal values → no change
+    if old_obj is new_obj:
+        return changes
+    
+    # Type mismatch → whole value changed
+    if type(old_obj) != type(new_obj):
+        changes.append(DeepDiffChange(
+            field_path=path or "(root)",
+            old_value=old_obj,
+            new_value=new_obj
+        ))
+        return changes
+    
+    # Both are dicts → recurse per key
+    if isinstance(old_obj, dict):
+        all_keys = set(old_obj.keys()) | set(new_obj.keys())
+        for key in sorted(all_keys, key=str):
+            child_path = f"{path}.{key}" if path else str(key)
+            if key not in old_obj:
+                # Key added
+                changes.append(DeepDiffChange(
+                    field_path=child_path,
+                    old_value=None,
+                    new_value=new_obj[key]
+                ))
+            elif key not in new_obj:
+                # Key removed
+                changes.append(DeepDiffChange(
+                    field_path=child_path,
+                    old_value=old_obj[key],
+                    new_value=None
+                ))
+            else:
+                # Key exists in both → recurse
+                changes.extend(deep_diff(old_obj[key], new_obj[key], child_path))
+        return changes
+    
+    # Both are lists → compare by index
+    if isinstance(old_obj, list):
+        max_len = max(len(old_obj), len(new_obj))
+        for i in range(max_len):
+            child_path = f"{path}[{i}]"
+            if i >= len(old_obj):
+                # Item added
+                changes.append(DeepDiffChange(
+                    field_path=child_path,
+                    old_value=None,
+                    new_value=new_obj[i]
+                ))
+            elif i >= len(new_obj):
+                # Item removed
+                changes.append(DeepDiffChange(
+                    field_path=child_path,
+                    old_value=old_obj[i],
+                    new_value=None
+                ))
+            else:
+                # Item exists in both → recurse
+                changes.extend(deep_diff(old_obj[i], new_obj[i], child_path))
+        return changes
+    
+    # Scalars → direct comparison
+    if old_obj != new_obj:
+        changes.append(DeepDiffChange(
+            field_path=path or "(root)",
+            old_value=old_obj,
+            new_value=new_obj
+        ))
+    
+    return changes
 
 @dataclass
 class BaselineVersionListItemView:
@@ -19,6 +115,7 @@ class BaselineDiffRuleChangeView:
     changed_fields: List[str]
     before: Optional[Dict[str, Any]]
     after: Optional[Dict[str, Any]]
+    deep_changes: Optional[List[DeepDiffChange]] = None  # B1: Full recursive diff details
 
 @dataclass
 class BaselineDiffView:
@@ -41,7 +138,7 @@ class RuleBaselineHistoryService:
     def __init__(self, repo: Optional[IBaselineRepository] = None):
         self.repo = repo or BaselineRepository()
 
-    def _get_rule_set_for_version(self, baseline: Any, version: str) -> Dict[str, Any]:
+    def _get_rule_set_for_version(self, baseline: Any, version: str) -> Optional[Dict[str, Any]]:
         if isinstance(baseline, dict):
             current_version = baseline.get("baseline_version", "v1.0")
             snapshots = baseline.get("baseline_version_snapshot", {})
@@ -57,7 +154,7 @@ class RuleBaselineHistoryService:
         if version in snapshots:
             return copy.deepcopy(snapshots[version])
             
-        return {}
+        return None  # B2: Version not found → None (distinguish from empty rule_set {})
 
     def list_baseline_versions(self, baseline_id: str) -> List[BaselineVersionListItemView]:
         baseline = self.repo.get_by_id(baseline_id)
@@ -106,8 +203,12 @@ class RuleBaselineHistoryService:
         rules_from = self._get_rule_set_for_version(baseline, from_version)
         rules_to = self._get_rule_set_for_version(baseline, to_version)
         
-        if not rules_from and from_version != "v0.0": # Handle edge case
-            pass # Or handle not found
+        # B2: _get_rule_set_for_version now returns None for not-found, {} for empty rule_set
+        # Treat None as empty dict for diff purposes (comparing against missing version = all rules are new/removed)
+        if rules_from is None:
+            rules_from = {}
+        if rules_to is None:
+            rules_to = {}
             
         added = []
         removed = []
@@ -120,19 +221,23 @@ class RuleBaselineHistoryService:
                 ))
             else:
                 rule_def_from = rules_from[rule_id]
-                changed_fields = []
                 
-                # Basic shallow diff comparison
-                for k, v in rule_def_to.items():
-                    if rule_def_from.get(k) != v:
-                        changed_fields.append(k)
-                for k in rule_def_from.keys():
-                    if k not in rule_def_to:
-                        changed_fields.append(k)
+                # B1: Use deep_diff for recursive comparison instead of shallow key compare
+                diff_changes = deep_diff(rule_def_from, rule_def_to)
                 
-                if changed_fields:
+                if diff_changes:
+                    # Extract top-level changed field names for backward compatibility
+                    top_level_fields = sorted(set(
+                        c.field_path.split(".")[0].split("[")[0] 
+                        for c in diff_changes
+                    ))
                     modified.append(BaselineDiffRuleChangeView(
-                        rule_id=rule_id, change_type="modified", changed_fields=changed_fields, before=rule_def_from, after=rule_def_to
+                        rule_id=rule_id, 
+                        change_type="modified", 
+                        changed_fields=top_level_fields, 
+                        before=rule_def_from, 
+                        after=rule_def_to,
+                        deep_changes=diff_changes  # B1: full recursive change details
                     ))
                     
         for rule_id, rule_def_from in rules_from.items():
@@ -159,7 +264,8 @@ class RuleBaselineHistoryService:
             return BaselineRollbackResult(False, target_version, "", [f"Baseline {baseline_id} not found."])
             
         target_rule_set = self._get_rule_set_for_version(baseline, target_version)
-        if not target_rule_set and target_version != "v0.0":
+        # B2: Use "is None" instead of "not" — empty dict {} is a valid rule_set (0 rules)
+        if target_rule_set is None and target_version != "v0.0":
             return BaselineRollbackResult(False, target_version, "", [f"Version {target_version} not found in history."])
 
         # Prepare for version bump

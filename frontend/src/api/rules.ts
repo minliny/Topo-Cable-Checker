@@ -5,7 +5,9 @@ import {
   ValidationResultDTO,
   PublishResultDTO,
   DiffSourceTargetDTO,
-  RollbackCandidateDTO
+  RollbackCandidateDTO,
+  SaveDraftResultDTO,
+  LoadDraftResultDTO
 } from '../types/dto';
 import {
   normalizeBaselineTreeResponse,
@@ -18,6 +20,25 @@ import {
 
 export interface ValidateRequest {
   rule_type: string;
+  params: Record<string, any>;
+}
+
+/** P1.0-1: Explicit publish request matching backend PublishRequestDTO */
+export interface PublishRequest {
+  rule_id?: string;
+  rule_type: string;
+  target_type?: string;
+  severity?: string;
+  params: Record<string, any>;
+}
+
+/** A1-4: Save draft request matching backend SaveDraftRequestDTO */
+export interface SaveDraftRequest {
+  baseline_id: string;
+  rule_id?: string;
+  rule_type: string;
+  target_type?: string;
+  severity?: string;
   params: Record<string, any>;
 }
 
@@ -45,13 +66,13 @@ export const rulesApi = {
     }
   },
 
-  // Publish baseline rules
+  // P1.0-1: Publish baseline rules — sends explicit PublishRequest body
   publishRules: async (baselineId: string, draftData?: any): Promise<PublishResultDTO> => {
     try {
       const raw = await apiClient.post(`/rules/publish/${baselineId}`, draftData);
       return normalizePublishResponse(raw);
     } catch (err: any) {
-      // HTTP 400 responses during publish often contain blocked_issues
+      // HTTP 400/422 responses during publish often contain blocked_issues
       return normalizePublishResponse(err);
     }
   },
@@ -66,5 +87,30 @@ export const rulesApi = {
   createRollbackCandidate: async (baselineId: string, versionId: string): Promise<RollbackCandidateDTO> => {
     const raw = await apiClient.post('/rules/rollback', { baseline_id: baselineId, version_id: versionId });
     return normalizeRollbackCandidateResponse(raw, baselineId, versionId);
-  }
+  },
+
+  // A1-4: Save draft — real API call (replaces setTimeout mock)
+  saveDraft: async (data: SaveDraftRequest): Promise<SaveDraftResultDTO> => {
+    const raw = await apiClient.post('/rules/draft/save', data);
+    return {
+      success: raw.success,
+      saved_at: raw.saved_at,
+      message: raw.message,
+    };
+  },
+
+  // A1-4/A1-6: Load draft — for draft auto-recovery on page init
+  loadDraft: async (baselineId: string): Promise<LoadDraftResultDTO> => {
+    const raw = await apiClient.get(`/rules/draft/${baselineId}`);
+    return {
+      has_draft: raw.has_draft,
+      draft_data: raw.draft_data,
+      saved_at: raw.saved_at,
+    };
+  },
+
+  // A1-4: Clear draft — manual discard
+  clearDraft: async (baselineId: string): Promise<void> => {
+    await apiClient.delete(`/rules/draft/${baselineId}`);
+  },
 };

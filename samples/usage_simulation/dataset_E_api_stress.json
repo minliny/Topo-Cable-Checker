@@ -1,0 +1,130 @@
+{
+  "_meta": {
+    "dataset_id": "E",
+    "description": "API 端点压力测试数据集 — 验证 REST API 在高频调用下的稳定性",
+    "created": "2026-04-12",
+    "scenarios": ["E-01", "E-02", "E-03", "E-04", "E-05"],
+    "base_url": "http://localhost:8000/api"
+  },
+
+  "baseline": {
+    "baseline_id": "SIM_E",
+    "baseline_version": "v1.0",
+    "recognition_profile": { "strategy": "excel_basic" },
+    "naming_profile": { "strategy": "snake_case" },
+    "parameter_profile": {
+      "P1": { "group_key": "device_type", "comparison_field": "status" }
+    },
+    "threshold_profile": {
+      "T1": { "operator": "gt", "expected_value": 0 }
+    },
+    "rule_set": {
+      "R_initial": {
+        "rule_type": "template",
+        "template": "threshold",
+        "target_type": "devices",
+        "severity": "warning",
+        "params": { "metric_type": "count", "threshold_key": "T1" }
+      }
+    },
+    "baseline_version_snapshot": {
+      "v1.0": {
+        "R_initial": {
+          "rule_type": "template",
+          "template": "threshold",
+          "target_type": "devices",
+          "severity": "warning",
+          "params": { "metric_type": "count", "threshold_key": "T1" }
+        }
+      }
+    },
+    "version_history_meta": {},
+    "working_draft": null
+  },
+
+  "scenarios": {
+    "E-01_get_baselines_100x": {
+      "description": "100 次 GET /baselines — 只读吞吐",
+      "method": "GET",
+      "endpoint": "/baselines",
+      "iterations": 100,
+      "concurrency": 5,
+      "expected": {
+        "all_200": true,
+        "avg_response_ms": "< 100",
+        "no_5xx": true
+      }
+    },
+
+    "E-02_validate_50x": {
+      "description": "50 次 POST /rules/draft/validate — 校验吞吐",
+      "method": "POST",
+      "endpoint": "/rules/draft/validate",
+      "body": {
+        "rule_type": "threshold",
+        "params": { "metric_type": "count", "threshold_key": "T1" }
+      },
+      "iterations": 50,
+      "concurrency": 5,
+      "expected": {
+        "all_200": true,
+        "valid_true": true,
+        "avg_response_ms": "< 200"
+      }
+    },
+
+    "E-03_publish_20x_serial": {
+      "description": "20 次 POST /rules/publish 串行 — 发布吞吐",
+      "method": "POST",
+      "endpoint": "/rules/publish/SIM_E",
+      "body_template": {
+        "rule_id": "R_stress_{n}",
+        "rule_type": "threshold",
+        "target_type": "devices",
+        "severity": "warning",
+        "params": { "metric_type": "count", "threshold_key": "T1" }
+      },
+      "iterations": 20,
+      "concurrency": 1,
+      "expected": {
+        "all_200": true,
+        "all_success": true,
+        "final_version": "v1.20",
+        "avg_response_ms": "< 300"
+      }
+    },
+
+    "E-04_validate_publish_mixed_50x": {
+      "description": "validate + publish 混合 50 次 — 混合负载",
+      "steps": [
+        { "method": "POST", "endpoint": "/rules/draft/validate", "body": { "rule_type": "threshold", "params": { "metric_type": "count", "threshold_key": "T1" } } },
+        { "method": "POST", "endpoint": "/rules/publish/SIM_E", "body": { "rule_id": "R_mixed_{n}", "rule_type": "threshold", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } } }
+      ],
+      "iterations": 50,
+      "pattern": "validate, publish, validate, publish, ...",
+      "concurrency": 1,
+      "expected": {
+        "no_5xx": true,
+        "all_validate_pass": true,
+        "all_publish_succeed": true,
+        "avg_response_ms": "< 400"
+      }
+    },
+
+    "E-05_diff_and_rollback_mixed": {
+      "description": "30 次 GET diff + 10 次 rollback — 查询+写入混合",
+      "steps": [
+        { "method": "GET", "endpoint": "/baselines/SIM_E/diff?source=v1.0&target=v1.1", "weight": 3 },
+        { "method": "POST", "endpoint": "/rules/rollback", "body": { "baseline_id": "SIM_E", "version_id": "v1.0" }, "weight": 1 }
+      ],
+      "total_requests": 40,
+      "concurrency": 2,
+      "expected": {
+        "no_5xx": true,
+        "diff_returns_valid_structure": true,
+        "rollback_returns_valid_candidate": true,
+        "avg_response_ms": "< 500"
+      }
+    }
+  }
+}

@@ -23,7 +23,10 @@ export type PageAction =
   | { type: 'DISCARD_ROLLBACK_CANDIDATE' }
   | { type: 'JUMP_TO_FIELD', payload: { fieldPath: string } }
   | { type: 'JUMP_TO_RULE', payload: { ruleId: string } }
-  | { type: 'CLEAR_DIRTY' };
+  | { type: 'CLEAR_DIRTY' }
+  | { type: 'DRAFT_SAVE_SUCCESS', payload: { savedAt?: string } }
+  | { type: 'DRAFT_SAVE_FAILED' }
+  | { type: 'DRAFT_LOADED', payload: { draftData: any; savedAt?: string } };
 
 export function pageReducer(state: PageState, action: PageAction): PageState {
   switch (action.type) {
@@ -215,6 +218,34 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         ...state,
         dirty: false,
       };
+
+    case 'DRAFT_SAVE_SUCCESS':
+      return {
+        ...state,
+        dirty: false,
+      };
+
+    case 'DRAFT_SAVE_FAILED':
+      // Keep dirty state so user knows there are unsaved changes
+      return { ...state };
+
+    case 'DRAFT_LOADED':
+      // A1-6: Auto-recover saved draft when entering a baseline context
+      if (action.payload.draftData) {
+        const draft = action.payload.draftData;
+        return {
+          ...state,
+          draftData: {
+            rule_type: draft.rule_type || 'threshold',
+            params: typeof draft.params === 'string' ? draft.params : JSON.stringify(draft.params || {}, null, 2),
+            ...(draft.rule_id ? { rule_id: draft.rule_id } : {}),
+            ...(draft.target_type ? { target_type: draft.target_type } : {}),
+            ...(draft.severity ? { severity: draft.severity } : {}),
+          },
+          dirty: false,  // Loaded draft is not dirty — it's already saved
+        };
+      }
+      return state;
 
     default:
       return state;

@@ -1,10 +1,19 @@
+/**
+ * P1.0-3: API Client — Real API by default, mock only when explicitly enabled.
+ *
+ * Behavior:
+ * - VITE_USE_MOCK_API is NOT set or is "false" → Real API (default)
+ * - VITE_USE_MOCK_API=true → Mock API (explicit opt-in)
+ *
+ * To use mock: set VITE_USE_MOCK_API=true in .env
+ * To use real API: set VITE_USE_MOCK_API=false or leave it unset
+ */
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { mockBaselines, mockDiffData } from './mockData'; // we'll extract mock data to a separate file
+import { mockBaselines, mockDiffData } from './mockData'; // mock data definitions
 
-// Check environment variable for API source (dual-channel setup)
-// e.g. VITE_USE_MOCK_API=true or VITE_USE_MOCK_API=false
-const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API !== 'false'; // Default to true if not specified
+// P1.0-3: Default to REAL API. Only use mock when explicitly opted in.
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 // Create an Axios instance
 const apiClient = axios.create({
@@ -15,11 +24,11 @@ const apiClient = axios.create({
   },
 });
 
-// Setup mock adapter only if enabled
+// Setup mock adapter only if explicitly enabled
 let mock: MockAdapter | null = null;
 
 if (USE_MOCK_API) {
-  console.log('🔌 Using MOCK API Channel');
+  console.log('🔌 Using MOCK API Channel (VITE_USE_MOCK_API=true)');
   mock = new MockAdapter(apiClient, { delayResponse: 500 });
   
   // 1. Get baselines list (for mock UI)
@@ -40,7 +49,6 @@ if (USE_MOCK_API) {
 
   // 3. Publish baseline
   mock.onPost(new RegExp('/rules/publish/.*')).reply((config) => {
-    // Simulate publish blocked
     if (config.data && config.data.includes('block')) {
       return [400, {
         success: false,
@@ -64,8 +72,28 @@ if (USE_MOCK_API) {
     source_version_id: 'v1.0',
     draft_data: { rule_type: 'threshold', params: '{"_comment": "Mock rollback draft"}' }
   });
+
+  // A1-4: Save Draft
+  mock.onPost('/rules/draft/save').reply(200, {
+    success: true,
+    saved_at: new Date().toISOString(),
+    message: 'Draft saved successfully (mock)'
+  });
+
+  // A1-4: Load Draft (returns no draft by default in mock)
+  mock.onGet(new RegExp('/rules/draft/.*')).reply(200, {
+    has_draft: false,
+    draft_data: null,
+    saved_at: null
+  });
+
+  // A1-4: Clear Draft
+  mock.onDelete(new RegExp('/rules/draft/.*')).reply(200, {
+    success: true,
+    message: 'Draft cleared (mock)'
+  });
 } else {
-  console.log('🚀 Using REAL API Channel');
+  console.log('🚀 Using REAL API Channel (default)');
 }
 
 // Request interceptor
@@ -74,7 +102,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// Response interceptor — unwrap data for convenience
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {

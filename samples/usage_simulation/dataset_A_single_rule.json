@@ -1,0 +1,197 @@
+{
+  "_meta": {
+    "dataset_id": "A",
+    "description": "单规则正确性验证数据集 — 覆盖 Threshold/SingleFact/GroupConsistency 全子类型",
+    "created": "2026-04-12",
+    "scenarios": ["A-01", "A-02", "A-03", "A-04", "A-05", "A-06", "A-07", "A-08", "A-09", "A-10"]
+  },
+
+  "baseline": {
+    "baseline_id": "SIM_A",
+    "baseline_version": "v1.0",
+    "recognition_profile": { "strategy": "excel_basic" },
+    "naming_profile": { "strategy": "snake_case" },
+    "parameter_profile": {
+      "P1": { "group_key": "device_type", "comparison_field": "status" },
+      "P2": { "group_key": "location", "comparison_field": "model" }
+    },
+    "threshold_profile": {
+      "T_gt": { "operator": "gt", "expected_value": 0 },
+      "T_gte": { "operator": "gte", "expected_value": 3 },
+      "T_lt": { "operator": "lt", "expected_value": 100 },
+      "T_lte": { "operator": "lte", "expected_value": 10 },
+      "T_between": { "operator": "between", "min_value": 2, "max_value": 8 },
+      "T_outside": { "operator": "outside", "min_value": 1, "max_value": 5 },
+      "T_eq": { "operator": "eq", "expected_value": 5 }
+    },
+    "rule_set": {},
+    "baseline_version_snapshot": {},
+    "version_history_meta": {}
+  },
+
+  "scenarios": {
+    "A-01_threshold_comparison_ops": {
+      "description": "Threshold gt/gte/lt/lte 四则比较",
+      "rules": [
+        { "rule_id": "R_gt", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T_gt" } },
+        { "rule_id": "R_gte", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T_gte" } },
+        { "rule_id": "R_lt", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "error", "params": { "metric_type": "count", "threshold_key": "T_lt" } },
+        { "rule_id": "R_lte", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "critical", "params": { "metric_type": "count", "threshold_key": "T_lte" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active", "model": "C9300", "location": "DC-A" },
+        { "name": "SW-02", "device_type": "Switch", "status": "active", "model": "C9300", "location": "DC-A" },
+        { "name": "SW-03", "device_type": "Switch", "status": "inactive", "model": "C9200", "location": "DC-B" }
+      ],
+      "expected": {
+        "R_gt": { "issue_count": 0, "reason": "3 > 0, pass" },
+        "R_gte": { "issue_count": 0, "reason": "3 >= 3, pass" },
+        "R_lt": { "issue_count": 0, "reason": "3 < 100, pass" },
+        "R_lte": { "issue_count": 0, "reason": "3 <= 10, pass" }
+      }
+    },
+
+    "A-02_threshold_range_ops": {
+      "description": "Threshold between/outside 区间判断",
+      "rules": [
+        { "rule_id": "R_between", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T_between" } },
+        { "rule_id": "R_outside", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "error", "params": { "metric_type": "count", "threshold_key": "T_outside" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": "active" },
+        { "name": "SW-03", "device_type": "Switch", "status": "active" },
+        { "name": "SW-04", "device_type": "Router", "status": "active" }
+      ],
+      "expected": {
+        "R_between": { "issue_count": 0, "reason": "4 in [2,8], pass" },
+        "R_outside": { "issue_count": 1, "reason": "4 NOT outside [1,5], fail" }
+      }
+    },
+
+    "A-03_threshold_eq": {
+      "description": "Threshold eq 等值判断",
+      "rules": [
+        { "rule_id": "R_eq", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "error", "params": { "metric_type": "count", "threshold_key": "T_eq" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": "active" },
+        { "name": "SW-03", "device_type": "Switch", "status": "active" },
+        { "name": "RT-01", "device_type": "Router", "status": "active" },
+        { "name": "RT-02", "device_type": "Router", "status": "active" }
+      ],
+      "expected": {
+        "R_eq": { "issue_count": 0, "reason": "5 == 5, pass" }
+      }
+    },
+
+    "A-04_threshold_distinct_count": {
+      "description": "Threshold count vs distinct_count",
+      "rules": [
+        { "rule_id": "R_count", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T_gt" } },
+        { "rule_id": "R_distinct", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "distinct_count", "metric_field": "device_type", "threshold_key": "T_gt" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": "active" },
+        { "name": "RT-01", "device_type": "Router", "status": "active" }
+      ],
+      "expected": {
+        "R_count": { "issue_count": 0, "reason": "count=3 > 0, pass" },
+        "R_distinct": { "issue_count": 0, "reason": "distinct_count=2 (Switch,Router) > 0, pass" }
+      }
+    },
+
+    "A-05_single_fact_field_equals": {
+      "description": "SingleFact field_equals 正/反例",
+      "rules": [
+        { "rule_id": "R_fe_pass", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "warning", "params": { "field": "status", "type": "field_equals", "expected": "active" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": "inactive" },
+        { "name": "RT-01", "device_type": "Router", "status": "active" }
+      ],
+      "expected": {
+        "R_fe_pass": { "issue_count": 1, "reason": "SW-02 has status=inactive != active" }
+      }
+    },
+
+    "A-06_single_fact_regex_match": {
+      "description": "SingleFact regex_match 正/反例",
+      "rules": [
+        { "rule_id": "R_regex", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "warning", "params": { "field": "name", "type": "regex_match", "expected": "^SW-" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "RT-01", "device_type": "Router", "status": "active" },
+        { "name": "FW-01", "device_type": "Firewall", "status": "active" }
+      ],
+      "expected": {
+        "R_regex": { "issue_count": 2, "reason": "RT-01 and FW-01 don't match ^SW-" }
+      }
+    },
+
+    "A-07_single_fact_missing_value": {
+      "description": "SingleFact missing_value 检测",
+      "rules": [
+        { "rule_id": "R_missing", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "critical", "params": { "field": "status", "type": "missing_value" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": null },
+        { "name": "SW-03", "device_type": "Switch", "status": "" },
+        { "name": "RT-01", "device_type": "Router", "status": "active" }
+      ],
+      "expected": {
+        "R_missing": { "issue_count": 2, "reason": "SW-02 (null) and SW-03 (empty) are missing" }
+      }
+    },
+
+    "A-08_group_consistency_inconsistent": {
+      "description": "GroupConsistency dominant value 不一致检测",
+      "rules": [
+        { "rule_id": "R_gc", "rule_type": "group_consistency", "template": "group_consistency", "target_type": "devices", "severity": "warning", "params": { "parameter_key": "P1" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active", "model": "C9300" },
+        { "name": "SW-02", "device_type": "Switch", "status": "active", "model": "C9300" },
+        { "name": "SW-03", "device_type": "Switch", "status": "inactive", "model": "C9200" },
+        { "name": "RT-01", "device_type": "Router", "status": "active", "model": "ISR4k" }
+      ],
+      "expected": {
+        "R_gc": { "issue_count": 1, "reason": "Switch group: SW-03 has status=inactive != active (dominant)" }
+      }
+    },
+
+    "A-09_group_consistency_all_consistent": {
+      "description": "GroupConsistency 单组全部一致 → 无 issue",
+      "rules": [
+        { "rule_id": "R_gc_ok", "rule_type": "group_consistency", "template": "group_consistency", "target_type": "devices", "severity": "warning", "params": { "parameter_key": "P1" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "SW-02", "device_type": "Switch", "status": "active" },
+        { "name": "SW-03", "device_type": "Switch", "status": "active" }
+      ],
+      "expected": {
+        "R_gc_ok": { "issue_count": 0, "reason": "All Switch have same status=active" }
+      }
+    },
+
+    "A-10_group_consistency_single_item": {
+      "description": "GroupConsistency 单组仅 1 条 → 跳过",
+      "rules": [
+        { "rule_id": "R_gc_skip", "rule_type": "group_consistency", "template": "group_consistency", "target_type": "devices", "severity": "warning", "params": { "parameter_key": "P1" } }
+      ],
+      "devices": [
+        { "name": "SW-01", "device_type": "Switch", "status": "active" },
+        { "name": "RT-01", "device_type": "Router", "status": "active" }
+      ],
+      "expected": {
+        "R_gc_skip": { "issue_count": 0, "reason": "Each group has <=1 item, skipped" }
+      }
+    }
+  }
+}

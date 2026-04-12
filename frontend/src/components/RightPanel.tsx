@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Tag, Collapse, Spin, Empty, Typography, Alert, Divider, Button } from 'antd';
 import { GitCommit, Plus, Minus, Edit3, HelpCircle, CheckCircle, FileSearch, Archive, UploadCloud } from 'lucide-react';
-import { ValidationResultDTO, DiffSourceTargetDTO } from '../types/dto';
+import { ValidationResultDTO, DiffSourceTargetDTO, DiffFieldChangeDTO } from '../types/dto';
 import { RightPanelMode } from '../types/ui';
 
 const { Panel } = Collapse;
@@ -59,6 +59,11 @@ const RightPanel: React.FC<RightPanelProps> = ({
       return <Empty description="No validation result yet. Click Validate to check the rule." />;
     }
 
+    // P1.1-1: Support both issues[] (current DTO) and errors[] (legacy alias)
+    const errorList = validationResult.issues?.map(i => i.message) 
+      || validationResult.errors 
+      || [];
+
     return (
       <Card title="Validation Result" size="small" className="shadow-sm border-gray-200">
         {validationResult.valid ? (
@@ -68,17 +73,16 @@ const RightPanel: React.FC<RightPanelProps> = ({
             title="Validation Errors"
             description={
               <ul className="list-disc pl-4 m-0">
-                {validationResult.errors?.map((err, i) => (
+                {errorList.map((err, i) => (
                   <li 
                     key={i} 
                     className="cursor-pointer hover:underline text-red-600 hover:text-red-800 transition-colors" 
                     onClick={() => {
-                      // Try to extract field name from error message (e.g. "Missing params")
                       const fieldMatch = err.match(/parameters|params|rule_type/i);
                       if (fieldMatch) {
                          onJumpToField?.(fieldMatch[0] === 'rule_type' ? 'rule_type' : 'params');
                       } else {
-                         onJumpToField?.('params'); // default jump
+                         onJumpToField?.('params');
                       }
                     }}
                   >
@@ -115,38 +119,59 @@ const RightPanel: React.FC<RightPanelProps> = ({
       return <Empty description="No diff data available" />;
     }
 
+    // P1.1-2: Separate rules by change type from unified rules array
+    const addedRules = diffData.rules.filter(r => r.change_type === 'added');
+    const removedRules = diffData.rules.filter(r => r.change_type === 'removed');
+    const modifiedRules = diffData.rules.filter(r => r.change_type === 'modified');
+
     return (
       <div className="space-y-4">
+        {/* P1.1-2: Human-readable summary */}
+        {diffData.human_readable_summary && (
+          <Alert 
+            message={diffData.human_readable_summary} 
+            type="info" 
+            showIcon 
+            className="text-sm"
+          />
+        )}
+
         {/* Added Rules */}
-        {diffData.added_rules?.length > 0 && (
-          <Card size="small" title={<span className="text-green-600 flex items-center gap-2"><Plus size={14} /> Added ({diffData.added_rules.length})</span>} className="border-green-200 bg-green-50 shadow-sm">
+        {addedRules.length > 0 && (
+          <Card size="small" title={<span className="text-green-600 flex items-center gap-2"><Plus size={14} /> Added ({addedRules.length})</span>} className="border-green-200 bg-green-50 shadow-sm">
             <ul className="list-disc pl-5 m-0 text-sm text-green-800">
-              {diffData.added_rules.map((rule: any, i: number) => (
-                <li key={i}>{rule.name || rule.id} <Tag className="ml-2" color="green">{rule.type}</Tag></li>
+              {addedRules.map((rule, i) => (
+                <li key={i}>
+                  <span className="font-medium">{rule.rule_id}</span>
+                  {rule.human_summary && <span className="ml-2 text-green-600 text-xs">{rule.human_summary}</span>}
+                </li>
               ))}
             </ul>
           </Card>
         )}
 
         {/* Removed Rules */}
-        {diffData.removed_rules?.length > 0 && (
-          <Card size="small" title={<span className="text-red-600 flex items-center gap-2"><Minus size={14} /> Removed ({diffData.removed_rules.length})</span>} className="border-red-200 bg-red-50 shadow-sm">
+        {removedRules.length > 0 && (
+          <Card size="small" title={<span className="text-red-600 flex items-center gap-2"><Minus size={14} /> Removed ({removedRules.length})</span>} className="border-red-200 bg-red-50 shadow-sm">
             <ul className="list-disc pl-5 m-0 text-sm text-red-800">
-              {diffData.removed_rules.map((rule: any, i: number) => (
-                <li key={i}>{rule.name || rule.id} <Tag className="ml-2" color="red">{rule.type}</Tag></li>
+              {removedRules.map((rule, i) => (
+                <li key={i}>
+                  <span className="font-medium">{rule.rule_id}</span>
+                  {rule.human_summary && <span className="ml-2 text-red-600 text-xs">{rule.human_summary}</span>}
+                </li>
               ))}
             </ul>
           </Card>
         )}
 
-        {/* Modified Rules */}
-        {diffData.modified_rules?.length > 0 && (
+        {/* P1.1-2: Modified Rules with per-field before/after */}
+        {modifiedRules.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3 text-orange-600 font-medium">
-              <Edit3 size={16} /> Modified ({diffData.modified_rules.length})
+              <Edit3 size={16} /> Modified ({modifiedRules.length})
             </div>
             <Collapse expandIconPosition="end" ghost className="bg-orange-50 border border-orange-200 rounded-md">
-              {diffData.modified_rules.map((rule, i) => (
+              {modifiedRules.map((rule, i) => (
                 <Panel 
                   key={i} 
                   header={
@@ -157,7 +182,14 @@ const RightPanel: React.FC<RightPanelProps> = ({
                         onJumpToRule?.(rule.rule_id);
                       }}
                     >
-                      <Text strong className="text-orange-700">{rule.rule_id}</Text>
+                      <div className="flex items-center gap-2">
+                        <Text strong className="text-orange-700">{rule.rule_id}</Text>
+                        {rule.human_summary && (
+                          <Text className="text-xs text-gray-500 truncate max-w-[200px]" title={rule.human_summary}>
+                            {rule.human_summary}
+                          </Text>
+                        )}
+                      </div>
                       <FileSearch size={14} className="text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   } 
@@ -166,14 +198,20 @@ const RightPanel: React.FC<RightPanelProps> = ({
                   <div className="mb-3">
                     <Text type="secondary" className="text-xs uppercase tracking-wider block mb-1">Changed Fields</Text>
                     <div className="bg-white p-2 rounded border border-orange-100">
-                      {Object.entries(rule.changed_fields).map(([field, changes]: [string, any]) => (
-                        <div key={field} className="text-sm font-mono flex items-center flex-wrap mb-1 last:mb-0">
-                          <span className="text-gray-500 w-24 truncate" title={field}>{field}:</span>
-                          <span className="text-red-500 line-through mr-2">{JSON.stringify(changes.old)}</span>
-                          <span className="text-gray-400 mx-1">→</span>
-                          <span className="text-green-600 ml-2">{JSON.stringify(changes.new)}</span>
-                        </div>
-                      ))}
+                      {/* P1.1-2: Use field_changes for structured before/after display */}
+                      {(rule.field_changes && rule.field_changes.length > 0)
+                        ? rule.field_changes.map((fc: DiffFieldChangeDTO) => (
+                          <div key={fc.field_name} className="text-sm font-mono flex items-center flex-wrap mb-1 last:mb-0">
+                            <span className="text-gray-500 w-44 truncate" title={fc.field_name}>{fc.field_name}:</span>
+                            <span className="text-red-500 line-through mr-2">{JSON.stringify(fc.old_value)}</span>
+                            <span className="text-gray-400 mx-1">→</span>
+                            <span className="text-green-600 ml-2">{JSON.stringify(fc.new_value)}</span>
+                          </div>
+                        ))
+                        : (rule.changed_fields || []).map((field: string) => (
+                          <div key={field} className="text-sm font-mono text-gray-500 mb-1">{field}</div>
+                        ))
+                      }
                     </div>
                   </div>
                 </Panel>
@@ -182,7 +220,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
           </div>
         )}
 
-        {diffData.added_rules?.length === 0 && diffData.removed_rules?.length === 0 && diffData.modified_rules?.length === 0 && (
+        {addedRules.length === 0 && removedRules.length === 0 && modifiedRules.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             No changes detected in this baseline.
           </div>
@@ -192,11 +230,6 @@ const RightPanel: React.FC<RightPanelProps> = ({
   };
 
   const renderVersionMeta = () => {
-    // Attempt to extract metadata from diffData or validationResult if available? No, wait. 
-    // We don't have versionMeta data directly in RightPanelProps.
-    // The App.ts doesn't fetch or pass versionMeta to RightPanel right now.
-    // It's a bit larger change than a 1-line string replace, because we'd need to fetch or pass the meta.
-    // I'll skip changing it and just write it down in the Next Actions!
     return (
       <Card className="shadow-sm border-gray-200">
         <Alert title="Viewing Historical Version" type="info" showIcon className="mb-4" />

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
+import json
 from src.presentation.api.dto_models import BaselineNodeDTO, VersionMetaDTO, DiffSourceTargetDTO
 from src.presentation.api.dependencies import get_baseline_service, get_history_service
 from src.application.baseline_services.baseline_service import BaselineService
@@ -117,25 +118,82 @@ def get_baseline_diff(
     rules = []
     
     for r in diff_view.added_rules:
+        rule_type = r.after.get("rule_type", r.after.get("template", "rule")) if r.after else "rule"
         rules.append({
-            "rule_id": r.rule_id, "change_type": "added", "changed_fields": [], "old_value": None, "new_value": r.after
+            "rule_id": r.rule_id, "change_type": "added",
+            "changed_fields": [], "field_changes": [],
+            "old_value": None, "new_value": r.after,
+            "human_summary": f"New {rule_type} rule added"
         })
     for r in diff_view.removed_rules:
+        rule_type = r.before.get("rule_type", r.before.get("template", "rule")) if r.before else "rule"
         rules.append({
-            "rule_id": r.rule_id, "change_type": "removed", "changed_fields": [], "old_value": r.before, "new_value": None
+            "rule_id": r.rule_id, "change_type": "removed",
+            "changed_fields": [], "field_changes": [],
+            "old_value": r.before, "new_value": None,
+            "human_summary": f"{rule_type} rule removed"
         })
     for r in diff_view.modified_rules:
+        # B1: Build per-field before/after using deep_changes (recursive) when available
+        field_changes = []
+        human_parts = []
+        if r.before and r.after:
+            if r.deep_changes:
+                # B1: Use deep_diff results with full nested paths
+                for dc in r.deep_changes:
+                    field_changes.append({
+                        "field_name": dc.field_path,
+                        "old_value": dc.old_value,
+                        "new_value": dc.new_value
+                    })
+                    human_parts.append(f"{dc.field_path}: {json.dumps(dc.old_value, default=str)} → {json.dumps(dc.new_value, default=str)}")
+            else:
+                # Fallback to shallow field-level comparison
+                for f in r.changed_fields:
+                    old_v = r.before.get(f)
+                    new_v = r.after.get(f)
+                    field_changes.append({
+                        "field_name": f,
+                        "old_value": old_v,
+                        "new_value": new_v
+                    })
+                    human_parts.append(f"{f}: {json.dumps(old_v, default=str)} → {json.dumps(new_v, default=str)}")
+        
+        human_summary = "; ".join(human_parts) if human_parts else f"{len(r.changed_fields)} field(s) changed"
         rules.append({
-            "rule_id": r.rule_id, "change_type": "modified", "changed_fields": r.changed_fields, "old_value": r.before, "new_value": r.after
+            "rule_id": r.rule_id, "change_type": "modified",
+            "changed_fields": r.changed_fields,
+            "field_changes": field_changes,
+            "old_value": r.before, "new_value": r.after,
+            "human_summary": human_summary
         })
+
+    # Build global human-readable summary
+    parts = []
+    n_added = len(diff_view.added_rules)
+    n_removed = len(diff_view.removed_rules)
+    n_modified = len(diff_view.modified_rules)
+    if n_added:
+        parts.append(f"{n_added} rule(s) added")
+    if n_removed:
+        parts.append(f"{n_removed} rule(s) removed")
+    if n_modified:
+        # Extract common modification themes
+        all_changed = set()
+        for r in diff_view.modified_rules:
+            all_changed.update(r.changed_fields)
+        detail = f" ({', '.join(sorted(all_changed))})" if all_changed else ""
+        parts.append(f"{n_modified} rule(s) modified{detail}")
+    human_readable_summary = "; ".join(parts) if parts else "No changes detected"
 
     return {
         "source_version_id": source,
         "target_version_id": actual_target,
         "diff_summary": {
-            "added": len(diff_view.added_rules),
-            "removed": len(diff_view.removed_rules),
-            "modified": len(diff_view.modified_rules)
+            "added": n_added,
+            "removed": n_removed,
+            "modified": n_modified
         },
+        "human_readable_summary": human_readable_summary,
         "rules": rules
     }

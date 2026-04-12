@@ -44,6 +44,8 @@ export interface ValidationIssueDTO {
 export interface ValidationResultDTO {
   valid: boolean; // UI requirement
   issues: ValidationIssueDTO[]; // UI requirement
+  errors?: string[]; // Legacy alias — some paths still use this
+  evidence?: Record<string, any>; // Optional evidence blob
 }
 
 /**
@@ -65,17 +67,26 @@ export interface RollbackCandidateDTO {
   source_version_id: string; // Used for UI state recovery
   source_version_label: string; // UI requirement
   draft_data: any; // Used to hydrate UI editor
+  rule_set?: Record<string, any>; // B2: Full rule set for complete rollback
 }
 
 /**
- * Diff models
+ * P1.1-2: Diff models — enhanced with per-field before/after and human-readable summaries
  */
+export interface DiffFieldChangeDTO {
+  field_name: string;
+  old_value: any;
+  new_value: any;
+}
+
 export interface DiffRuleDTO {
   rule_id: string; // Used for UI jump-to-rule
   change_type: 'added' | 'removed' | 'modified'; // UI requirement
   changed_fields?: string[];
+  field_changes?: DiffFieldChangeDTO[]; // P1.1-2: per-field before/after
   old_value?: any;
   new_value?: any;
+  human_summary?: string; // P1.1-2: e.g. "severity: warning → error"
 }
 
 /**
@@ -89,6 +100,33 @@ export interface DiffSourceTargetDTO {
     removed: number; // UI requirement
     modified: number; // UI requirement
   };
+  human_readable_summary?: string; // P1.1-2: e.g. "2 rules added, 1 modified (severity)"
   rules: DiffRuleDTO[]; // UI requirement
 }
 
+/**
+ * A1-4: POST /api/rules/draft/save
+ */
+export interface SaveDraftRequestDTO {
+  baseline_id: string;
+  rule_id?: string;
+  rule_type: string;
+  target_type?: string;
+  severity?: string;
+  params: Record<string, any>;
+}
+
+export interface SaveDraftResultDTO {
+  success: boolean;
+  saved_at?: string;
+  message?: string;
+}
+
+/**
+ * A1-4: GET /api/rules/draft/{baseline_id}
+ */
+export interface LoadDraftResultDTO {
+  has_draft: boolean;
+  draft_data?: any;
+  saved_at?: string;
+}

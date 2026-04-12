@@ -116,51 +116,128 @@ export function normalizeDiffResponse(raw: any, sourceVersionId: string, targetV
   let modifiedCount = 0;
 
   if (Array.isArray(raw.rules)) {
-    // Already unified format
+    // Already unified format — P1.1-2 backend now sends field_changes & human_summary
     raw.rules.forEach((r: any) => {
+      const rule_id = r.rule_id || r.id || `unknown-${Math.random()}`;
+      const change_type = r.change_type || 'modified';
+      
+      // Build field_changes from changed_fields if not already provided
+      let field_changes = r.field_changes;
+      if (!field_changes && Array.isArray(r.changed_fields) && r.changed_fields.length > 0) {
+        const old_val = r.old_value || {};
+        const new_val = r.new_value || {};
+        field_changes = r.changed_fields.map((f: string) => ({
+          field_name: f,
+          old_value: old_val[f] ?? null,
+          new_value: new_val[f] ?? null
+        }));
+      }
+      
+      // Build human_summary if not provided
+      let human_summary = r.human_summary;
+      if (!human_summary && field_changes && field_changes.length > 0) {
+        human_summary = field_changes.map((fc: any) => 
+          `${fc.field_name}: ${JSON.stringify(fc.old_value)} → ${JSON.stringify(fc.new_value)}`
+        ).join('; ');
+      }
+      
       rules.push({
-        rule_id: r.rule_id || r.id || `unknown-${Math.random()}`,
-        change_type: r.change_type || 'modified',
+        rule_id,
+        change_type,
         changed_fields: r.changed_fields || [],
+        field_changes: field_changes || [],
         old_value: r.old_value,
         new_value: r.new_value,
+        human_summary,
       });
-      if (r.change_type === 'added') addedCount++;
-      if (r.change_type === 'removed') removedCount++;
-      if (r.change_type === 'modified') modifiedCount++;
+      if (change_type === 'added') addedCount++;
+      if (change_type === 'removed') removedCount++;
+      if (change_type === 'modified') modifiedCount++;
     });
   } else {
     // Old mock format: { added_rules: [], removed_rules: [], modified_rules: [] }
     if (Array.isArray(raw.added_rules)) {
       raw.added_rules.forEach((r: any) => {
-        rules.push({ rule_id: r.id || r.rule_id, change_type: 'added', new_value: r });
+        const rule_id = r.id || r.rule_id || `unknown-${Math.random()}`;
+        rules.push({
+          rule_id,
+          change_type: 'added',
+          field_changes: [],
+          new_value: r,
+          human_summary: `New rule added`
+        });
         addedCount++;
       });
     }
     if (Array.isArray(raw.removed_rules)) {
       raw.removed_rules.forEach((r: any) => {
-        rules.push({ rule_id: r.id || r.rule_id, change_type: 'removed', old_value: r });
+        const rule_id = r.id || r.rule_id || `unknown-${Math.random()}`;
+        rules.push({
+          rule_id,
+          change_type: 'removed',
+          field_changes: [],
+          old_value: r,
+          human_summary: `Rule removed`
+        });
         removedCount++;
       });
     }
     if (Array.isArray(raw.modified_rules)) {
       raw.modified_rules.forEach((r: any) => {
+        const rule_id = r.id || r.rule_id || `unknown-${Math.random()}`;
+        // Mock format: changed_fields = { field: { old, new } }
+        let field_changes: any[] = [];
+        let human_parts: string[] = [];
+        
+        if (r.changed_fields && typeof r.changed_fields === 'object' && !Array.isArray(r.changed_fields)) {
+          // Old mock format: { threshold: { old: 10, new: 15 } }
+          for (const [f, changes] of Object.entries(r.changed_fields)) {
+            const c = changes as any;
+            field_changes.push({ field_name: f, old_value: c.old, new_value: c.new });
+            human_parts.push(`${f}: ${JSON.stringify(c.old)} → ${JSON.stringify(c.new)}`);
+          }
+        } else if (Array.isArray(r.changed_fields)) {
+          const old_val = r.old_value || r.before || {};
+          const new_val = r.new_value || r.after || {};
+          field_changes = r.changed_fields.map((f: string) => ({
+            field_name: f,
+            old_value: old_val[f] ?? null,
+            new_value: new_val[f] ?? null
+          }));
+          human_parts = field_changes.map((fc: any) => 
+            `${fc.field_name}: ${JSON.stringify(fc.old_value)} → ${JSON.stringify(fc.new_value)}`
+          );
+        }
+        
         rules.push({ 
-          rule_id: r.id || r.rule_id, 
+          rule_id, 
           change_type: 'modified', 
-          changed_fields: r.changed_fields ? Object.keys(r.changed_fields) : [],
+          changed_fields: r.changed_fields ? (Array.isArray(r.changed_fields) ? r.changed_fields : Object.keys(r.changed_fields)) : [],
+          field_changes,
           old_value: r.old_value,
           new_value: r.new_value,
+          human_summary: human_parts.length > 0 ? human_parts.join('; ') : 'Modified',
         });
         modifiedCount++;
       });
     }
   }
 
+  // Build human_readable_summary
+  let human_readable_summary = raw.human_readable_summary;
+  if (!human_readable_summary) {
+    const parts: string[] = [];
+    if (addedCount) parts.push(`${addedCount} rule(s) added`);
+    if (removedCount) parts.push(`${removedCount} rule(s) removed`);
+    if (modifiedCount) parts.push(`${modifiedCount} rule(s) modified`);
+    human_readable_summary = parts.length > 0 ? parts.join(', ') : 'No changes detected';
+  }
+
   return {
     source_version_id: raw.source_version_id || sourceVersionId,
     target_version_id: raw.target_version_id || targetVersionId,
     diff_summary: raw.diff_summary || { added: addedCount, removed: removedCount, modified: modifiedCount },
+    human_readable_summary,
     rules,
   };
 }

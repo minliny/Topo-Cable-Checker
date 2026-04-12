@@ -68,7 +68,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         <div className="flex items-center gap-2">
           <FileCode size={24} className="text-blue-600" />
           <Title level={4} className="!m-0">
-            {mode === 'create' ? 'Create New Rule' : 'Edit Rule Draft'}
+            {mode === 'edit' ? 'Edit Rule Draft' : 'Edit Rule Draft'}
           </Title>
           {dirty && <Text type="warning" className="ml-2">(Unsaved Changes)</Text>}
         </div>

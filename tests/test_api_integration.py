@@ -56,8 +56,15 @@ def test_validate_draft_blocked():
     assert data["issues"][0]["issue_type"] == "error"
 
 def test_publish_baseline_blocked():
-    # Sending 'block': true should be blocked by backend minimum validation
-    payload = {"params": {"block": True}}
+    """P1.0-2: Invalid draft (missing required params) is blocked by validation gate."""
+    # Send a threshold rule without required params — compile will fail
+    payload = {
+        "rule_id": "bad_rule",
+        "rule_type": "threshold",
+        "target_type": "devices",
+        "severity": "warning",
+        "params": {}  # Missing metric_type and threshold_key
+    }
     response = client.post("/api/rules/publish/B001", json=payload)
     
     if response.status_code == 404:
@@ -69,8 +76,16 @@ def test_publish_baseline_blocked():
     assert "blocked_issues" in data
     assert len(data["blocked_issues"]) > 0
 
+
 def test_publish_baseline_success():
-    payload = {"params": {"threshold_key": "new_key"}}
+    """P1.0-1: Valid draft with proper PublishRequestDTO body is published."""
+    payload = {
+        "rule_id": "test_threshold_rule",
+        "rule_type": "threshold",
+        "target_type": "devices",
+        "severity": "error",
+        "params": {"metric_type": "count", "threshold_key": "T1"}
+    }
     response = client.post("/api/rules/publish/B001", json=payload)
     
     if response.status_code == 404:
@@ -92,14 +107,17 @@ def test_get_diff_after_publish():
     # Compare draft against the newly created version
     response = client.get("/api/baselines/B001/diff?source=draft&target=previous_version")
     
-    if response.status_code == 404:
-        pytest.skip("Baseline B001 not found in test environment")
-        
-    assert response.status_code == 200
-    data = response.json()
-    assert "diff_summary" in data
-    assert "rules" in data
-    assert isinstance(data["rules"], list)
+    # The diff endpoint may return 404 if version snapshots don't align
+    # Just verify the response structure when it does work
+    if response.status_code == 200:
+        data = response.json()
+        assert "diff_summary" in data
+        assert "rules" in data
+        assert isinstance(data["rules"], list)
+    elif response.status_code == 404:
+        pytest.skip("Diff data not available in test environment")
+    else:
+        pytest.fail(f"Unexpected status code: {response.status_code}")
     
 def test_create_rollback_candidate():
     payload = {"baseline_id": "B001", "version_id": "v1.0"}

@@ -1,0 +1,130 @@
+{
+  "_meta": {
+    "dataset_id": "D",
+    "description": "Draft/Publish/Version 工作流压测数据集 — 验证高频 draft-save + publish + rollback 稳定性",
+    "created": "2026-04-12",
+    "scenarios": ["D-01", "D-02", "D-03", "D-04", "D-05"]
+  },
+
+  "baseline": {
+    "baseline_id": "SIM_D",
+    "baseline_version": "v1.0",
+    "recognition_profile": { "strategy": "excel_basic" },
+    "naming_profile": { "strategy": "snake_case" },
+    "parameter_profile": {
+      "P1": { "group_key": "device_type", "comparison_field": "status" }
+    },
+    "threshold_profile": {
+      "T1": { "operator": "gt", "expected_value": 0 }
+    },
+    "rule_set": {
+      "R_initial": {
+        "rule_type": "template",
+        "template": "threshold",
+        "target_type": "devices",
+        "severity": "warning",
+        "params": { "metric_type": "count", "threshold_key": "T1" }
+      }
+    },
+    "baseline_version_snapshot": {
+      "v1.0": {
+        "R_initial": {
+          "rule_type": "template",
+          "template": "threshold",
+          "target_type": "devices",
+          "severity": "warning",
+          "params": { "metric_type": "count", "threshold_key": "T1" }
+        }
+      }
+    },
+    "version_history_meta": {
+      "v1.0": {
+        "published_at": "2026-04-12T00:00:00Z",
+        "publisher": "admin",
+        "summary": "Initial version",
+        "parent_version": null
+      }
+    },
+    "working_draft": null
+  },
+
+  "draft_template": {
+    "baseline_id": "SIM_D",
+    "rule_type": "threshold",
+    "target_type": "devices",
+    "severity": "warning",
+    "params": { "metric_type": "count", "threshold_key": "T1" }
+  },
+
+  "scenarios": {
+    "D-01_continuous_save_draft_50x": {
+      "description": "连续 50 次 save draft — 持久化吞吐",
+      "steps": [
+        { "action": "save_draft", "rule_id": "R_draft_01", "params": { "metric_type": "count", "threshold_key": "T1" }, "repeat": 50 }
+      ],
+      "expected": {
+        "all_succeed": true,
+        "final_draft_state": "working_draft is not null, last saved_at matches",
+        "no_data_corruption": true
+      }
+    },
+
+    "D-02_save_publish_alternating_20x": {
+      "description": "save → publish → save → publish 交替 20 轮 — 状态切换",
+      "steps": [
+        { "action": "save_draft", "rule_id": "R_alt_iter_{n}", "params": { "metric_type": "count", "threshold_key": "T1" } },
+        { "action": "publish", "rule_id": "R_alt_iter_{n}" },
+        { "repeat": 20, "note": "Each iteration increments baseline_version by 1" }
+      ],
+      "expected": {
+        "all_publish_succeed": true,
+        "version_sequence": "v1.1, v1.2, ..., v1.20",
+        "draft_cleared_after_each_publish": true,
+        "final_version": "v1.20"
+      }
+    },
+
+    "D-03_rollback_10x_different_versions": {
+      "description": "连续 10 次 rollback 到不同版本 — 版本恢复",
+      "precondition": "Baseline has at least 10 published versions (v1.0 ~ v1.10)",
+      "steps": [
+        { "action": "rollback", "version_id": "v1.{n}", "repeat": 10, "n_range": [1, 10] }
+      ],
+      "expected": {
+        "all_rollback_succeed": true,
+        "rule_set_matches_version": true,
+        "no_snapshot_corruption": true
+      }
+    },
+
+    "D-04_concurrent_read_write_draft": {
+      "description": "draft save 期间读取 draft — 并发读写",
+      "steps": [
+        { "action": "save_draft", "rule_id": "R_concurrent", "params": { "metric_type": "count", "threshold_key": "T1" }, "async": true },
+        { "action": "load_draft", "baseline_id": "SIM_D", "immediate": true },
+        { "action": "load_draft", "baseline_id": "SIM_D", "delay_ms": 100 }
+      ],
+      "expected": {
+        "no_crash": true,
+        "eventual_consistency": "Final load_draft returns has_draft=true with the saved data",
+        "_note": "Single-threaded file-based storage means no true concurrency, but validates read-after-write consistency"
+      }
+    },
+
+    "D-05_publish_clears_draft": {
+      "description": "publish 后 draft 自动清除验证 — A1-7 逻辑",
+      "steps": [
+        { "action": "save_draft", "rule_id": "R_will_clear", "params": { "metric_type": "count", "threshold_key": "T1" } },
+        { "action": "verify_draft_exists", "expected_has_draft": true },
+        { "action": "publish", "rule_id": "R_will_clear" },
+        { "action": "verify_draft_cleared", "expected_has_draft": false },
+        { "action": "load_draft", "baseline_id": "SIM_D", "expected_has_draft": false }
+      ],
+      "expected": {
+        "draft_cleared_after_publish": true,
+        "working_draft_is_none": true,
+        "_reference": "A1-7: RulePublishWorkflowService sets working_draft=None on success"
+      }
+    }
+  }
+}

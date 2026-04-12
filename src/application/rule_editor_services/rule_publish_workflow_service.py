@@ -29,7 +29,7 @@ class PublishedBaselineSummaryView:
 class RulePublishResult:
     publish_success: bool
     summary: Optional[PublishedBaselineSummaryView] = None
-    errors: List[RulePublishFailure] = None
+    errors: List[RulePublishFailure] = None  # None = no errors, [] = empty error list
 
 class RulePublishWorkflowService:
     """
@@ -105,10 +105,14 @@ class RulePublishWorkflowService:
             baseline["rule_set"] = new_rule_set
             baseline["baseline_version"] = new_version
             baseline["baseline_version_snapshot"] = snapshots
+            # A1-7: Clear working_draft after successful publish
+            baseline["working_draft"] = None
         else:
             baseline.rule_set = new_rule_set
             baseline.baseline_version = new_version
             baseline.baseline_version_snapshot = snapshots
+            # A1-7: Clear working_draft after successful publish
+            baseline.working_draft = None
 
         self.repo.save(baseline)
 

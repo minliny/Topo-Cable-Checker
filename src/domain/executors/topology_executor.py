@@ -2,9 +2,12 @@ from typing import Dict, Any, List
 from src.domain.executors.base_executor import RuleExecutor
 from src.domain.result_model import IssueItem
 from src.crosscutting.ids.generator import generate_id
+from src.crosscutting.logging.logger import get_logger
 from src.domain.rule_engine.execution_context import ExecutionContext
 from src.domain.rule_engine.compiled_rule import CompiledRule
 import dataclasses
+
+logger = get_logger(__name__)
 
 class TopologyExecutor(RuleExecutor):
     def execute(self, rule_id: str, compiled_rule: CompiledRule, filtered_dataset: Dict[str, List[Any]], 
@@ -65,7 +68,8 @@ class TopologyExecutor(RuleExecutor):
                     ))
                     
         elif rule_subtype == "topology_assertion":
-            assertion_type = rule_def.get("assertion_type")
+            # BUG-FIX: was `rule_def` (undefined), must be `compiled_rule.params`
+            assertion_type = compiled_rule.params.get("assertion_type")
             
             if assertion_type == "self_loop":
                 for i, link in enumerate(links):

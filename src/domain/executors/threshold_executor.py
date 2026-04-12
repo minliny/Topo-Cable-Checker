@@ -81,7 +81,7 @@ class ThresholdExecutor(RuleExecutor):
                 "metric_field": metric_field,
                 "actual_value": actual_value,
                 "compare_operator": compare_operator,
-                "scope": rule_def.get("scope_selector", {}),
+                "scope": compiled_rule.target.get("filter", {}),
                 "threshold_source": "threshold_profile" if thresh_key else "inline"
             }
             if compare_operator in ("between", "outside"):

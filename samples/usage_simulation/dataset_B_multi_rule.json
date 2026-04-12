@@ -1,0 +1,104 @@
+{
+  "_meta": {
+    "dataset_id": "B",
+    "description": "多规则交互验证数据集 — 验证跨规则无状态污染",
+    "created": "2026-04-12",
+    "scenarios": ["B-01", "B-02", "B-03", "B-04", "B-05"]
+  },
+
+  "baseline": {
+    "baseline_id": "SIM_B",
+    "baseline_version": "v1.0",
+    "recognition_profile": { "strategy": "excel_basic" },
+    "naming_profile": { "strategy": "snake_case" },
+    "parameter_profile": {
+      "P1": { "group_key": "device_type", "comparison_field": "status" }
+    },
+    "threshold_profile": {
+      "T1": { "operator": "gt", "expected_value": 0 },
+      "T2": { "operator": "lte", "expected_value": 5 }
+    },
+    "rule_set": {},
+    "baseline_version_snapshot": {},
+    "version_history_meta": {}
+  },
+
+  "shared_devices": [
+    { "name": "SW-01", "device_type": "Switch", "status": "active", "model": "C9300", "location": "DC-A" },
+    { "name": "SW-02", "device_type": "Switch", "status": "inactive", "model": "C9200", "location": "DC-A" },
+    { "name": "SW-03", "device_type": "Switch", "status": "active", "model": "C9300", "location": "DC-B" },
+    { "name": "RT-01", "device_type": "Router", "status": "active", "model": "ISR4k", "location": "DC-A" },
+    { "name": "FW-01", "device_type": "Firewall", "status": "active", "model": "FG-100F", "location": "DC-B" }
+  ],
+
+  "scenarios": {
+    "B-01_three_threshold_parallel": {
+      "description": "3 条 Threshold 规则并行 — 不同 operator + 不同 target",
+      "rules": [
+        { "rule_id": "R_th_count_gt", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } },
+        { "rule_id": "R_th_count_lte", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "error", "params": { "metric_type": "count", "threshold_key": "T2" } },
+        { "rule_id": "R_th_distinct", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "info", "params": { "metric_type": "distinct_count", "metric_field": "device_type", "threshold_key": "T1" } }
+      ],
+      "expected": {
+        "R_th_count_gt": { "issue_count": 0 },
+        "R_th_count_lte": { "issue_count": 0 },
+        "R_th_distinct": { "issue_count": 0 },
+        "_cross_check": "Each rule evaluates independently — no shared mutable state"
+      }
+    },
+
+    "B-02_threshold_plus_single_fact": {
+      "description": "Threshold + SingleFact 混合 — 跨类型无污染",
+      "rules": [
+        { "rule_id": "R_th", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } },
+        { "rule_id": "R_sf", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "error", "params": { "field": "status", "type": "field_equals", "expected": "active" } }
+      ],
+      "expected": {
+        "R_th": { "issue_count": 0 },
+        "R_sf": { "issue_count": 1, "reason": "SW-02 has status=inactive" },
+        "_cross_check": "R_th count=5 > 0 (pass), R_sf 1 fail — independent results"
+      }
+    },
+
+    "B-03_threshold_plus_group_consistency": {
+      "description": "Threshold + GroupConsistency 混合 — 跨类型无污染",
+      "rules": [
+        { "rule_id": "R_th2", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } },
+        { "rule_id": "R_gc", "rule_type": "group_consistency", "template": "group_consistency", "target_type": "devices", "severity": "warning", "params": { "parameter_key": "P1" } }
+      ],
+      "expected": {
+        "R_th2": { "issue_count": 0 },
+        "R_gc": { "issue_count": 1, "reason": "Switch group: SW-02 inconsistent" },
+        "_cross_check": "Threshold uses count, GC uses grouping — no overlap"
+      }
+    },
+
+    "B-04_all_three_types": {
+      "description": "3 种类型各 1 条 — 全类型混合",
+      "rules": [
+        { "rule_id": "R_th3", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } },
+        { "rule_id": "R_sf2", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "error", "params": { "field": "status", "type": "field_equals", "expected": "active" } },
+        { "rule_id": "R_gc2", "rule_type": "group_consistency", "template": "group_consistency", "target_type": "devices", "severity": "warning", "params": { "parameter_key": "P1" } }
+      ],
+      "expected": {
+        "R_th3": { "issue_count": 0 },
+        "R_sf2": { "issue_count": 1 },
+        "R_gc2": { "issue_count": 1 },
+        "_total_issues": 2,
+        "_cross_check": "All 3 executors run independently on same dataset"
+      }
+    },
+
+    "B-05_duplicate_rule_id": {
+      "description": "重复 rule_id 不同 rule_type — ID 冲突处理",
+      "rules": [
+        { "rule_id": "R_dup", "rule_type": "threshold", "template": "threshold_check", "target_type": "devices", "severity": "warning", "params": { "metric_type": "count", "threshold_key": "T1" } },
+        { "rule_id": "R_dup", "rule_type": "single_fact", "template": "single_fact", "target_type": "devices", "severity": "error", "params": { "field": "status", "type": "field_equals", "expected": "active" } }
+      ],
+      "expected": {
+        "_note": "Publish should handle rule_id collision — later rule overwrites earlier in rule_set dict. This is expected dict behavior, not a bug.",
+        "rule_set_after_publish": { "R_dup": { "rule_type": "single_fact" } }
+      }
+    }
+  }
+}

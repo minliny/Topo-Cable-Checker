@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 @dataclass
 class BaselineProfile:
@@ -15,3 +15,7 @@ class BaselineProfile:
     # Extensions for API integration (UI History & Auditing)
     version_history_meta: Dict[str, Dict[str, Any]] = field(default_factory=dict) 
     # e.g. {"v1.0": {"published_at": "...", "publisher": "admin", "summary": "...", "parent_version": "v0.9"}}
+    
+    # A1-1: Working draft storage — None means no draft, dict means draft exists
+    # Strict: {} is NOT used to mean "no draft" — always use None
+    working_draft: Optional[Dict[str, Any]] = None

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Form, Input, Button, Select, Card, Typography, Space, FormInstance } from 'antd';
 import { Play, UploadCloud, FileCode, Save, Trash2 } from 'lucide-react';
-import { DraftData } from '../types/ui';
+import { DraftData } from '../../types/ui';
 
 const { Option } = Select;
 const { TextArea } = Input;

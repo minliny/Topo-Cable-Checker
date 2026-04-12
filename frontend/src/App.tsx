@@ -64,9 +64,43 @@ function App() {
 
   // --- 4. Event Handlers (Dispatching Actions) ---
 
-  const switchNavContext = (baselineId: string, versionId: string, nodeType: string, sourceVersionId?: string, sourceVersionLabel?: string) => {
+  const switchNavContext = async (baselineId: string, versionId: string, nodeType: string, sourceVersionId?: string, sourceVersionLabel?: string) => {
     const isDraft = versionId === 'draft';
     let draftData = {};
+    
+    // A1-6: Auto-recover saved draft when entering a baseline editing context
+    if (isDraft && baselineId) {
+      try {
+        const draftResult = await rulesApi.loadDraft(baselineId);
+        if (draftResult.has_draft && draftResult.draft_data) {
+          // Use the saved working draft
+          dispatch({ 
+            type: 'SWITCH_CONTEXT', 
+            payload: { 
+              baselineId, 
+              versionId, 
+              isDraft, 
+              draftData: {
+                rule_type: draftResult.draft_data.rule_type || 'threshold',
+                params: typeof draftResult.draft_data.params === 'string' 
+                  ? draftResult.draft_data.params 
+                  : JSON.stringify(draftResult.draft_data.params || {}, null, 2),
+                ...(draftResult.draft_data.rule_id ? { rule_id: draftResult.draft_data.rule_id } : {}),
+                ...(draftResult.draft_data.target_type ? { target_type: draftResult.draft_data.target_type } : {}),
+                ...(draftResult.draft_data.severity ? { severity: draftResult.draft_data.severity } : {}),
+              },
+              nodeType: nodeType as any,
+              sourceVersionId,
+              sourceVersionLabel
+            } 
+          });
+          return;
+        }
+      } catch (error) {
+        console.warn('Failed to load saved draft, using default:', error);
+      }
+    }
+
     if (isDraft) {
       if (nodeType === 'rollback_candidate') {
         draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + sourceVersionId + '"\n}' };
@@ -162,9 +196,11 @@ function App() {
     dispatch({ type: 'REQUEST_PUBLISH' });
     
     try {
-      // Simulate real publish payload
+      // P1.0-1: Send explicit PublishRequest body matching backend PublishRequestDTO
       const draftPayload = {
-        rule_type: pageState.draftData.rule_type,
+        rule_type: pageState.draftData.rule_type || 'threshold',
+        target_type: 'devices',
+        severity: 'warning',
         params: pageState.draftData.params ? JSON.parse(pageState.draftData.params) : {}
       };
       
@@ -259,14 +295,42 @@ function App() {
     dispatch({ type: 'CANCEL_ROLLBACK' });
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     setSaving(true);
-    // Simulate save API
-    setTimeout(() => {
+    try {
+      // A1-5: Real Save Draft API call — replaces setTimeout mock
+      let parsedParams = {};
+      try {
+        parsedParams = JSON.parse(pageState.draftData.params || '{}');
+      } catch (err) {
+        message.error('Params must be valid JSON to save');
+        setSaving(false);
+        return;
+      }
+
+      const res = await rulesApi.saveDraft({
+        baseline_id: pageState.selectedBaselineId || '',
+        rule_id: pageState.draftData.rule_id || '',
+        rule_type: pageState.draftData.rule_type || 'threshold',
+        target_type: pageState.draftData.target_type || 'devices',
+        severity: pageState.draftData.severity || 'warning',
+        params: parsedParams,
+      });
+
+      if (res.success) {
+        dispatch({ type: 'DRAFT_SAVE_SUCCESS', payload: { savedAt: res.saved_at } });
+        message.success('Draft saved successfully');
+      } else {
+        dispatch({ type: 'DRAFT_SAVE_FAILED' });
+        message.error(res.message || 'Failed to save draft');
+      }
+    } catch (error) {
+      console.error('Save draft error:', error);
+      dispatch({ type: 'DRAFT_SAVE_FAILED' });
+      message.error('Failed to save draft');
+    } finally {
       setSaving(false);
-      dispatch({ type: 'CLEAR_DIRTY' });
-      message.success('Draft saved successfully');
-    }, 500);
+    }
   };
 
   const closeDiff = () => {

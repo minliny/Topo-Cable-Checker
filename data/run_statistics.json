@@ -18,5 +18,15 @@
       "Switch": 2,
       "Router": 1
     }
+  },
+  "173a2a9d-9b30-4c23-a23e-6a34b2d5e6b5": {
+    "run_id": "173a2a9d-9b30-4c23-a23e-6a34b2d5e6b5",
+    "total_devices": 3,
+    "total_ports": 2,
+    "total_links": 1,
+    "device_type_distribution": {
+      "Switch": 2,
+      "Router": 1
+    }
   }
 }

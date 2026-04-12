@@ -1,26 +1,24 @@
 {
-  "a39f7661-49c9-49ee-9ac0-74bf71d2d577": {
-    "task_id": "a39f7661-49c9-49ee-9ac0-74bf71d2d577",
-    "task_name": "Task_/workspace/data/samples/test.xlsx",
-    "source_file_ref": "/workspace/data/samples/test.xlsx",
-    "source_file_version": "1.0",
-    "baseline_id": "B001",
-    "baseline_version": "v1.8",
-    "task_status": "check_completed",
-    "created_at": "2026-04-10 03:22:22.507037",
-    "latest_run_id": "0c3b1329-20df-4cc7-8db0-31722dad681d",
-    "parent_task_id": null
-  },
-  "30966468-9240-4c49-a0cc-c7df4de6ffe4": {
-    "task_id": "30966468-9240-4c49-a0cc-c7df4de6ffe4",
+  "task_id": "cd9e4901-4a0e-4e47-8f40-280ff4d24d38",
+  "task_name": "Task_data/samples/test.xlsx",
+  "source_file_ref": "data/samples/test.xlsx",
+  "source_file_version": "1.0",
+  "baseline_id": "B001",
+  "baseline_version": "v1.38",
+  "task_status": "data_attached",
+  "created_at": "2026-04-12 12:17:43.868244",
+  "latest_run_id": null,
+  "parent_task_id": null,
+  "433596ef-5ef4-4a09-abb2-5fc46f5b757f": {
+    "task_id": "433596ef-5ef4-4a09-abb2-5fc46f5b757f",
     "task_name": "Task_data/samples/test.xlsx",
     "source_file_ref": "data/samples/test.xlsx",
     "source_file_version": "1.0",
     "baseline_id": "B001",
-    "baseline_version": "v1.8",
+    "baseline_version": "v1.39",
     "task_status": "check_completed",
-    "created_at": "2026-04-10 03:29:23.881556",
-    "latest_run_id": "7f608ac6-7b59-4b32-adf5-c2d75d923c50",
+    "created_at": "2026-04-12 12:27:29.377682",
+    "latest_run_id": "173a2a9d-9b30-4c23-a23e-6a34b2d5e6b5",
     "parent_task_id": null
   }
 }
