@@ -102,21 +102,78 @@ Pain Score = Frequency × 2 + Severity × 3 + Workflow Blocking × 2 + Trust Ris
 
 ---
 
-### PAIN-003：（模板行 — 复制此块新增条目）
+### PAIN-003：Publish 阶段触发后端代码错误阻断发布
 
 | 字段 | 值 |
 |------|-----|
 | **Pain ID** | PAIN-003 |
-| **日期** | _填写日期_ |
-| **使用场景** | _描述你在做什么_ |
-| **触发路径** | _具体操作步骤_ |
-| **问题描述** | _客观描述问题_ |
-| **实际影响** | _对你工作的实际影响_ |
-| **临时绕过方式** | _你怎么绕过的，或"无"_ |
-| **Frequency** | _1-4_ |
-| **Severity** | _1-4_ |
-| **Workflow Blocking** | _1-4_ |
-| **Trust Risk** | _1-4_ |
-| **Pain Score** | _Frequency×2 + Severity×3 + Blocking×2 + Trust×4 = N_ |
-| **建议方案** | _你认为该怎么解决，或"待评估"_ |
-| **当前状态** | Open / Planned / Fixed / Deferred |
+| **日期** | 2026-04-13 |
+| **使用场景** | 提交草稿进行发布 (Prepare Publish -> Confirm Publish) |
+| **触发路径** | 点击 Validate 成功后，点击 Prepare Publish，然后点击 Confirm Publish |
+| **问题描述** | Validate 阶段显示校验通过，但在最终发布校验时后端抛出 `An unexpected error occurred during compilation: 'CompiledRule' object has no attribute 'validate'`。这是由于代码中调用了不存在的方法导致的，彻底阻断了发布流程。 |
+| **实际影响** | 无法完成任何新规则或草稿的发布，核心闭环断裂 |
+| **临时绕过方式** | 无 |
+| **Frequency** | 4 |
+| **Severity** | 4 |
+| **Workflow Blocking** | 4 |
+| **Trust Risk** | 4 |
+| **Pain Score** | 4×2 + 4×3 + 4×2 + 4×4 = **44** (Critical) |
+| **建议方案** | 修复 `RuleEditorGovernanceBridgeService` 中的代码逻辑，移除 `compiled_rule.validate()` 调用或实现该方法 |
+| **当前状态** | Open |
+
+### PAIN-004：草稿与编辑器架构仅支持单条规则编辑
+
+| 字段 | 值 |
+|------|-----|
+| **Pain ID** | PAIN-004 |
+| **日期** | 2026-04-13 |
+| **使用场景** | 尝试连续修改多条规则或执行多规则场景 (Day 2 / 批量编辑) |
+| **触发路径** | 选中 Baseline -> 点击 Draft -> 编辑器中仅能输入单一 Rule ID 和 Params |
+| **问题描述** | MVP 版本的 `RuleDraftSaveService` 和前端 `EditorView` 强制将 Draft 建模为单一规则（`rule_id`, `rule_type`, `params`）。不支持在一次 Draft 中添加、删除或修改多条规则。这导致多规则并发编辑、批量重构等高频场景无法完成。 |
+| **实际影响** | 无法支持真实业务中复杂的规则集重构，每个规则变更都必须走一次完整的 Publish 流程，效率极低。 |
+| **临时绕过方式** | 只能逐个规则单独建立草稿、单独发布 |
+| **Frequency** | 4 |
+| **Severity** | 3 |
+| **Workflow Blocking** | 3 |
+| **Trust Risk** | 1 |
+| **Pain Score** | 4×2 + 3×3 + 3×2 + 1×4 = **27** (High) |
+| **建议方案** | 升级 Draft 数据模型，支持 `rule_set` 级别的全量草稿或多条增量变更；前端增加规则列表导航以支持多规则切换编辑。 |
+| **当前状态** | Open |
+
+### PAIN-005：修改草稿参数后未清理历史校验结果
+
+| 字段 | 值 |
+|------|-----|
+| **Pain ID** | PAIN-005 |
+| **日期** | 2026-04-13 |
+| **使用场景** | 在通过 Validate 后继续编辑草稿 |
+| **触发路径** | 填写合法 JSON -> 点击 Validate (通过) -> 再次修改 JSON 为非法格式 -> 页面依然显示绿色的 "Validation Results" 通过状态 |
+| **问题描述** | 只要不再次点击 Validate 并成功触发 API（或如果被前端 try-catch 拦截而未更新页面状态），右侧面板的 Validation Results 状态不会自动重置为未校验或隐藏。如果 JSON.parse 抛出异常被前端捕获并 toast 报错，由于 `dispatch({ type: 'VALIDATION_FAILED' })` 没能正确清空历史成功的 payload，旧的绿色 check-circle 会一直保留，极大误导用户。 |
+| **实际影响** | 用户看到明显的语法错误，但右侧却显示“校验通过”，引发严重信任危机 |
+| **临时绕过方式** | 忽略右侧状态，只看 toast 提示 |
+| **Frequency** | 4 |
+| **Severity** | 2 |
+| **Workflow Blocking** | 1 |
+| **Trust Risk** | 4 |
+| **Pain Score** | 4×2 + 2×3 + 1×2 + 4×4 = **32** (Critical) |
+| **建议方案** | `pageReducer.ts` 在 `UPDATE_DRAFT` (dirty 状态变为 true) 时，应自动清除 `validationResult` 和 `publishBlockedIssues`。 |
+| **当前状态** | Open |
+
+### PAIN-006：Save Draft 触发全量同步写盘，导致大规模数据下性能雪崩
+
+| 字段 | 值 |
+|------|-----|
+| **Pain ID** | PAIN-006 |
+| **日期** | 2026-04-13 |
+| **使用场景** | Day 4: 大规模数据下的压力测试 (Save Draft) |
+| **触发路径** | 规则数达到 10000+ 时，连续点击 Save Draft |
+| **问题描述** | `BaselineRepository` 当前使用同步阻塞式 I/O (`_write_json`) 全量覆盖 `baselines.json` 文件。在测试 10,000 条规则时，每次 Save Draft 都需序列化并重写整个 JSON 文件，导致请求耗时激增（单次 >180ms），不仅前端卡顿，且由于是同步操作，会阻塞 FastAPI 事件循环，导致其他用户的并发请求超时。 |
+| **实际影响** | 无法支撑生产环境中的大规模基线存储和并发编辑场景 |
+| **临时绕过方式** | 无 |
+| **Frequency** | 4 |
+| **Severity** | 4 |
+| **Workflow Blocking** | 2 |
+| **Trust Risk** | 2 |
+| **Pain Score** | 4×2 + 4×3 + 2×2 + 2×4 = **32** (Critical) |
+| **建议方案** | 引入真正的数据库（如 PostgreSQL/SQLite），按 Rule 或 Draft 进行增量记录；或至少改用异步 I/O 及读写锁机制，避免阻塞主线程。 |
+| **当前状态** | Open |
