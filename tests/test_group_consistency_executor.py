@@ -298,14 +298,10 @@ class TestEmptyAndDegenerateInputs:
 
     def test_parameter_key_not_found_falls_back_to_inline(self):
         """If parameter_key is specified but not in profile, falls back to compiled_rule params.
-        
+
         When parameter_key="P_MISSING" is not in profile, the executor falls back to
         compiled_rule.get("group_key") and compiled_rule.get("comparison_field").
-        Since we provided parameter_key instead of inline group_key/comparison_field,
-        both will be None, causing getattr to raise TypeError.
-        
-        This is a known edge case in the executor — it does not gracefully handle
-        missing parameter resolution. The test documents this behavior.
+        If they are not provided, it gracefully returns empty issues rather than crashing.
         """
         executor = GroupConsistencyExecutor()
         devices = [
@@ -313,7 +309,7 @@ class TestEmptyAndDegenerateInputs:
             DeviceFact(device_name="SW2", device_type="Building-A", status="down", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("fallback_rule", "device_type", "status", parameter_key="P_MISSING")
-        # Known behavior: parameter_key not found → fallback returns None for group_key
-        # → getattr(item, None) raises TypeError
-        with pytest.raises(TypeError):
-            executor.execute(compiled, {"devices": devices}, _make_context())
+        
+        # Test that it does NOT raise an error anymore, but returns empty issues
+        issues = executor.execute(compiled, {"devices": devices}, _make_context())
+        assert issues == []

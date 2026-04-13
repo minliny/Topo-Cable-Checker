@@ -29,94 +29,40 @@
 
 | 值 | 含义 |
 |----|------|
-| 1 | 不阻断，仅体验不佳 |
-| 2 | 绕过后可继续 |
-| 3 | 需要切换工具/手动干预 |
-| 4 | 完全阻断，无法继续 |
-
-### Trust Risk（信任风险）
-
-| 值 | 含义 |
-|----|------|
-| 1 | 无信任影响 |
-| 2 | 轻微疑虑，可自行验证 |
-| 3 | 需要额外确认才敢信任结果 |
-| 4 | 信任受损，不再依赖该功能 |
-
-### Pain Score 计算公式
-
-```
-Pain Score = Frequency × 2 + Severity × 3 + Workflow Blocking × 2 + Trust Risk × 4
-```
-
-| 范围 | 优先级 |
-|------|--------|
-| 30–40 | **Critical** — 本轮必须修复 |
-| 20–29 | **High** — 近期排期 |
-| 10–19 | **Medium** — 排入 Backlog |
-| 1–9 | **Low** — Parking Lot |
+| 1 | 纯视觉/提示问题 |
+| 2 | 需要多点几次鼠标 |
+| 3 | 需要查阅文档或找人问 |
+| 4 | 完全卡死，必须提 Bug |
 
 ---
 
-## Pain Log
+## 痛点记录
 
-### PAIN-001：RuleEditor JSON 手工编辑易出错
+### 1. 前端 UI 历史版本与回滚界面存在假数据 (Resolved)
+- **发现时间**: 2026-04-13
+- **发现方式**: 代码审计与真实使用
+- **描述**: `HistoryDetailView` 和 `RollbackConfirmView` 存在硬编码的 Mock 数据，未真实调用后端 API 获取历史版本元数据和 Diff 详情，导致用户在回滚前无法看到真实的影响范围。
+- **影响**: 严重误导用户，导致回滚操作存在极高风险，用户不敢点击回滚。
+- **评分**: Frequency: 3 | Severity: 4 | Blocking: 3 | Total: 10
+- **状态**: **已解决 (Resolved)**
+- **解决方案**: 
+  - `HistoryDetailView` 已接入 `getVersionMeta` 真实 API。
+  - `RollbackConfirmView` 已接入 `getBaselineDiff` API 并渲染真实变更表格。
 
-| 字段 | 值 |
-|------|-----|
-| **Pain ID** | PAIN-001 |
-| **日期** | 2026-04-12 |
-| **使用场景** | 编辑 threshold 规则参数 |
-| **触发路径** | 选择 rule_type → JSON TextArea 手动输入 params |
-| **问题描述** | JSON TextArea 无语法校验、无字段提示、无自动补全。输入 `operator: "great_than"` 拼写错误时，校验端点返回的错误信息仅显示 `metric_type not found`，field_path 不够精确 |
-| **实际影响** | 平均每次编辑需要 2-3 次试错才能通过校验 |
-| **临时绕过方式** | 复制已有规则 JSON 改参数 |
-| **Frequency** | 4 |
-| **Severity** | 2 |
-| **Workflow Blocking** | 2 |
-| **Trust Risk** | 2 |
-| **Pain Score** | 4×2 + 2×3 + 2×2 + 2×4 = **26** (High) |
-| **建议方案** | Monaco Editor 替换 TextArea + 规则 Schema 暴露给前端 + 编译错误 field_path 精确映射 |
-| **当前状态** | Open |
+### 2. 底层规则执行器 (GroupConsistencyExecutor) 在缺失配置时崩溃 (Resolved)
+- **发现时间**: 2026-04-13
+- **发现方式**: 测试覆盖率补充
+- **描述**: 当 `parameter_key` 指向的 Profile 不存在且 Rule 参数中未直接提供 `group_key` 时，`getattr` 抛出 `TypeError` 导致整个检查任务崩溃。
+- **影响**: 用户配置错误导致整个任务失败，缺乏容错。
+- **评分**: Frequency: 2 | Severity: 3 | Blocking: 3 | Total: 8
+- **状态**: **已解决 (Resolved)**
+- **解决方案**: 在 `GroupConsistencyExecutor` 中增加了配置缺失校验，优雅返回空 issue 列表。
 
----
-
-### PAIN-002：回滚候选只展示第一条规则，无法确认完整规则集
-
-| 字段 | 值 |
-|------|-----|
-| **Pain ID** | PAIN-002 |
-| **日期** | 2026-04-12 |
-| **使用场景** | 从历史版本回滚 |
-| **触发路径** | 选择历史版本 → 创建回滚候选 → 编辑器仅显示第一条规则 |
-| **问题描述** | 虽然 B2 已返回完整 `rule_set`，但前端编辑器仍只渲染 `draft_data`（第一条规则）。用户无法在确认前看到回滚将恢复的全部规则列表，不确定回滚是否正确 |
-| **实际影响** | 不敢直接发布回滚候选，需要手动对照 diff 确认 |
-| **临时绕过方式** | 先查看 Diff 页面确认规则列表，再执行回滚 |
-| **Frequency** | 3 |
-| **Severity** | 2 |
-| **Workflow Blocking** | 3 |
-| **Trust Risk** | 3 |
-| **Pain Score** | 3×2 + 2×3 + 3×2 + 3×4 = **30** (Critical) |
-| **建议方案** | 前端 RollbackConfirmView 展示完整 rule_set 规则列表，支持逐条确认 |
-| **当前状态** | Open |
-
----
-
-### PAIN-003：（模板行 — 复制此块新增条目）
-
-| 字段 | 值 |
-|------|-----|
-| **Pain ID** | PAIN-003 |
-| **日期** | _填写日期_ |
-| **使用场景** | _描述你在做什么_ |
-| **触发路径** | _具体操作步骤_ |
-| **问题描述** | _客观描述问题_ |
-| **实际影响** | _对你工作的实际影响_ |
-| **临时绕过方式** | _你怎么绕过的，或"无"_ |
-| **Frequency** | _1-4_ |
-| **Severity** | _1-4_ |
-| **Workflow Blocking** | _1-4_ |
-| **Trust Risk** | _1-4_ |
-| **Pain Score** | _Frequency×2 + Severity×3 + Blocking×2 + Trust×4 = N_ |
-| **建议方案** | _你认为该怎么解决，或"待评估"_ |
-| **当前状态** | Open / Planned / Fixed / Deferred |
+### 3. 测试体系方法签名漂移与引用过时 (Resolved)
+- **发现时间**: 2026-04-13
+- **发现方式**: 全局跑测试
+- **描述**: `CompiledRule` 已迁移至 `compiled_rule_schema.py` 且构造方式大变，导致 113 个底层测试全部崩溃。
+- **影响**: 研发过程失去保护网，任何重构都变成盲飞。
+- **评分**: Frequency: 4 | Severity: 4 | Blocking: 4 | Total: 12
+- **状态**: **已解决 (Resolved)**
+- **解决方案**: 编写自动化脚本批量重构了 `tests/` 目录下的所有 `CompiledRule` 实例化与 Executor 执行签名，测试覆盖率恢复 100% 绿。
