@@ -17,8 +17,8 @@ Also covers:
 
 import pytest
 from src.domain.executors.single_fact_executor import SingleFactExecutor
-from src.domain.rule_engine.compiled_rule import CompiledRule
-from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
+from typing import Dict, Any
 from src.domain.fact_model import DeviceFact, PortFact
 from src.domain.result_model import IssueItem
 
@@ -34,19 +34,15 @@ def _make_compiled_rule(rule_id: str, subtype: str, field: str,
     return CompiledRule(
         rule_id=rule_id,
         rule_type="template",
-        executor={"type": "single_fact"},
-        target={"type": target_type, "filter": None},
-        message={"template": f"Rule {rule_id} single_fact check"},
-        severity=severity,
-        params=params,
-        type=subtype,
-        field=field,
-        **({"expected": expected} if expected is not None else {}),
+        executor="single_fact",
+        target=RuleTarget(type=target_type, filter=None),
+        message=RuleMessage(template="", severity=severity),
+        params=params
     )
 
 
-def _make_context() -> ExecutionContext:
-    return ExecutionContext(parameter_profile={}, threshold_profile={}, runtime_flags={})
+def _make_context() -> dict:
+    return {"parameter_profile": {}, "threshold_profile": {}}
 
 
 # ==========================================
@@ -62,7 +58,7 @@ class TestFieldEquals:
             DeviceFact(device_name="SW1", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("eq_rule", "field_equals", "device_type", expected="Switch")
-        result = executor.execute("eq_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 0
 
     def test_issue_when_values_differ(self):
@@ -71,7 +67,7 @@ class TestFieldEquals:
             DeviceFact(device_name="SW1", device_type="Switch", status="down", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("eq_rule", "field_equals", "status", expected="up")
-        result = executor.execute("eq_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
         assert result[0].category == "single_fact"
         assert result[0].actual == "down"
@@ -85,7 +81,7 @@ class TestFieldEquals:
             DeviceFact(device_name="SW3", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("eq_rule", "field_equals", "status", expected="up")
-        result = executor.execute("eq_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 2
 
     def test_field_equals_on_port_facts(self):
@@ -96,7 +92,7 @@ class TestFieldEquals:
         ]
         compiled = _make_compiled_rule("port_rule", "field_equals", "port_status", 
                                        expected="up", target_type="ports")
-        result = executor.execute("port_rule", compiled, {"ports": ports}, _make_context())
+        result = executor.execute(compiled, {"ports": ports}, _make_context())
         assert len(result) == 1
         assert "Gi0/2" in str(result[0].evidence)
 
@@ -107,7 +103,7 @@ class TestFieldEquals:
             DeviceFact(device_name="SW1", device_type=None, status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("none_rule", "field_equals", "device_type", expected=None)
-        result = executor.execute("none_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 0
 
 
@@ -124,7 +120,7 @@ class TestRegexMatch:
             DeviceFact(device_name="SW-001", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("regex_rule", "regex_match", "device_name", expected=r"SW-\d+")
-        result = executor.execute("regex_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 0
 
     def test_issue_when_regex_fails(self):
@@ -133,7 +129,7 @@ class TestRegexMatch:
             DeviceFact(device_name="INVALID", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("regex_rule", "regex_match", "device_name", expected=r"SW-\d+")
-        result = executor.execute("regex_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
         assert result[0].category == "single_fact"
         assert "INVALID" in result[0].message
@@ -145,7 +141,7 @@ class TestRegexMatch:
             DeviceFact(device_name="SW1", device_type=None, status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("regex_rule", "regex_match", "device_type", expected=r"Switch")
-        result = executor.execute("regex_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
 
     def test_regex_partial_match(self):
@@ -156,7 +152,7 @@ class TestRegexMatch:
         ]
         # re.match only matches at the start of the string
         compiled = _make_compiled_rule("regex_rule", "regex_match", "device_name", expected=r"SW\d+")
-        result = executor.execute("regex_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         # "prefix-SW1" does not start with "SW", so re.match fails
         assert len(result) == 1
 
@@ -168,7 +164,7 @@ class TestRegexMatch:
             DeviceFact(device_name="WRONG", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("regex_rule", "regex_match", "device_name", expected=r"SW-\d+")
-        result = executor.execute("regex_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 2
 
 
@@ -185,7 +181,7 @@ class TestMissingValue:
             DeviceFact(device_name="SW1", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("missing_rule", "missing_value", "device_type")
-        result = executor.execute("missing_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 0
 
     def test_issue_when_value_is_none(self):
@@ -194,7 +190,7 @@ class TestMissingValue:
             DeviceFact(device_name="SW1", device_type=None, status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("missing_rule", "missing_value", "device_type")
-        result = executor.execute("missing_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
         assert result[0].category == "single_fact"
         assert "missing" in result[0].message.lower() or "empty" in result[0].message.lower()
@@ -205,7 +201,7 @@ class TestMissingValue:
             DeviceFact(device_name="SW1", device_type="", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("missing_rule", "missing_value", "device_type")
-        result = executor.execute("missing_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
 
     def test_issue_when_value_is_whitespace_only(self):
@@ -214,7 +210,7 @@ class TestMissingValue:
             DeviceFact(device_name="SW1", device_type="   ", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("missing_rule", "missing_value", "device_type")
-        result = executor.execute("missing_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
 
     def test_multiple_missing_values(self):
@@ -225,7 +221,7 @@ class TestMissingValue:
             DeviceFact(device_name="SW3", device_type="Router", status="down", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("missing_rule", "missing_value", "device_type")
-        result = executor.execute("missing_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1  # Only SW2 has missing device_type
 
 
@@ -239,7 +235,7 @@ class TestSingleFactEdgeCases:
     def test_empty_dataset_returns_no_issues(self):
         executor = SingleFactExecutor()
         compiled = _make_compiled_rule("empty_rule", "field_equals", "status", expected="up")
-        result = executor.execute("empty_rule", compiled, {"devices": []}, _make_context())
+        result = executor.execute(compiled, {"devices": []}, _make_context())
         assert result == []
 
     def test_severity_propagated_to_issue(self):
@@ -248,7 +244,7 @@ class TestSingleFactEdgeCases:
             DeviceFact(device_name="SW1", device_type="Switch", status="down", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("sev_rule", "field_equals", "status", expected="up", severity="critical")
-        result = executor.execute("sev_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
         assert result[0].severity == "critical"
 
@@ -258,7 +254,7 @@ class TestSingleFactEdgeCases:
             DeviceFact(device_name="SW1", device_type="Switch", status="down", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("evidence_rule", "field_equals", "status", expected="up")
-        result = executor.execute("evidence_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1
         assert "item_data" in result[0].evidence
         assert result[0].evidence["item_data"]["device_name"] == "SW1"
@@ -270,7 +266,7 @@ class TestSingleFactEdgeCases:
             DeviceFact(device_name="SW1", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("missing_field_rule", "missing_value", "nonexistent_field")
-        result = executor.execute("missing_field_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert len(result) == 1  # nonexistent field → None → missing
 
     def test_details_contains_target_type(self):
@@ -279,5 +275,5 @@ class TestSingleFactEdgeCases:
             DeviceFact(device_name="SW1", device_type="Switch", status="down", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("detail_rule", "field_equals", "status", expected="up")
-        result = executor.execute("detail_rule", compiled, {"devices": devices}, _make_context())
+        result = executor.execute(compiled, {"devices": devices}, _make_context())
         assert result[0].details["target_type"] == "devices"

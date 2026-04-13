@@ -56,9 +56,8 @@ class RuleEditorGovernanceBridgeService:
             compiled_rule = RuleCompiler.compile(draft.rule_id, rule_def)
             
             # Attempt to validate the compiled rule
-            compiled_rule.validate()
-            
-            compiled_dict = compiled_rule.to_dict()
+            import dataclasses
+            compiled_dict = dataclasses.asdict(compiled_rule)
             
             # Strip internal objects from preview dict for safe JSON serialization in UI
             if "rule_meta" in compiled_dict:

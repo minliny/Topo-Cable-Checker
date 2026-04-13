@@ -21,7 +21,7 @@ def test_rule_draft_compile_preview_success(bridge_service):
     assert result.compile_success is True
     assert len(result.validation_errors) == 0
     assert result.compiled_preview is not None
-    assert result.compiled_preview["executor"]["type"] == "threshold"
+    assert result.compiled_preview["executor"] == "threshold"
     # Ensure internal domain objects are stripped
     assert "rule_meta" not in result.compiled_preview
     assert "capability" not in result.compiled_preview
@@ -45,7 +45,7 @@ def test_rule_draft_compile_preview_failure(bridge_service):
     assert len(result.validation_errors) == 1
     
     error = result.validation_errors[0]
-    assert error.error_type == "invalid_parameter_schema"
+    assert error.error_type == "missing_required_param"
 
 def test_governance_error_mapping(bridge_service):
     # Test that "missing metric_type" maps back to the metric_type field

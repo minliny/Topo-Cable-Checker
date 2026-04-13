@@ -22,7 +22,10 @@ class GroupConsistencyExecutor(RuleExecutor):
         else:
             group_key_field = compiled_rule.params.get("group_key")
             comparison_field = compiled_rule.params.get("comparison_field")
-            
+
+        if not group_key_field or not comparison_field:
+            return issues
+
         severity = compiled_rule.message.severity
         
         target_list = dataset.get(target_type, [])

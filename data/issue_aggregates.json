@@ -1,8 +1,8 @@
 {
-  "run_id": "e3252e5c-ab93-4e6c-a059-46177aa245ce",
+  "run_id": "6340b709-9062-4a31-b327-084de52d4ad7",
   "issues": [
     {
-      "issue_id": "2a500902-1ddc-4e97-a9f6-9c9ab5be15c3",
+      "issue_id": "58ea92e0-7e5e-45f4-9bd6-fd7dae6a387f",
       "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
       "evidence": {
         "sheet_type": "device",
@@ -25,7 +25,7 @@
       "stage": "recognition"
     },
     {
-      "issue_id": "fe7dac04-9334-460d-8a44-1208fd502025",
+      "issue_id": "f5be0ea0-d45f-4c4b-aa49-d05ac0432945",
       "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
       "evidence": {
         "sheet": "ports",
@@ -46,7 +46,7 @@
       "stage": "recognition"
     },
     {
-      "issue_id": "ed9be300-bdce-4eb5-96e9-18df51b0bfea",
+      "issue_id": "6392c8bd-eeb9-442f-8db5-8853aa87e1b6",
       "message": "Missing required sheet type 'link'.",
       "evidence": {
         "missing_sheet": "link"
@@ -60,7 +60,7 @@
       "stage": "recognition"
     },
     {
-      "issue_id": "d3000201-2a20-4c87-9d9a-c5ef98fca000",
+      "issue_id": "fcf21c31-cfa6-4679-afae-02f130b0ec0b",
       "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
       "evidence": {
         "rule_id": "R2_threshold_count",
@@ -83,7 +83,7 @@
       "stage": "engine"
     },
     {
-      "issue_id": "00a3bf1e-da28-4486-8bc4-b33a0456ce06",
+      "issue_id": "a2cbf940-812d-4ec0-9a66-a6a35714d5a9",
       "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 0. Must be >= 3.",
       "evidence": {
         "rule_id": "R3_threshold_distinct",
@@ -104,20 +104,1553 @@
       "severity": "error",
       "category": "threshold_check",
       "stage": "engine"
+    },
+    {
+      "issue_id": "ccb37e79-e271-499e-afa8-9e06520f798d",
+      "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
+      "evidence": {
+        "rule_id": "test_threshold_rule",
+        "metric_key": "devices.count",
+        "metric_field": null,
+        "actual_value": 0,
+        "compare_operator": "between",
+        "scope": {},
+        "threshold_source": "threshold_profile",
+        "expected_range": "[5, 10]"
+      },
+      "expected": "[5, 10]",
+      "actual": 0,
+      "details": {
+        "target_type": "devices"
+      },
+      "source_row": 0,
+      "severity": "error",
+      "category": "threshold_check",
+      "stage": "engine"
     }
   ],
   "by_device": {
-    "Unknown": 5
+    "Unknown": 6
   },
   "by_rule": {
     "Unknown": 3,
     "R2_threshold_count": 1,
-    "R3_threshold_distinct": 1
+    "R3_threshold_distinct": 1,
+    "test_threshold_rule": 1
   },
   "by_severity": {
     "critical": 2,
     "warning": 1,
     "high": 1,
-    "error": 1
+    "error": 2
+  },
+  "db3e0774-94a9-4fc5-a398-7266b734f338": {
+    "run_id": "db3e0774-94a9-4fc5-a398-7266b734f338",
+    "issues": [
+      {
+        "issue_id": "00af4da6-72bd-485e-aa45-190c1454b5c0",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "d313f2c7-11ae-4c07-929b-da1b965fe14d",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "8c3dda17-118e-4f55-8a92-f9e307ed6edb",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "86444507-b337-42fd-aa94-667ed402556a",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "6d2009cf-25dd-4093-a896-bb14280dcbc0",
+        "message": "Device is offline!",
+        "evidence": {
+          "rule_id": "RE_SF_EXT_01",
+          "item_data": {
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline",
+            "_source_sheet": "device"
+          }
+        },
+        "expected": "Offline",
+        "actual": "Offline",
+        "details": {
+          "target_field": "status",
+          "rule_type": "field_not_equals",
+          "target_type": "devices"
+        },
+        "source_row": 1,
+        "severity": "high",
+        "category": "single_fact",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 4,
+      "FW-01": 1
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1,
+      "RE_SF_EXT_01": 1
+    },
+    "by_severity": {
+      "high": 2,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "2c281246-33a7-490d-8f7d-6034454e124d": {
+    "run_id": "2c281246-33a7-490d-8f7d-6034454e124d",
+    "issues": [
+      {
+        "issue_id": "170eaabc-9fa9-4599-ad26-9dd6a6e1d2a3",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "369dd444-5e8d-47dd-8bd9-6249d17899fc",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "31101ed2-361a-48d2-a4e9-ade8fef0e39d",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "8a4ed6d9-23a4-4849-a01c-4fa2b55da0aa",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 4
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1
+    },
+    "by_severity": {
+      "high": 1,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "12c91417-065e-48a3-abee-dec7c4615d68": {
+    "run_id": "12c91417-065e-48a3-abee-dec7c4615d68",
+    "issues": [
+      {
+        "issue_id": "aca8db6c-be05-4e94-9692-e2d194170904",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "c49034fc-737b-4c1f-84b5-866df1dbda2a",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "1274b5db-afb7-4c51-b13b-6f97dc068c58",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "25b94b5f-f320-4515-b9a0-e339c94d1d33",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "920ad9ab-648d-4728-94b8-170c8d20bd5f",
+        "message": "Too many firewalls!",
+        "evidence": {
+          "rule_id": "RE_TH_EXT_01",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "lte",
+          "scope": {},
+          "threshold_source": "inline",
+          "expected_value": "0"
+        },
+        "expected": "0",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "high",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 5
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1,
+      "RE_TH_EXT_01": 1
+    },
+    "by_severity": {
+      "high": 2,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "44ca34b4-9038-4c3e-813d-3c2e9035be3a": {
+    "run_id": "44ca34b4-9038-4c3e-813d-3c2e9035be3a",
+    "issues": [
+      {
+        "issue_id": "706f014b-cd22-44d4-aec1-e1c5467ff7ac",
+        "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
+        "evidence": {
+          "sheet_type": "device",
+          "conflicting_sheets": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "expected": "1 sheet per type",
+        "actual": "2 sheets",
+        "details": {
+          "sheet_names": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "sheet_conflict",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "f111cf4c-c561-4f1e-a44c-e28593885dd7",
+        "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
+        "evidence": {
+          "sheet": "ports",
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "expected": "All headers mapped",
+        "actual": "1 unmapped headers",
+        "details": {
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "source_row": 0,
+        "severity": "warning",
+        "category": "unmapped_header",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "e1f54b26-11ad-4888-a9a6-2fd2cfdc463a",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "de5f475c-007a-432a-a8b1-4b797d18bbb6",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "ad043bc0-3bde-451d-9aaa-c4dcc094dd7f",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 0. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 0,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "78e78a99-7070-49ac-9915-5ad74e0e0a7c",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 6
+    },
+    "by_rule": {
+      "Unknown": 3,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1
+    },
+    "by_severity": {
+      "critical": 2,
+      "warning": 1,
+      "high": 1,
+      "error": 2
+    }
+  },
+  "5e609bea-cfa0-4cb9-82d6-7260fbe89f49": {
+    "run_id": "5e609bea-cfa0-4cb9-82d6-7260fbe89f49",
+    "issues": [
+      {
+        "issue_id": "1bd84b81-aefa-4586-877e-cd9177c6bf7a",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "75ccc0e1-3343-4d3f-9b02-d86d1d85813d",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "23cf1643-f6d4-403d-9f5e-e88324716154",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "bc87fcb3-4c01-448d-ab5a-677cabf0709b",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "3543b814-e999-4c44-9f0f-1571d87bc6c4",
+        "message": "Device is offline!",
+        "evidence": {
+          "rule_id": "RE_SF_EXT_01",
+          "item_data": {
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline",
+            "_source_sheet": "device"
+          }
+        },
+        "expected": "Offline",
+        "actual": "Offline",
+        "details": {
+          "target_field": "status",
+          "rule_type": "field_not_equals",
+          "target_type": "devices"
+        },
+        "source_row": 1,
+        "severity": "high",
+        "category": "single_fact",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 4,
+      "FW-01": 1
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1,
+      "RE_SF_EXT_01": 1
+    },
+    "by_severity": {
+      "high": 2,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "818b3838-9762-444c-be42-fff29309a1a1": {
+    "run_id": "818b3838-9762-444c-be42-fff29309a1a1",
+    "issues": [
+      {
+        "issue_id": "6471c09c-ffaf-4635-8992-4e704a524775",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "7dd1a7d3-ba18-4f26-889a-4c25d0821feb",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "a959d9d3-62ee-499b-b403-d1f92ff39c74",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "9bebc43b-337d-4f12-9038-162ab8f1f1ec",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 4
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1
+    },
+    "by_severity": {
+      "high": 1,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "69ae9b42-166e-4c7c-a048-e5d49392e98d": {
+    "run_id": "69ae9b42-166e-4c7c-a048-e5d49392e98d",
+    "issues": [
+      {
+        "issue_id": "c81f2ed2-9ec6-4125-9532-b040b41a200b",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "78e28a20-f4f2-46c1-808c-18932bfcad83",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "61c60f8c-2a0d-4a2a-add0-604a12bc4fb0",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "e1bac492-5ebc-4cb6-ae8b-a1b7a077b899",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "0ffa5688-3e1c-4cf9-8188-54ba2a645559",
+        "message": "Too many firewalls!",
+        "evidence": {
+          "rule_id": "RE_TH_EXT_01",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "lte",
+          "scope": {},
+          "threshold_source": "inline",
+          "expected_value": "0"
+        },
+        "expected": "0",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "high",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 5
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1,
+      "RE_TH_EXT_01": 1
+    },
+    "by_severity": {
+      "high": 2,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "0917dde3-a44c-4386-872b-629298770687": {
+    "run_id": "0917dde3-a44c-4386-872b-629298770687",
+    "issues": [
+      {
+        "issue_id": "2ce59488-ef6c-4cad-8e0b-db5909114192",
+        "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
+        "evidence": {
+          "sheet_type": "device",
+          "conflicting_sheets": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "expected": "1 sheet per type",
+        "actual": "2 sheets",
+        "details": {
+          "sheet_names": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "sheet_conflict",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "a3e9969b-0c4a-42ce-8d11-cd62b4047a16",
+        "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
+        "evidence": {
+          "sheet": "ports",
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "expected": "All headers mapped",
+        "actual": "1 unmapped headers",
+        "details": {
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "source_row": 0,
+        "severity": "warning",
+        "category": "unmapped_header",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "9e15e8a5-df3f-430a-8a86-260414178b16",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "ccf7c7d2-bf32-4720-a5cd-81855ef06e28",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "c3a88621-8834-4186-8948-8ec97ff21281",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 0. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 0,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "deece5b4-ce24-4e37-8881-10598dd3d85c",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 6
+    },
+    "by_rule": {
+      "Unknown": 3,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1
+    },
+    "by_severity": {
+      "critical": 2,
+      "warning": 1,
+      "high": 1,
+      "error": 2
+    }
+  },
+  "959c1780-97d1-49c3-ae1d-1b43269369e8": {
+    "run_id": "959c1780-97d1-49c3-ae1d-1b43269369e8",
+    "issues": [
+      {
+        "issue_id": "709d80b7-5a02-45fa-b62e-6286cf1354f3",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "f32119ee-b920-4e8c-8b42-e5ae8406a73a",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "4ad6a23f-a562-413f-8e25-d1f165c88fee",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "a673756a-7a36-40b2-8595-cc4dd45ed0b1",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "5de6e972-1a05-4995-82a2-3f421e29bc31",
+        "message": "Device is offline!",
+        "evidence": {
+          "rule_id": "RE_SF_EXT_01",
+          "item_data": {
+            "device_name": "FW-01",
+            "device_type": "Firewall",
+            "status": "Offline",
+            "_source_sheet": "device"
+          }
+        },
+        "expected": "Offline",
+        "actual": "Offline",
+        "details": {
+          "target_field": "status",
+          "rule_type": "field_not_equals",
+          "target_type": "devices"
+        },
+        "source_row": 1,
+        "severity": "high",
+        "category": "single_fact",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 4,
+      "FW-01": 1
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1,
+      "RE_SF_EXT_01": 1
+    },
+    "by_severity": {
+      "high": 2,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "ac7264d5-e0a2-46ba-9ac2-593a6b315224": {
+    "run_id": "ac7264d5-e0a2-46ba-9ac2-593a6b315224",
+    "issues": [
+      {
+        "issue_id": "aaebe06e-ff32-4905-a772-5880ff1c0ebc",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "5b1b43a1-ba05-4fcd-8d69-4b2bd9c58b10",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "d34a5227-5557-44d1-a591-267ab2fb16fa",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "24dc4979-613b-429c-8251-8e8d615de560",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 4
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1
+    },
+    "by_severity": {
+      "high": 1,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "322af9dd-5546-437e-bb2b-cf6803446893": {
+    "run_id": "322af9dd-5546-437e-bb2b-cf6803446893",
+    "issues": [
+      {
+        "issue_id": "735356e7-558d-47b3-b693-f2a96d868a37",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "bb6a32de-3423-40e6-b88f-9f348ff2bee7",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "d855563b-04b8-48f2-9a8a-bed82ffe3ce0",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 2. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 2,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "6609e246-5c18-427f-ac6f-7d7556b37915",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 2. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "d825e08a-982c-4fc8-a441-4f9fda91bfce",
+        "message": "Too many firewalls!",
+        "evidence": {
+          "rule_id": "RE_TH_EXT_01",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 2,
+          "compare_operator": "lte",
+          "scope": {},
+          "threshold_source": "inline",
+          "expected_value": "0"
+        },
+        "expected": "0",
+        "actual": 2,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "high",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 5
+    },
+    "by_rule": {
+      "Unknown": 1,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1,
+      "RE_TH_EXT_01": 1
+    },
+    "by_severity": {
+      "high": 2,
+      "critical": 1,
+      "error": 2
+    }
+  },
+  "cbe34443-5b72-4927-ad60-ef3039f1d392": {
+    "run_id": "cbe34443-5b72-4927-ad60-ef3039f1d392",
+    "issues": [
+      {
+        "issue_id": "e5f0d53d-08d0-41d1-9b05-633e1f08fab1",
+        "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
+        "evidence": {
+          "sheet_type": "device",
+          "conflicting_sheets": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "expected": "1 sheet per type",
+        "actual": "2 sheets",
+        "details": {
+          "sheet_names": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "sheet_conflict",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "9921c600-03c3-42a2-8e11-c0ee6db25cf1",
+        "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
+        "evidence": {
+          "sheet": "ports",
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "expected": "All headers mapped",
+        "actual": "1 unmapped headers",
+        "details": {
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "source_row": 0,
+        "severity": "warning",
+        "category": "unmapped_header",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "e1fa742b-0641-446c-aa34-5c0b36b697a8",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "8b72b723-f4d6-4d7f-9efe-f2fbf09ebfc9",
+        "message": "Rule R2_threshold_count (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "ff2a8723-fd3f-400a-b6f4-15d3ce1dccd4",
+        "message": "Rule R3_threshold_distinct (threshold) failed: Metric 'distinct_count' on 'devices' is 0. Must be >= 3.",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 0,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "03733097-28f6-426d-bfe9-90a241844f38",
+        "message": "Rule test_threshold_rule (threshold) failed: Metric 'count' on 'devices' is 0. Must be between 5 and 10.",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 6
+    },
+    "by_rule": {
+      "Unknown": 3,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1
+    },
+    "by_severity": {
+      "critical": 2,
+      "warning": 1,
+      "high": 1,
+      "error": 2
+    }
   }
 }

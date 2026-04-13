@@ -152,8 +152,9 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
 
     case 'history_detail':
       return (
-        <HistoryDetailView 
-          versionId={selectedVersionId}
+        <HistoryDetailView
+          baselineId={pageState.selectedBaselineId}
+          versionId={pageState.selectedVersionId}
           onRequestDiff={onRequestDiff}
           onRequestRollback={onRequestRollback}
         />
@@ -161,8 +162,9 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
 
     case 'rollback_confirm':
       return (
-        <RollbackConfirmView 
-          versionId={selectedVersionId}
+        <RollbackConfirmView
+          baselineId={pageState.selectedBaselineId}
+          versionId={pageState.selectedVersionId}
           onRollbackConfirmRequest={onRollbackConfirmRequest}
           onCancelRollback={onCancelRollback}
         />

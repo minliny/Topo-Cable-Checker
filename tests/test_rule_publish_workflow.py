@@ -124,7 +124,7 @@ def test_publish_draft_rejects_compile_error(publish_service):
     assert len(result.errors) > 0
     
     error = result.errors[0]
-    assert error.error_type == "invalid_parameter_schema"
+    assert error.error_type == "missing_required_param"
     assert error.field_name == "metric_type"
 
 def test_publish_modifies_existing_rule(publish_service, fake_repo):

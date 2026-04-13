@@ -14,8 +14,8 @@ Covers:
 
 import pytest
 from src.domain.executors.topology_executor import TopologyExecutor
-from src.domain.rule_engine.compiled_rule import CompiledRule
-from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
+from typing import Dict, Any
 from src.domain.fact_model import DeviceFact, LinkFact, NormalizedDataset
 from src.domain.result_model import IssueItem
 
@@ -24,21 +24,19 @@ def _make_compiled_rule(rule_id: str, rule_subtype: str, params: dict = None,
                         target_type: str = "links", severity: str = "high") -> CompiledRule:
     """Helper to create CompiledRule for topology executor tests."""
     extra_params = params or {}
+    extra_params["type"] = rule_subtype
     return CompiledRule(
         rule_id=rule_id,
         rule_type="template",
-        executor={"type": "topology"},
-        target={"type": target_type, "filter": None},
-        message={"template": f"Rule {rule_id} failed"},
-        severity=severity,
-        params={"type": rule_subtype, **extra_params},
-        type=rule_subtype,
-        **extra_params
+        executor="topology",
+        target=RuleTarget(type=target_type, filter=None),
+        message=RuleMessage(template="", severity=severity),
+        params=extra_params
     )
 
 
-def _make_context() -> ExecutionContext:
-    return ExecutionContext(parameter_profile={}, threshold_profile={}, runtime_flags={})
+def _make_context() -> dict:
+    return {"parameter_profile": {}, "threshold_profile": {}}
 
 
 class TestTopologyExecutorDuplicateLink:
@@ -51,7 +49,7 @@ class TestTopologyExecutorDuplicateLink:
             LinkFact(src_device="SW1", src_port="Gi0/1", dst_device="SW2", dst_port="Gi0/1", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("dup_rule", "duplicate_link")
-        result = executor.execute("dup_rule", compiled, {"links": links, "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": []}, _make_context())
 
         assert len(result) == 1, f"Expected 1 issue, got {len(result)}"
         assert result[0].category == "duplicate_link"
@@ -65,14 +63,14 @@ class TestTopologyExecutorDuplicateLink:
             LinkFact(src_device="SW2", src_port="Gi0/2", dst_device="SW3", dst_port="Gi0/1", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("dup_rule", "duplicate_link")
-        result = executor.execute("dup_rule", compiled, {"links": links, "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": []}, _make_context())
 
         assert len(result) == 0, "No issues expected for unique links"
 
     def test_empty_links_no_crash(self):
         executor = TopologyExecutor()
         compiled = _make_compiled_rule("dup_rule", "duplicate_link")
-        result = executor.execute("dup_rule", compiled, {"links": [], "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": [], "devices": []}, _make_context())
         assert result == []
 
 
@@ -88,7 +86,7 @@ class TestTopologyExecutorMissingPeer:
             DeviceFact(device_name="SW2", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("peer_rule", "missing_peer")
-        result = executor.execute("peer_rule", compiled, {"links": links, "devices": devices}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": devices}, _make_context())
 
         assert len(result) == 1
         assert result[0].category == "missing_peer"
@@ -103,7 +101,7 @@ class TestTopologyExecutorMissingPeer:
             DeviceFact(device_name="SW1", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("peer_rule", "missing_peer")
-        result = executor.execute("peer_rule", compiled, {"links": links, "devices": devices}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": devices}, _make_context())
 
         assert len(result) == 1
         assert "GONE" in result[0].message
@@ -118,7 +116,7 @@ class TestTopologyExecutorMissingPeer:
             DeviceFact(device_name="SW2", device_type="Switch", status="up", _source_sheet="s1"),
         ]
         compiled = _make_compiled_rule("peer_rule", "missing_peer")
-        result = executor.execute("peer_rule", compiled, {"links": links, "devices": devices}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": devices}, _make_context())
 
         assert len(result) == 0
 
@@ -134,7 +132,7 @@ class TestTopologyExecutorSelfLoop:
         ]
         compiled = _make_compiled_rule("loop_rule", "topology_assertion", 
                                         params={"assertion_type": "self_loop"})
-        result = executor.execute("loop_rule", compiled, {"links": links, "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": []}, _make_context())
 
         assert len(result) == 1, f"Expected 1 self-loop issue, got {len(result)}"
         assert result[0].category == "topology_assertion"
@@ -149,7 +147,7 @@ class TestTopologyExecutorSelfLoop:
         ]
         compiled = _make_compiled_rule("loop_rule", "topology_assertion",
                                         params={"assertion_type": "self_loop"})
-        result = executor.execute("loop_rule", compiled, {"links": links, "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": []}, _make_context())
 
         assert len(result) == 0
 
@@ -162,7 +160,7 @@ class TestTopologyExecutorSelfLoop:
         ]
         compiled = _make_compiled_rule("loop_rule", "topology_assertion",
                                         params={"assertion_type": "self_loop"})
-        result = executor.execute("loop_rule", compiled, {"links": links, "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": []}, _make_context())
 
         assert len(result) == 2, f"Expected 2 self-loop issues, got {len(result)}"
 
@@ -184,7 +182,7 @@ class TestTopologyExecutorIsolatedDevice:
         compiled = _make_compiled_rule("iso_rule", "topology_assertion",
                                         params={"assertion_type": "isolated_device"},
                                         target_type="devices")
-        result = executor.execute("iso_rule", compiled, {"links": links, "devices": devices}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": devices}, _make_context())
 
         assert len(result) == 1, f"Expected 1 isolated device issue, got {len(result)}"
         assert result[0].category == "topology_assertion"
@@ -203,7 +201,7 @@ class TestTopologyExecutorIsolatedDevice:
         compiled = _make_compiled_rule("iso_rule", "topology_assertion",
                                         params={"assertion_type": "isolated_device"},
                                         target_type="devices")
-        result = executor.execute("iso_rule", compiled, {"links": links, "devices": devices}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": devices}, _make_context())
 
         assert len(result) == 0
 
@@ -217,7 +215,7 @@ class TestTopologyExecutorIsolatedDevice:
         compiled = _make_compiled_rule("iso_rule", "topology_assertion",
                                         params={"assertion_type": "isolated_device"},
                                         target_type="devices")
-        result = executor.execute("iso_rule", compiled, {"links": links, "devices": devices}, _make_context())
+        result = executor.execute(compiled, {"links": links, "devices": devices}, _make_context())
 
         assert len(result) == 0, "Empty device_name should not be flagged as isolated"
 
@@ -228,12 +226,12 @@ class TestTopologyExecutorUnknownSubtype:
     def test_unknown_subtype_returns_empty(self):
         executor = TopologyExecutor()
         compiled = _make_compiled_rule("unknown_rule", "unknown_subtype")
-        result = executor.execute("unknown_rule", compiled, {"links": [], "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": [], "devices": []}, _make_context())
         assert result == []
 
     def test_unknown_assertion_type_returns_empty(self):
         executor = TopologyExecutor()
         compiled = _make_compiled_rule("unknown_assert", "topology_assertion",
                                         params={"assertion_type": "nonexistent"})
-        result = executor.execute("unknown_assert", compiled, {"links": [], "devices": []}, _make_context())
+        result = executor.execute(compiled, {"links": [], "devices": []}, _make_context())
         assert result == []

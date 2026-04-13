@@ -501,7 +501,7 @@ class ResultRepository:
         dd = snap.__dict__.copy()
         dd["issues"] = [i.__dict__ for i in dd["issues"]]
         d[snap.run_id] = dd
-        _write_json("issue_aggregates.json", dd)
+        _write_json("issue_aggregates.json", d)
         
     def get_issue_aggregate(self, run_id: str) -> IssueAggregateSnapshot:
         d = _read_json("issue_aggregates.json")

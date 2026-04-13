@@ -34,13 +34,17 @@ class TemplateRegistry:
         "threshold": {
             "target_executor": "threshold",
             "supported_params": ["metric_type", "metric_field", "threshold_key", "operator", "expected_value", "expected", "min_value", "max_value"],
-            "validation_rules": []
+            "validation_rules": [
+                lambda p: None if "metric_type" in p else "missing_required_param: metric_type is required",
+                lambda p: "unknown_rule_capability: unsupported metric_type" if p.get("metric_type") not in ["count", "distinct_count", "sum", "average"] else None
+            ]
         },
         "threshold_check": {
             "target_executor": "threshold",
             "supported_params": ["metric_type", "metric_field", "threshold_key"],
             "validation_rules": [
-                lambda p: None if "metric_type" in p else "missing_required_param: metric_type is required"
+                lambda p: None if "metric_type" in p else "missing_required_param: metric_type is required",
+                lambda p: "unknown_rule_capability: unsupported metric_type" if p.get("metric_type") not in ["count", "distinct_count", "sum", "average"] else None
             ]
         },
         "single_fact": {
@@ -208,6 +212,10 @@ class RuleCompiler:
                 
         template_info = TemplateRegistry.get_template(template_name)
         
+        from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry
+        if not RuleMetaRegistry.get_meta(template_info["target_executor"]):
+            raise RuleCompileError(rule_id, "unknown_rule_meta", f"Unknown executor meta for '{template_info['target_executor']}'")
+
         scope_selector = rule_def.get("scope_selector", {"target_type": rule_def.get("target_type", "devices")})
         target_type = scope_selector.pop("target_type", "devices")
         target = RuleTarget(type=target_type, filter=scope_selector)

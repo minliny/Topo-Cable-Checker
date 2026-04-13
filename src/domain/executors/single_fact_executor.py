@@ -13,7 +13,7 @@ class SingleFactExecutor(RuleExecutor):
         rule_id = compiled_rule.rule_id
         target_type = compiled_rule.target.type
         target_field = compiled_rule.params.get("field")
-        rule_subtype = compiled_rule.rule_type
+        rule_subtype = compiled_rule.params.get("type") or compiled_rule.rule_type
         expected_val = compiled_rule.params.get("expected")
         severity = compiled_rule.message.severity
         
