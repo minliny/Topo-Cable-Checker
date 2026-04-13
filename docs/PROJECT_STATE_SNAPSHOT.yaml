@@ -22,8 +22,8 @@ branch_state:
   mainline_policy: "后续开发应以 main 作为唯一可信主线"
 
 development_mode:
-  current: rule_engine_externalization
-  current_maturity: L4
+  current: reality_recovery_rejection
+  current_maturity: L4_BLOCKED
   roadmap_mode: phase_driven
   principles:
     - "所有开发由 USAGE_PAINLOG.md 真实痛点驱动"

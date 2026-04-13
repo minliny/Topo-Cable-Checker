@@ -38,25 +38,25 @@
 
 ## 痛点记录
 
-### 1. 前端 UI 历史版本与回滚界面存在假数据 (Resolved)
+### 1. 前端 UI 历史版本与回滚界面存在假数据 (Rejected - Misleading)
 - **发现时间**: 2026-04-13
 - **发现方式**: 代码审计与真实使用
 - **描述**: `HistoryDetailView` 和 `RollbackConfirmView` 存在硬编码的 Mock 数据，未真实调用后端 API 获取历史版本元数据和 Diff 详情，导致用户在回滚前无法看到真实的影响范围。
 - **影响**: 严重误导用户，导致回滚操作存在极高风险，用户不敢点击回滚。
 - **评分**: Frequency: 3 | Severity: 4 | Blocking: 3 | Total: 10
-- **状态**: **已解决 (Resolved)**
+- **状态**: **已拒绝 (Rejected - 语义反转)**
 - **解决方案**: 
-  - `HistoryDetailView` 已接入 `getVersionMeta` 真实 API。
-  - `RollbackConfirmView` 已接入 `getBaselineDiff` API 并渲染真实变更表格。
+  - `HistoryDetailView` 已接入 `getVersionMeta` 真实 API。（PASS）
+  - `RollbackConfirmView` 已接入 `getBaselineDiff` API 并渲染真实变更表格，**但是 Diff 方向传反了**，导致 UI 上显示 "Added" 的规则实际上在回滚时会被 "Removed"。这构成了更危险的误导，必须重新修复。（FAIL）
 
-### 2. 底层规则执行器 (GroupConsistencyExecutor) 在缺失配置时崩溃 (Resolved)
+### 2. 底层规则执行器 (GroupConsistencyExecutor) 在缺失配置时崩溃 (Rejected - Silent Failure)
 - **发现时间**: 2026-04-13
 - **发现方式**: 测试覆盖率补充
 - **描述**: 当 `parameter_key` 指向的 Profile 不存在且 Rule 参数中未直接提供 `group_key` 时，`getattr` 抛出 `TypeError` 导致整个检查任务崩溃。
 - **影响**: 用户配置错误导致整个任务失败，缺乏容错。
 - **评分**: Frequency: 2 | Severity: 3 | Blocking: 3 | Total: 8
-- **状态**: **已解决 (Resolved)**
-- **解决方案**: 在 `GroupConsistencyExecutor` 中增加了配置缺失校验，优雅返回空 issue 列表。
+- **状态**: **已拒绝 (Rejected - 掩盖错误)**
+- **解决方案**: 之前在 `GroupConsistencyExecutor` 中增加了配置缺失校验并优雅返回空 issue 列表。**独立验收指出这是静默失败 (Silent Failure)**。配置缺失应作为明确的 Execution Error 暴露给用户，而不是返回 0 违规让用户误以为网络健康。必须重新修复。（FAIL）
 
 ### 3. 测试体系方法签名漂移与引用过时 (Resolved)
 - **发现时间**: 2026-04-13

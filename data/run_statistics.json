@@ -731,5 +731,42 @@
     "total_ports": 1,
     "total_links": 0,
     "device_type_distribution": {}
+  },
+  "695a3541-bd4f-4fb4-8b4d-b6fe52291dbb": {
+    "run_id": "695a3541-bd4f-4fb4-8b4d-b6fe52291dbb",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "dbd663c6-de5b-4a3f-a955-cb35ccb5cb98": {
+    "run_id": "dbd663c6-de5b-4a3f-a955-cb35ccb5cb98",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "d26d7ad0-7f01-40b4-83e6-cd31f7dda620": {
+    "run_id": "d26d7ad0-7f01-40b4-83e6-cd31f7dda620",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "be4e6629-7dfb-4e65-ae30-250a6e2af0a9": {
+    "run_id": "be4e6629-7dfb-4e65-ae30-250a6e2af0a9",
+    "total_devices": 0,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {}
   }
 }
