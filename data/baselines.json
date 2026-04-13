@@ -181,19 +181,9 @@
       }
     },
     "version_history_meta": {},
-    "working_draft": {
-      "rule_id": "",
-      "rule_type": "threshold",
-      "target_type": "devices",
-      "severity": "warning",
-      "params": {
-        "threshold": 10,
-        "severity": "warning"
-      },
-      "saved_at": "2026-04-13T13:09:44.956103"
-    }
+    "working_draft": null
   },
-  "__schema_version__": "1.2",
+  "__schema_version__": "1.3",
   "SIM_LARGE": {
     "baseline_id": "SIM_LARGE",
     "baseline_version": "v1.0",
@@ -110210,14 +110200,19 @@
     "baseline_version_snapshot": {},
     "version_history_meta": {},
     "working_draft": {
-      "rule_id": "R_test",
-      "rule_type": "threshold",
-      "target_type": "devices",
-      "severity": "warning",
-      "params": {
-        "metric_type": "count",
-        "threshold_key": "T1"
+      "rule_set": {
+        "R_test": {
+          "template": "threshold",
+          "rule_type": "template",
+          "target_type": "devices",
+          "severity": "warning",
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          }
+        }
       },
+      "active_rule_id": "R_test",
       "saved_at": "2026-04-13T13:11:50.349233"
     }
   },
@@ -110320,5 +110315,28 @@
     },
     "version_history_meta": {},
     "working_draft": null
+  },
+  "perf_baseline": {
+    "baseline_id": "perf_baseline",
+    "baseline_version": "1.0",
+    "recognition_profile": {},
+    "naming_profile": {},
+    "parameter_profile": {},
+    "threshold_profile": {},
+    "rule_set": {},
+    "baseline_version_snapshot": {},
+    "version_history_meta": {},
+    "working_draft": {
+      "rule_set": {
+        "rule_99": {
+          "template": "threshold",
+          "params": {
+            "val": 99
+          }
+        }
+      },
+      "active_rule_id": "rule_99",
+      "saved_at": "2026-04-13T15:16:42.149395"
+    }
   }
 }

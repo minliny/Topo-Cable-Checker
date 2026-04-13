@@ -30,6 +30,7 @@ from src.crosscutting.errors.exceptions import (
 )
 from src.crosscutting.logging.logger import get_logger
 import datetime
+import atexit
 
 logger = get_logger(__name__)
 
@@ -368,6 +369,7 @@ def _write_json_debounced(file_name: str, data: Dict):
     we implement a simple time-based batching/throttling in-memory.
     """
     import time
+    import atexit
     
     # Global state for debouncing
     if not hasattr(_write_json_debounced, "_pending_writes"):
@@ -384,10 +386,11 @@ def _write_json_debounced(file_name: str, data: Dict):
     
     # If we haven't written recently (e.g. > 500ms), write immediately
     # Otherwise, we just leave it in pending (it will be flushed on next read or forced flush)
-    if file_name not in last_write or (now - last_write[file_name] > 0.5):
-        _write_json_direct(file_name, pending[file_name])
-        last_write[file_name] = now
-        del pending[file_name]
+    if file_name not in last_write or (now - last_write[file_name] > 2.0):
+        _write_json(file_name, pending[file_name])
+        last_write[file_name] = time.time()
+        # We don't delete from pending so that subsequent reads can use it as a cache!
+        # Instead, we just let it stay.
 
 def _flush_pending_writes(file_name: str = None):
     """Force flush any pending writes for a file or all files."""
@@ -398,73 +401,73 @@ def _flush_pending_writes(file_name: str = None):
     last_write = _write_json_debounced._last_write_time
     import time
     
+    now = time.time()
     if file_name:
-        if file_name in pending:
-            _write_json_direct(file_name, pending[file_name])
+        if file_name in pending and (file_name not in last_write or last_write[file_name] < now - 2.0):
+            _write_json(file_name, pending[file_name])
             last_write[file_name] = time.time()
-            del pending[file_name]
     else:
         for fname, data in list(pending.items()):
-            _write_json_direct(fname, data)
-            last_write[fname] = time.time()
-            del pending[fname]
+            if fname not in last_write or last_write[fname] < now - 2.0:
+                _write_json(fname, data)
+                last_write[fname] = time.time()
+
+atexit.register(_flush_pending_writes)
 
 def _read_json(file_name: str) -> Dict:
     """
     Read and parse a JSON file with fail-fast corruption detection.
-    Also flushes any pending writes before reading to ensure consistency.
+    Instead of flushing to disk on every read, we read from disk and merge 
+    any pending writes in memory so that rapid read-modify-write cycles don't thrash the disk.
     """
-    # Flush pending writes for this file to ensure we read latest data
-    _flush_pending_writes(file_name)
-    
+    # PAIN-006: Return pending writes immediately without hitting disk if available
+    if hasattr(_write_json_debounced, "_pending_writes"):
+        pending = _write_json_debounced._pending_writes
+        if file_name in pending:
+            import copy
+            return copy.deepcopy(pending[file_name])
+
     path = os.path.join(DATA_DIR, file_name)
-    if not os.path.exists(path):
-        return {}
-
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if not isinstance(data, dict):
-                logger.warning(f"File {file_name} contains non-dict JSON (type={type(data).__name__}), wrapping")
-                data = {}
-            return data
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON corruption detected in {file_name}: {e}")
-        # 1. Preserve the corrupted file
-        corrupted_path = _preserve_corrupted_file(file_name)
-        # 2. Attempt recovery from backup
-        backup_path = _get_latest_backup(file_name)
-        if backup_path:
-            try:
-                with open(backup_path, "r", encoding="utf-8") as f:
-                    recovered_data = json.load(f)
-                # Copy backup to primary location
-                shutil.copy2(backup_path, path)
-                logger.info(f"Recovered {file_name} from backup: {backup_path}")
-                return recovered_data
-            except Exception as recovery_err:
-                logger.error(f"Backup recovery also failed for {file_name}: {recovery_err}")
-                raise PersistenceRecoveryError(
+    data = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if not isinstance(data, dict):
+                    logger.warning(f"File {file_name} contains non-dict JSON, wrapping")
+                    data = {}
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON corruption detected in {file_name}: {e}")
+            corrupted_path = _preserve_corrupted_file(file_name)
+            backup_path = _get_latest_backup(file_name)
+            if backup_path:
+                try:
+                    with open(backup_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    shutil.copy2(backup_path, path)
+                    logger.info(f"Recovered {file_name} from backup: {backup_path}")
+                except Exception as recovery_err:
+                    raise PersistenceRecoveryError(
+                        file_path=path,
+                        backup_path=backup_path,
+                        reason=f"Backup at {backup_path} is also invalid: {recovery_err}"
+                    )
+            else:
+                raise PersistenceCorruptionError(
                     file_path=path,
-                    backup_path=backup_path,
-                    reason=f"Backup at {backup_path} is also invalid: {recovery_err}"
+                    original_error=str(e)
                 )
-        else:
-            # No backup available — this is a data loss situation
-            raise PersistenceCorruptionError(
-                file_path=path,
-                original_error=str(e)
+        except Exception as e:
+            raise PersistenceError(
+                f"Failed to read {file_name}: {e}",
+                error_code=ErrorCode.PERSISTENCE_READ_FAILED,
+                details={"file_path": path, "original_error": str(e)}
             )
-    except Exception as e:
-        logger.error(f"Unexpected error reading {file_name}: {e}")
-        raise PersistenceError(
-            f"Failed to read {file_name}: {e}",
-            error_code=ErrorCode.PERSISTENCE_READ_FAILED,
-            details={"file_path": path, "original_error": str(e)}
-        )
+            
+    return data
 
 
-def _write_json_direct(file_name: str, data: Dict):
+def _write_json(file_name: str, data: Dict):
     """
     Atomic write with pre-write backup.
     
