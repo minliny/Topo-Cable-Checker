@@ -8,6 +8,23 @@
     "naming_profile": {
       "strategy": "snake_case"
     },
+    "parameter_profile": {
+      "P1": {
+        "group_key": "device_type",
+        "comparison_field": "status"
+      }
+    },
+    "threshold_profile": {
+      "T1": {
+        "operator": "between",
+        "min_value": 5,
+        "max_value": 10
+      },
+      "T2": {
+        "operator": "gte",
+        "expected_value": 3
+      }
+    },
     "rule_set": {
       "R1_scoped": {
         "rule_type": "template",
@@ -47,25 +64,8 @@
         "severity": "error"
       }
     },
-    "parameter_profile": {
-      "P1": {
-        "group_key": "device_type",
-        "comparison_field": "status"
-      }
-    },
-    "threshold_profile": {
-      "T1": {
-        "operator": "between",
-        "min_value": 5,
-        "max_value": 10
-      },
-      "T2": {
-        "operator": "gte",
-        "expected_value": 3
-      }
-    },
     "baseline_version_snapshot": {
-      "B001": "v1.0",
+      "B001": {},
       "v1.1": {
         "R1_scoped": {
           "rule_type": "template",
@@ -179,6 +179,18 @@
           "severity": "error"
         }
       }
+    },
+    "version_history_meta": {},
+    "working_draft": {
+      "rule_id": "rule_1",
+      "rule_type": "threshold",
+      "target_type": "devices",
+      "severity": "warning",
+      "params": {
+        "key": "val1"
+      },
+      "saved_at": "2026-04-13T15:50:43.651298"
     }
-  }
+  },
+  "__schema_version__": "1.2"
 }

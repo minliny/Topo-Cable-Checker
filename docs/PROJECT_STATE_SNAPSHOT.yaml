@@ -6,7 +6,7 @@
 project:
   name: "Topo-Cable-Checker"
   identity: "Rule Governance Workbench — 规则治理工作台"
-  status: "L4.0 稳定，Input Contract + Rule Engine Externalization 已合并"
+  status: "L4 Alpha 降级，发现 W16 Draft Model / Stale UI / Debounce 为假实现"
   last_audit: "2026-04-12"
 
 branch_state:
@@ -23,7 +23,7 @@ branch_state:
 
 development_mode:
   current: rule_engine_externalization
-  current_maturity: L4
+  current_maturity: L4 Alpha
   roadmap_mode: phase_driven
   principles:
     - "所有开发由 USAGE_PAINLOG.md 真实痛点驱动"
@@ -31,7 +31,7 @@ development_mode:
     - "禁止无 Pain 支撑的预设计划"
 
 maturity_rating:
-  overall: "L4.0"
+  overall: "L4 Alpha (Downgraded due to W16 false claims)"
   dimensions:
     main_flow_completeness: "L4"
     input_experience: "L3"             # Input Contract with header mapping + row constraints
@@ -40,7 +40,7 @@ maturity_rating:
     data_reliability: "L4+"
     self_maintenance: "L3"
     observability_troubleshooting: "L4"
-  target: "L4 (Production-like Solo Tool)"
+  target: "重新回到 L4 Stable，修复 W16 假实现"
 
 architecture_summary:
   pattern: "DDD Layered (Domain-Driven Design)"
@@ -117,6 +117,19 @@ rule_externalization_status:
     - "RuleEngine GroupConsistency/Topology are not externalized at runtime yet"
 
 remaining_risks:
+
+  - id: "RISK-009"
+    severity: "Critical"
+    description: "W16 Fake Implementation: Draft payload accepts only single rule_id, breaking multi-rule save semantics."
+    file: "src/presentation/api/routers/rules.py, dto_models.py"
+  - id: "RISK-010"
+    severity: "Critical"
+    description: "W16 Fake Implementation: Validate/Publish/Diff endpoints do not support rule_set, destroying full workflow."
+    file: "src/presentation/api/routers/rules.py, dto_models.py"
+  - id: "RISK-011"
+    severity: "Critical"
+    description: "W16 Fake Implementation: pageReducer.ts UPDATE_DRAFT fails to clear validationResult, causing stale UI."
+    file: "frontend/src/store/pageReducer.ts"
   - id: "RISK-003"
     severity: "P2"
     description: "tasks.json 无 schema 版本迁移（baselines.json 已有）"

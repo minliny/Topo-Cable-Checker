@@ -7,7 +7,7 @@
 
 ## 当前状态
 
-- **成熟度**：L4.0（0 伪实现，272+ 测试全通过）
+- **成熟度**：L4 Alpha（W16 假实现导致成熟度下调）
 - **开发模式**：Usage-Driven Optimization
 - **迭代机制**：Pain Log → Iteration Review → Roadmap 排期
 - **测试基准**：272 passed, 1 skipped, 0 failed
@@ -18,6 +18,10 @@
 
 | Pain ID | 项目 | Pain Score | 目标 | 关联风险 |
 |---------|------|-----------|------|---------|
+| PAIN-004 | Draft Payload 支持 rule_set | 44 (Critical) | 后端支持多规则 Draft 保存 | W16 假实现 |
+| PAIN-005 | 完整工作流语义闭环 | 44 (Critical) | Validate/Publish/Diff 接口支持 rule_set | W16 假实现 |
+| PAIN-006 | 彻底清理 Stale UI | 37 (Critical) | UPDATE_DRAFT 清理过期校验状态 | W16 假实现 |
+| PAIN-007 | Draft Debounced Persistence | 18 (Moderate) | 实现前端/后端 Save Debounce | W16 假实现 |
 | PAIN-002 | 回滚确认展示完整 rule_set | 30 (Critical) | RollbackConfirmView 展示完整规则列表 + 逐条确认 | — |
 | PAIN-001 | RuleEditor JSON 编辑体验 | 26 (High) | Monaco Editor + Schema 暴露 + 编译错误精确映射 | — |
 

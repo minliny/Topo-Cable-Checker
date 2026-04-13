@@ -1,4 +1,5 @@
-# AI Handoff Document
+with open("docs/AI_HANDOFF.md", "w") as f:
+    f.write("""# AI Handoff Document
 
 ## Current Focus
 The project was evaluated for W16 Recovery Validation (Draft Model upgrades, Stale UI fixes, Debounce persistence). 
@@ -13,3 +14,5 @@ The project was evaluated for W16 Recovery Validation (Draft Model upgrades, Sta
 
 ## Testing & Verification
 Do not blindly claim "fixed". You must use `w16_full_validation.py` (which I created in the root directory) to prove the endpoints actually accept and process multiple rules correctly.
+""")
+
