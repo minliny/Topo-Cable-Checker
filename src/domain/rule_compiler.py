@@ -34,7 +34,9 @@ class TemplateRegistry:
         "threshold": {
             "target_executor": "threshold",
             "supported_params": ["metric_type", "metric_field", "threshold_key", "operator", "expected_value", "expected", "min_value", "max_value"],
-            "validation_rules": []
+            "validation_rules": [
+                lambda p: None if "metric_type" in p else "missing_required_param: metric_type is required"
+            ]
         },
         "threshold_check": {
             "target_executor": "threshold",

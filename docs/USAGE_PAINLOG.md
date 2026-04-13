@@ -118,8 +118,8 @@ Pain Score = Frequency × 2 + Severity × 3 + Workflow Blocking × 2 + Trust Ris
 | **Workflow Blocking** | 4 |
 | **Trust Risk** | 4 |
 | **Pain Score** | 4×2 + 4×3 + 4×2 + 4×4 = **44** (Critical) |
-| **建议方案** | 修复 `RuleEditorGovernanceBridgeService` 中的代码逻辑，移除 `compiled_rule.validate()` 调用或实现该方法 |
-| **当前状态** | Open |
+| **建议方案** | 补齐 `CompiledRule` 的 Contract（`validate()` / `to_dict()`），并让 Validate / Publish 共用同一套编译+校验语义（missing_required_param 映射一致） |
+| **当前状态** | Fixed (W16 STEP 1) |
 
 ### PAIN-004：草稿与编辑器架构仅支持单条规则编辑
 

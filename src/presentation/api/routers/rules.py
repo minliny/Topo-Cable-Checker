@@ -23,6 +23,7 @@ from src.application.rule_editor_services.rule_editor_mvp_service import (
     RuleDraftView, RuleDraftValidationResult
 )
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError
+from src.domain.rule_engine.compiled_rule import RuleValidationError
 from src.crosscutting.logging.logger import get_logger
 from src.crosscutting.errors.exceptions import DomainError, ErrorCode
 
@@ -46,6 +47,7 @@ def validate_draft(req: ValidateRequestDTO):
         rule_def = {"rule_type": "template", "template": req.rule_type, "params": req.params}
         # Compile it using a dummy ID to trigger validation
         compiled_rule = RuleCompiler.compile("draft_rule", rule_def)
+        compiled_rule.validate()
     except RuleCompileError as e:
         is_valid = False
         # Extract the field_path if available in the error type or message
@@ -62,6 +64,13 @@ def validate_draft(req: ValidateRequestDTO):
             issue_type="error",
             message=e.message,
             suggestion="Check the rule documentation for required parameters."
+        ))
+    except RuleValidationError as e:
+        is_valid = False
+        issues.append(ValidationIssueDTO(
+            field_path="params",
+            issue_type="error",
+            message=str(e),
         ))
     except Exception as e:
         is_valid = False

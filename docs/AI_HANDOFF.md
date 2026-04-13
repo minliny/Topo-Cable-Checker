@@ -7,13 +7,13 @@
 
 ## 0. 开发模式：Usage-Driven Optimization
 
-**当前项目已进入 L4 稳定期。开发模式从"建设驱动"切换为"真实使用驱动优化"。**
+**当前项目处于 L4 Alpha 稳定性修复期（W16）。开发模式从"建设驱动"切换为"真实使用驱动优化"，并在本周期严格聚焦 Top Priority Pain 修复。**
 
 ### 当前开发原则
 
 1. **Pain 驱动**：所有开发工作必须来自 `USAGE_PAINLOG.md` 中的真实痛点，禁止凭预感添加功能
 2. **最小变更**：每次只解决一个 Pain，不做附带重构
-3. **测试守卫**：任何修改必须保证 272+ 现有测试通过，不得引入回归
+3. **测试守卫**：任何修改必须新增/补齐回归测试，并保证核心链路测试通过，不得引入回归
 4. **验证闭环**：修复后必须在 `ITERATION_REVIEW.md` 中记录验证结果
 
 ### 新功能准入标准（Feature Gate）
@@ -49,7 +49,7 @@
 **Topo-Cable-Checker = 规则治理工作台（Rule Governance Workbench）**
 用于编辑、校验、版本化、Diff、发布和回滚拓扑线缆校验规则的个人开发者工具。
 
-**当前成熟度：L4.0（稳固）** — 0 伪实现 + 272 测试通过 + Deep Diff 递归比较 + 完整 Rule Set Rollback + Save Draft 真实持久化 + Executor 全覆盖测试 + Usage Simulation 体系
+**当前成熟度：L4 Alpha（W16 修复中）** — First Usage Validation 后发现主闭环阻断与架构假设错误，需完成 W16 稳定性修复后再恢复 L4 Stable
 
 ---
 

@@ -6,8 +6,8 @@
 project:
   name: "Topo-Cable-Checker"
   identity: "Rule Governance Workbench — 规则治理工作台"
-  status: "L4.0 稳定，Input Contract + Rule Engine Externalization 已合并"
-  last_audit: "2026-04-12"
+  status: "L4 Alpha — W16 稳定性修复期（PAIN-003 已修复，其余 Top Pain 待完成）"
+  last_audit: "2026-04-13"
 
 branch_state:
   trusted_mainline: "main"
@@ -22,16 +22,16 @@ branch_state:
   mainline_policy: "后续开发应以 main 作为唯一可信主线"
 
 development_mode:
-  current: rule_engine_externalization
-  current_maturity: L4
-  roadmap_mode: phase_driven
+  current: stability_repair_w16
+  current_maturity: L4_alpha
+  roadmap_mode: pain_driven
   principles:
     - "所有开发由 USAGE_PAINLOG.md 真实痛点驱动"
     - "新功能准入需 Pain Score ≥ 10"
     - "禁止无 Pain 支撑的预设计划"
 
 maturity_rating:
-  overall: "L4.0"
+  overall: "L4 Alpha"
   dimensions:
     main_flow_completeness: "L4"
     input_experience: "L3"             # Input Contract with header mapping + row constraints

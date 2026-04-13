@@ -7,10 +7,10 @@
 
 ## 当前状态
 
-- **成熟度**：L4.0（0 伪实现，272+ 测试全通过）
-- **开发模式**：Usage-Driven Optimization
+- **成熟度**：L4 Alpha（W16 稳定性修复期）
+- **开发模式**：Stability Repair（严控范围：仅修复 Top Priority Pain）
 - **迭代机制**：Pain Log → Iteration Review → Roadmap 排期
-- **测试基准**：272 passed, 1 skipped, 0 failed
+- **测试基准**：核心链路相关测试通过；全量 pytest 需补齐 openpyxl 依赖（非本轮范围）
 
 ---
 
@@ -18,8 +18,10 @@
 
 | Pain ID | 项目 | Pain Score | 目标 | 关联风险 |
 |---------|------|-----------|------|---------|
-| PAIN-002 | 回滚确认展示完整 rule_set | 30 (Critical) | RollbackConfirmView 展示完整规则列表 + 逐条确认 | — |
-| PAIN-001 | RuleEditor JSON 编辑体验 | 26 (High) | Monaco Editor + Schema 暴露 + 编译错误精确映射 | — |
+| PAIN-003 | Publish Blocker | 44 (Critical) | 修复 Contract 不一致，恢复 Publish Gate 与主闭环 | 主链路不可用 |
+| PAIN-004 | Draft Model Architecture Fault | 27 (High) | Draft 升级为 rule_set-level，并完成迁移与全链路适配 | 多规则治理语义失效 |
+| PAIN-005 | Validation Stale UI State | 32 (Critical) | Draft dirty 时清除过期校验结果，恢复 UI 信任语义 | 误导用户 |
+| PAIN-006 | Save Draft Performance Bottleneck | 32 (Critical) | 最小成本性能缓解（debounce/batch/增量写）并给出基准 | 大规模卡顿/阻塞 |
 
 ---
 

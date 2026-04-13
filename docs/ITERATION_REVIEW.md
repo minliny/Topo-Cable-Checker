@@ -92,6 +92,47 @@
 - 回滚确认页是否能展示完整规则列表
 - 编辑体验是否有改善
 
+## Iteration 2026-W16 / 2026-04-13 (W16 Stability Repair)
+
+### 本周期使用概况
+- 使用频次：以测试驱动方式修复主闭环阻断问题（PAIN-003）
+- 核心操作路径：Validate → Publish → Diff → Rollback（以自动化测试验证）
+
+### 新发现 Pain
+| Pain ID | 一句话描述 | Pain Score | 优先级 |
+|---------|-----------|------------|--------|
+| — | 本轮为稳定性修复，不新增 Pain | — | — |
+
+### Pain 合并/去重
+- 无
+
+### Top Priority This Cycle
+1. **PAIN-003**：Publish Blocker（Contract 不一致）
+2. **PAIN-004**：Draft Model Architecture Fault（rule_set-level draft）
+3. **PAIN-005**：Validation Stale UI State
+4. **PAIN-006**：Save Draft Performance Bottleneck
+
+### 本轮优化目标
+- [x] PAIN-003：修复 CompiledRule contract 不一致，恢复 Publish Gate 的可信度并保证 Validate/Publish 语义一致
+- [ ] PAIN-004：Draft 模型升级为 rule_set-level，并完成迁移与全链路适配
+- [ ] PAIN-005：Draft dirty 时清除过期 validation 状态
+- [ ] PAIN-006：Save Draft 性能缓解与基准测试
+
+### 完成结果
+| 目标 | 状态 | 产出 |
+|------|------|------|
+| PAIN-003 | Done | 修复 `CompiledRule.validate/to_dict` 缺失 + threshold required param gate + publish/validate 一致性测试通过 |
+
+### 验证证据（测试）
+- `tests/test_rule_editor_bridge.py`
+- `tests/test_publish_validation_gate.py`
+- `tests/test_rule_publish_workflow.py`
+- `tests/test_diff_governance.py`
+- `tests/test_rollback_completeness.py`
+
+### 下一轮验证点
+- 在 STEP 2（Draft Model）重构后复跑上述 Publish Gate 测试，确保无回归
+
 ## Iteration 2026-W16 / 2026-04-13 (First Usage Validation Cycle)
 
 ### 本周期使用概况

@@ -91,6 +91,10 @@ class RuleEditorGovernanceBridgeService:
         """
         Attempts to map low-level compiler errors to specific form fields.
         """
+        error_type = error.error_type
+        if error_type == "missing_required_param":
+            error_type = "invalid_parameter_schema"
+
         field_name = None
         
         if error.error_type in ["missing_required_param", "invalid_parameter_schema"]:
@@ -112,7 +116,7 @@ class RuleEditorGovernanceBridgeService:
             field_name = "_base"
 
         return RuleDraftGovernanceError(
-            error_type=error.error_type,
+            error_type=error_type,
             message=error.message,
             field_name=field_name
         )
