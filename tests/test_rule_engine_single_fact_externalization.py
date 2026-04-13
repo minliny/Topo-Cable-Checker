@@ -4,7 +4,7 @@ from src.application.recognition_services.rule_definition_registry import RuleDe
 from src.application.recognition_services.rule_definition_model import RuleDefinition
 from src.domain.fact_model import NormalizedDataset, DeviceFact
 from src.domain.baseline_model import BaselineProfile
-from src.domain.rule_engine import RuleEngine
+from src.domain.rule_engine.engine import RuleEngine
 
 
 def test_single_fact_external_rules_from_registry_produce_issues():
