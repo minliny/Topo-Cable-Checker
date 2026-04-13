@@ -81,13 +81,8 @@ function App() {
               versionId, 
               isDraft, 
               draftData: {
-                rule_type: draftResult.draft_data.rule_type || 'threshold',
-                params: typeof draftResult.draft_data.params === 'string' 
-                  ? draftResult.draft_data.params 
-                  : JSON.stringify(draftResult.draft_data.params || {}, null, 2),
-                ...(draftResult.draft_data.rule_id ? { rule_id: draftResult.draft_data.rule_id } : {}),
-                ...(draftResult.draft_data.target_type ? { target_type: draftResult.draft_data.target_type } : {}),
-                ...(draftResult.draft_data.severity ? { severity: draftResult.draft_data.severity } : {}),
+                rule_set: draftResult.draft_data.rule_set || {},
+                active_rule_id: draftResult.draft_data.active_rule_id,
               },
               nodeType: nodeType as any,
               sourceVersionId,
@@ -103,9 +98,29 @@ function App() {
 
     if (isDraft) {
       if (nodeType === 'rollback_candidate') {
-        draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + sourceVersionId + '"\n}' };
+        draftData = { 
+          rule_set: {
+            "rule_1": {
+              "template": "threshold",
+              "target_type": "devices",
+              "severity": "warning",
+              "params": {"threshold": 10, "_comment": "Rolled back from " + sourceVersionId}
+            }
+          },
+          active_rule_id: "rule_1"
+        };
       } else {
-        draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning"\n}' };
+        draftData = { 
+          rule_set: {
+            "rule_1": {
+              "template": "threshold",
+              "target_type": "devices",
+              "severity": "warning",
+              "params": {"threshold": 10}
+            }
+          },
+          active_rule_id: "rule_1"
+        };
       }
     }
     dispatch({ 
@@ -157,19 +172,20 @@ function App() {
     dispatch({ type: 'REQUEST_VALIDATION' });
     setValidating(true);
     try {
-      let parsedParams = {};
-      try {
-        parsedParams = JSON.parse(pageState.draftData.params || '{}');
-      } catch (err) {
-        message.error('Params must be valid JSON');
-        setValidating(false);
-        dispatch({ type: 'VALIDATION_FAILED' });
-        return;
+      // For MVP validation, we only validate the currently active rule
+      const activeRuleId = pageState.draftData.active_rule_id;
+      const ruleDef = activeRuleId ? pageState.draftData.rule_set?.[activeRuleId] : null;
+      
+      if (!ruleDef) {
+         message.error('No active rule selected to validate');
+         setValidating(false);
+         dispatch({ type: 'VALIDATION_FAILED' });
+         return;
       }
 
       const res = await rulesApi.validateDraft({
-        rule_type: pageState.draftData.rule_type || 'threshold',
-        params: parsedParams,
+        rule_type: ruleDef.template || ruleDef.rule_type || 'threshold',
+        params: ruleDef.params || {},
       });
 
       dispatch({ type: 'VALIDATION_SUCCESS', payload: { result: res } });
@@ -196,15 +212,10 @@ function App() {
     dispatch({ type: 'REQUEST_PUBLISH' });
     
     try {
-      // P1.0-1: Send explicit PublishRequest body matching backend PublishRequestDTO
-      const draftPayload = {
-        rule_type: pageState.draftData.rule_type || 'threshold',
-        target_type: 'devices',
-        severity: 'warning',
-        params: pageState.draftData.params ? JSON.parse(pageState.draftData.params) : {}
-      };
-      
-      const res = await rulesApi.publishRules(pageState.selectedBaselineId!, draftPayload);
+      const res = await rulesApi.publishBaseline(
+        pageState.selectedBaselineId!, 
+        pageState.draftData.rule_set || {}
+      );
       
       if (!res.success) {
         dispatch({ type: 'PUBLISH_BLOCKED', payload: { issues: res.blocked_issues || [] } });
@@ -276,8 +287,8 @@ function App() {
         type: 'ROLLBACK_READY', 
         payload: { 
           draftData: { 
-            rule_type: res.draft_data?.rule_type || 'threshold', 
-            params: typeof res.draft_data?.params === 'string' ? res.draft_data.params : JSON.stringify(res.draft_data?.params || {}, null, 2)
+            rule_set: res.draft_data?.rule_set || {},
+            active_rule_id: res.draft_data?.active_rule_id,
           },
           sourceVersionId: res.source_version_id,
           sourceVersionLabel: res.source_version_label
@@ -299,22 +310,10 @@ function App() {
     setSaving(true);
     try {
       // A1-5: Real Save Draft API call — replaces setTimeout mock
-      let parsedParams = {};
-      try {
-        parsedParams = JSON.parse(pageState.draftData.params || '{}');
-      } catch (err) {
-        message.error('Params must be valid JSON to save');
-        setSaving(false);
-        return;
-      }
-
       const res = await rulesApi.saveDraft({
         baseline_id: pageState.selectedBaselineId || '',
-        rule_id: pageState.draftData.rule_id || '',
-        rule_type: pageState.draftData.rule_type || 'threshold',
-        target_type: pageState.draftData.target_type || 'devices',
-        severity: pageState.draftData.severity || 'warning',
-        params: parsedParams,
+        rule_set: pageState.draftData.rule_set || {},
+        active_rule_id: pageState.draftData.active_rule_id
       });
 
       if (res.success) {

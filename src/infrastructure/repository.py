@@ -45,7 +45,7 @@ os.makedirs(BACKUP_DIR, exist_ok=True)
 # ==========================================
 
 # Current schema versions — bump when data structure changes
-BASELINES_SCHEMA_VERSION = "1.2"
+BASELINES_SCHEMA_VERSION = "1.3"
 TASKS_SCHEMA_VERSION = "1.0"
 
 # Supported migration paths: {(from_version, to_version): migration_function}
@@ -127,11 +127,70 @@ def _migrate_baselines_v1_1_to_v1_2(data: dict) -> dict:
     return data
 
 
+def _migrate_baselines_v1_2_to_v1_3(data: dict) -> dict:
+    """Migrate baselines.json from v1.2 to v1.3.
+    
+    v1.3 changes:
+    - Modifies working_draft to be a rule_set-level draft wrapper:
+      working_draft = {"rule_set": {...}, "saved_at": "...", "active_rule_id": "..."}
+    - Rejects and clears malformed drafts that don't fit old or new structure.
+    """
+    for baseline_id, entry in data.items():
+        if baseline_id == "__schema_version__":
+            continue
+        if not isinstance(entry, dict):
+            continue
+        
+        draft = entry.get("working_draft")
+        if draft is None:
+            continue
+            
+        if not isinstance(draft, dict):
+            logger.error(f"Malformed draft in baseline {baseline_id} (not a dict). Clearing.")
+            entry["working_draft"] = None
+            continue
+            
+        # If it's already in the new format (has rule_set), leave it alone
+        if "rule_set" in draft and isinstance(draft["rule_set"], dict):
+            continue
+            
+        # Try to parse it as an old single-rule draft
+        # An old draft has rule_id, rule_type, params, etc. at the top level
+        rule_id = draft.get("rule_id")
+        rule_type = draft.get("rule_type")
+        params = draft.get("params")
+        
+        # We need at least these fields to do a safe migration
+        if rule_id and rule_type and params is not None:
+            # We map it to the new wrapper
+            new_rule_def = {
+                "template": rule_type,  # in old schema, rule_type was actually template
+                "rule_type": "template", # new schema default
+                "target_type": draft.get("target_type", "devices"),
+                "severity": draft.get("severity", "warning"),
+                "params": params
+            }
+            new_draft = {
+                "rule_set": {rule_id: new_rule_def},
+                "active_rule_id": rule_id,
+                "saved_at": draft.get("saved_at", datetime.datetime.now().isoformat())
+            }
+            entry["working_draft"] = new_draft
+            logger.info(f"Migrated baseline {baseline_id} draft from single-rule to rule_set wrapper.")
+        else:
+            # It's malformed or unrecoverable, clear it to be safe
+            logger.error(f"Malformed draft in baseline {baseline_id} missing core fields. Clearing.")
+            entry["working_draft"] = None
+
+    data["__schema_version__"] = "1.3"
+    return data
+
 # Migration registry
 BASELINES_MIGRATIONS = {
     ("0", "1.0"): _migrate_baselines_v0_to_v1,
     ("1.0", "1.1"): _migrate_baselines_v1_to_v1_1,
     ("1.1", "1.2"): _migrate_baselines_v1_1_to_v1_2,
+    ("1.2", "1.3"): _migrate_baselines_v1_2_to_v1_3,
 }
 
 
@@ -300,15 +359,64 @@ def _preserve_corrupted_file(file_name: str) -> Optional[str]:
         return None
 
 
+def _write_json_debounced(file_name: str, data: Dict):
+    """
+    PAIN-006: Debounced async-like flush for high-frequency saves.
+    Instead of writing immediately, we schedule a write to happen shortly after.
+    If another write comes in before the timer fires, the timer is reset.
+    For simplicity in this sync environment without a running event loop, 
+    we implement a simple time-based batching/throttling in-memory.
+    """
+    import time
+    
+    # Global state for debouncing
+    if not hasattr(_write_json_debounced, "_pending_writes"):
+        _write_json_debounced._pending_writes = {}
+        _write_json_debounced._last_write_time = {}
+        
+    pending = _write_json_debounced._pending_writes
+    last_write = _write_json_debounced._last_write_time
+    
+    now = time.time()
+    
+    # Always update the pending data
+    pending[file_name] = data
+    
+    # If we haven't written recently (e.g. > 500ms), write immediately
+    # Otherwise, we just leave it in pending (it will be flushed on next read or forced flush)
+    if file_name not in last_write or (now - last_write[file_name] > 0.5):
+        _write_json_direct(file_name, pending[file_name])
+        last_write[file_name] = now
+        del pending[file_name]
+
+def _flush_pending_writes(file_name: str = None):
+    """Force flush any pending writes for a file or all files."""
+    if not hasattr(_write_json_debounced, "_pending_writes"):
+        return
+        
+    pending = _write_json_debounced._pending_writes
+    last_write = _write_json_debounced._last_write_time
+    import time
+    
+    if file_name:
+        if file_name in pending:
+            _write_json_direct(file_name, pending[file_name])
+            last_write[file_name] = time.time()
+            del pending[file_name]
+    else:
+        for fname, data in list(pending.items()):
+            _write_json_direct(fname, data)
+            last_write[fname] = time.time()
+            del pending[fname]
+
 def _read_json(file_name: str) -> Dict:
     """
     Read and parse a JSON file with fail-fast corruption detection.
-    
-    Behavior:
-    - File does not exist → return {} (legitimate empty state)
-    - File exists but corrupted → preserve corrupted, attempt backup recovery, raise if unrecoverable
-    - File valid → return parsed data
+    Also flushes any pending writes before reading to ensure consistency.
     """
+    # Flush pending writes for this file to ensure we read latest data
+    _flush_pending_writes(file_name)
+    
     path = os.path.join(DATA_DIR, file_name)
     if not os.path.exists(path):
         return {}
@@ -356,7 +464,7 @@ def _read_json(file_name: str) -> Dict:
         )
 
 
-def _write_json(file_name: str, data: Dict):
+def _write_json_direct(file_name: str, data: Dict):
     """
     Atomic write with pre-write backup.
     
@@ -442,7 +550,7 @@ class BaselineRepository:
         data[profile.baseline_id] = profile.__dict__
         # P1.1-3: Stamp schema version on write
         data["__schema_version__"] = BASELINES_SCHEMA_VERSION
-        _write_json("baselines.json", data)
+        _write_json_debounced("baselines.json", data)
 
 class TaskRepository:
     def get_by_id(self, task_id: str) -> CheckTask:

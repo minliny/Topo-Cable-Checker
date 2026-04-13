@@ -48,11 +48,7 @@ class RuleDraftSaveService:
     def save_draft(
         self,
         baseline_id: str,
-        rule_id: str,
-        rule_type: str,
-        target_type: str,
-        severity: str,
-        params: Dict[str, Any],
+        req: Any,
     ) -> SaveDraftResult:
         """
         Save a working draft to the baseline.
@@ -67,24 +63,24 @@ class RuleDraftSaveService:
                 message=f"Baseline {baseline_id} not found"
             )
 
-        draft_data = {
-            "rule_id": rule_id,
-            "rule_type": rule_type,
-            "target_type": target_type,
-            "severity": severity,
-            "params": params,
-            "saved_at": datetime.datetime.now().isoformat(),
+        draft_wrapper = {
+            "rule_set": getattr(req, "rule_set", req.get("rule_set", {}) if isinstance(req, dict) else {}),
+            "active_rule_id": getattr(req, "active_rule_id", req.get("active_rule_id") if isinstance(req, dict) else None),
+            "saved_at": datetime.datetime.now().isoformat()
         }
-
-        baseline.working_draft = draft_data
+        
+        # In dict form or object form
+        if isinstance(baseline, dict):
+            baseline["working_draft"] = draft_wrapper
+        else:
+            baseline.working_draft = draft_wrapper
         self.repo.save(baseline)
 
-        saved_at = draft_data["saved_at"]
-        logger.info(f"Draft saved for baseline={baseline_id} rule_id={rule_id}")
+        logger.info(f"Draft saved for baseline={baseline_id}")
 
         return SaveDraftResult(
             success=True,
-            saved_at=saved_at,
+            saved_at=draft_wrapper["saved_at"],
             message="Draft saved successfully"
         )
 

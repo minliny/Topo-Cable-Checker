@@ -67,9 +67,12 @@ export const rulesApi = {
   },
 
   // P1.0-1: Publish baseline rules — sends explicit PublishRequest body
-  publishRules: async (baselineId: string, draftData?: any): Promise<PublishResultDTO> => {
+  publishRules: async (baselineId: string, rule_set: Record<string, any>, changeNote?: string): Promise<PublishResultDTO> => {
     try {
-      const raw = await apiClient.post(`/rules/publish/${baselineId}`, draftData);
+      const raw = await apiClient.post(`/rules/publish/${baselineId}`, {
+        rule_set,
+        change_note: changeNote
+      });
       return normalizePublishResponse(raw);
     } catch (err: any) {
       // HTTP 400/422 responses during publish often contain blocked_issues
@@ -90,12 +93,14 @@ export const rulesApi = {
   },
 
   // A1-4: Save draft — real API call (replaces setTimeout mock)
-  saveDraft: async (data: SaveDraftRequest): Promise<SaveDraftResultDTO> => {
-    const raw = await apiClient.post<SaveDraftResultDTO, SaveDraftResultDTO>('/rules/draft/save', data);
+  saveDraft: async (payload: { baseline_id: string; rule_set: any; active_rule_id?: string }): Promise<SaveDraftResultDTO> => {
+    console.log(`[rulesApi.saveDraft] Request payload:`, payload);
+    const raw = await apiClient.post<SaveDraftResultDTO, SaveDraftResultDTO>('/rules/draft/save', payload);
+    console.log(`[rulesApi.saveDraft] Success:`, raw);
     return {
       success: raw.success,
       saved_at: raw.saved_at,
-      message: raw.message,
+      draft_snapshot: raw.draft_snapshot,
     };
   },
 

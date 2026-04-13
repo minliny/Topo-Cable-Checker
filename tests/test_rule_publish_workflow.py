@@ -57,14 +57,14 @@ def publish_service(fake_repo):
     return RulePublishWorkflowService(repo=fake_repo)
 
 def test_publish_draft_success(publish_service, fake_repo):
-    draft = RuleDraftView(
-        rule_id="new_rule",
-        rule_type="threshold",
-        target_type="devices",
-        severity="high",
-        params={"metric_type": "count", "operator": "gt", "expected_value": 5},
-        validation_result=RuleDraftValidationResult(is_valid=True, errors={})
-    )
+    draft = {
+        "new_rule": {
+            "template": "threshold",
+            "target_type": "devices",
+            "severity": "high",
+            "params": {"metric_type": "count", "operator": "gt", "expected_value": 5}
+        }
+    }
     
     result = publish_service.publish_draft("b1", draft, "Added new threshold rule")
     
@@ -77,7 +77,7 @@ def test_publish_draft_success(publish_service, fake_repo):
     assert result.summary.changed_rule_count == 1
     assert result.summary.added_rules == 1
     assert result.summary.modified_rules == 0
-    assert "Added rule 'new_rule' (threshold)" in result.summary.summary_text
+    assert "Added rules 'new_rule'" in result.summary.summary_text
     
     # Verify persistence
     updated_baseline = fake_repo.get_by_id("b1")
@@ -88,34 +88,33 @@ def test_publish_draft_success(publish_service, fake_repo):
     assert "existing_rule" in updated_baseline.baseline_version_snapshot["v1.0"]
 
 def test_publish_draft_rejects_form_validation_error(publish_service):
-    # Form layer invalidated this draft
-    draft = RuleDraftView(
-        rule_id="bad_rule",
-        rule_type="threshold",
-        target_type="devices",
-        severity="medium",
-        params={},
-        validation_result=RuleDraftValidationResult(is_valid=False, errors={"metric_type": "Required"})
-    )
+    # Form layer invalidated this draft (simulate UI validation by just returning failure from bridge)
+    # The new workflow expects valid rule_set, if UI fails, UI shouldn't even call publish.
+    # To keep this test meaningful, we'll test that a rule with missing required target_type is rejected by compiler
+    draft = {
+        "bad_rule": {
+            "template": "threshold",
+            "severity": "medium",
+            "params": {"metric_type": "count"}
+        }
+    }
     
     result = publish_service.publish_draft("b1", draft)
     
     assert result.publish_success is False
     assert result.summary is None
     assert len(result.errors) == 1
-    assert result.errors[0].error_type == "form_validation_error"
-    assert result.errors[0].field_name == "metric_type"
 
 def test_publish_draft_rejects_compile_error(publish_service):
     # Form validation passed, but structure missing metric_type
-    draft = RuleDraftView(
-        rule_id="bad_rule_compile",
-        rule_type="threshold",
-        target_type="devices",
-        severity="medium",
-        params={},
-        validation_result=RuleDraftValidationResult(is_valid=True, errors={})
-    )
+    draft = {
+        "bad_rule_compile": {
+            "template": "threshold",
+            "target_type": "devices",
+            "severity": "medium",
+            "params": {}
+        }
+    }
     
     result = publish_service.publish_draft("b1", draft)
     
@@ -128,14 +127,14 @@ def test_publish_draft_rejects_compile_error(publish_service):
     assert error.field_name == "metric_type"
 
 def test_publish_modifies_existing_rule(publish_service, fake_repo):
-    draft = RuleDraftView(
-        rule_id="existing_rule",
-        rule_type="single_fact",
-        target_type="devices",
-        severity="high",
-        params={"field": "status", "type": "field_equals", "expected": "inactive"},
-        validation_result=RuleDraftValidationResult(is_valid=True, errors={})
-    )
+    draft = {
+        "existing_rule": {
+            "template": "single_fact",
+            "target_type": "devices",
+            "severity": "high",
+            "params": {"field": "status", "type": "field_equals", "expected": "inactive"}
+        }
+    }
     
     result = publish_service.publish_draft("b1", draft, "Modified status to inactive")
     
@@ -143,4 +142,4 @@ def test_publish_modifies_existing_rule(publish_service, fake_repo):
     assert result.summary.added_rules == 0
     assert result.summary.modified_rules == 1
     assert result.summary.published_rule_count == 1
-    assert "Modified rule 'existing_rule'" in result.summary.summary_text
+    assert "Modified rules 'existing_rule'" in result.summary.summary_text

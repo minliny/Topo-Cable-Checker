@@ -109,17 +109,14 @@ export interface DiffSourceTargetDTO {
  */
 export interface SaveDraftRequestDTO {
   baseline_id: string;
-  rule_id?: string;
-  rule_type: string;
-  target_type?: string;
-  severity?: string;
-  params: Record<string, any>;
+  rule_set: Record<string, any>;
+  active_rule_id?: string;
 }
 
 export interface SaveDraftResultDTO {
   success: boolean;
   saved_at?: string;
-  message?: string;
+  draft_snapshot?: Record<string, any>;
 }
 
 /**

@@ -23,11 +23,11 @@ export type RightPanelMode =
   | 'version_meta';
 
 export interface DraftData {
-  rule_id?: string;
-  rule_type?: string;
-  target_type?: string;
-  severity?: string;
-  params?: string;
+  rule_set: Record<string, any>;
+  active_rule_id?: string;
+  is_dirty: boolean;
+  is_saving: boolean;
+  saved_at?: string;
 }
 
 export type BaselineNodeType = 

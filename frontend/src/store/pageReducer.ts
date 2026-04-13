@@ -38,7 +38,12 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         selectedNodeType: action.payload.nodeType,
         centerMode: action.payload.isDraft ? 'edit' : 'history_detail',
         rightPanelMode: action.payload.isDraft ? 'help' : 'version_meta',
-        draftData: action.payload.draftData || {},
+        draftData: {
+          rule_set: action.payload.draftData?.rule_set || {},
+          active_rule_id: action.payload.draftData?.active_rule_id,
+          is_dirty: false,
+          is_saving: false
+        },
         dirty: false,
         validationResult: null,
         publishBlockedIssues: null,
@@ -52,9 +57,17 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
       if (state.centerMode !== 'edit' && state.centerMode !== 'rollback_ready_edit') return state;
       return {
         ...state,
-        draftData: action.payload.draftData,
+        draftData: {
+          rule_set: action.payload.draftData?.rule_set || {},
+          active_rule_id: action.payload.draftData?.active_rule_id,
+          is_dirty: true,
+          is_saving: false
+        },
         dirty: action.payload.dirty,
         targetFieldPath: undefined,
+        // PAIN-005: Clear stale validation results and publish blockers when draft changes
+        validationResult: action.payload.dirty ? null : state.validationResult,
+        publishBlockedIssues: action.payload.dirty ? null : state.publishBlockedIssues,
       };
 
     case 'REQUEST_VALIDATION':
@@ -182,7 +195,12 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         ...state,
         centerMode: 'rollback_ready_edit',
         rightPanelMode: 'help',
-        draftData: action.payload.draftData,
+        draftData: {
+          rule_set: action.payload.draftData?.rule_set || {},
+          active_rule_id: action.payload.draftData?.active_rule_id,
+          is_dirty: true,
+          is_saving: false
+        },
         dirty: true,
         selectedNodeType: 'rollback_candidate',
         selectedVersionId: 'draft',
@@ -194,7 +212,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         selectedNodeType: 'working_draft',
         dirty: false,
         centerMode: 'empty',
-        draftData: {}
+        draftData: { rule_set: {}, is_dirty: false, is_saving: false }
       };
 
     case 'JUMP_TO_FIELD':
@@ -236,11 +254,10 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         return {
           ...state,
           draftData: {
-            rule_type: draft.rule_type || 'threshold',
-            params: typeof draft.params === 'string' ? draft.params : JSON.stringify(draft.params || {}, null, 2),
-            ...(draft.rule_id ? { rule_id: draft.rule_id } : {}),
-            ...(draft.target_type ? { target_type: draft.target_type } : {}),
-            ...(draft.severity ? { severity: draft.severity } : {}),
+            rule_set: draft.rule_set || {},
+            active_rule_id: draft.active_rule_id,
+            is_dirty: false,
+            is_saving: false
           },
           dirty: false,  // Loaded draft is not dirty — it's already saved
         };

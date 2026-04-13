@@ -102,23 +102,26 @@ def publish_baseline(
     3. If validation fails → return blocked_issues (no publish)
     4. If validation passes → persist version bump + rule data → return success
     """
-    # Build the application-layer draft from the explicit request body
-    rule_id = req.rule_id or f"rule_{req.rule_type}"
-    draft = RuleDraftView(
-        rule_id=rule_id,
-        rule_type=req.rule_type,
-        target_type=req.target_type,
-        severity=req.severity,
-        params=req.params,
-        # We do NOT carry prior UI validation_result here —
-        # the publish workflow will re-compile via RuleCompiler independently
-    )
+    # B2: Delegate to the application service which compiles+validates before persisting.
+    # The request payload now contains a rule_set.
+    rule_set = getattr(req, "rule_set", None)
+    if not rule_set:
+        # Fallback to single rule definition for backward compatibility
+        rule_id = getattr(req, "rule_id", None) or f"rule_{req.rule_type}"
+        rule_set = {
+            rule_id: {
+                "template": req.rule_type,
+                "target_type": req.target_type,
+                "severity": req.severity,
+                "params": req.params
+            }
+        }
 
-    # Delegate to the application service which compiles+validates before persisting
     publish_svc = RulePublishWorkflowService(
         repo=svc.repo,
     )
-    result = publish_svc.publish_draft(baseline_id, draft)
+    # Pass rule_set as dict
+    result = publish_svc.publish_draft(baseline_id, rule_set)
 
     if not result.publish_success:
         # P1.0-2: Validation genuinely blocked the publish
@@ -131,7 +134,7 @@ def publish_baseline(
             for err in (result.errors or [])
         ]
         logger.warning(
-            f"Publish BLOCKED for baseline={baseline_id} rule={rule_id} "
+            f"Publish BLOCKED for baseline={baseline_id} "
             f"issues={len(blocked_issues)}"
         )
         return PublishResultDTO(
@@ -206,11 +209,7 @@ def save_draft(
     """
     result = svc.save_draft(
         baseline_id=req.baseline_id,
-        rule_id=req.rule_id,
-        rule_type=req.rule_type,
-        target_type=req.target_type,
-        severity=req.severity,
-        params=req.params,
+        req=req
     )
     
     if not result.success:
@@ -222,7 +221,7 @@ def save_draft(
     return SaveDraftResultDTO(
         success=result.success,
         saved_at=result.saved_at,
-        message=result.message,
+        draft_snapshot=req.model_dump(),
     )
 
 

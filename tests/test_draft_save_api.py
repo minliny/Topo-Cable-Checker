@@ -80,27 +80,37 @@ class TestSaveDraftSuccess:
     def test_save_draft_returns_success(self):
         payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "draft_rule_1",
-            "rule_type": "threshold",
-            "target_type": "devices",
-            "severity": "warning",
-            "params": {"metric_type": "count", "threshold_key": "T1"},
+            "rule_set": {
+                "draft_rule_1": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "warning",
+                    "params": {"metric_type": "count", "threshold_key": "T1"}
+                }
+            },
+            "active_rule_id": "draft_rule_1"
         }
         response = client.post("/api/rules/draft/save", json=payload)
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
         assert data["saved_at"] is not None
-        assert data["message"] is not None
+        assert "draft_snapshot" in data
 
     def test_save_draft_persists_working_draft(self):
         payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "draft_rule_1",
-            "rule_type": "threshold",
-            "target_type": "devices",
-            "severity": "warning",
-            "params": {"metric_type": "count", "threshold_key": "T1"},
+            "rule_set": {
+                "draft_rule_2": {
+                    "rule_type": "template",
+                    "template": "group_consistency",
+                    "target_type": "devices",
+                    "severity": "info",
+                    "params": {"parameter_key": "P1"}
+                }
+            },
+            "active_rule_id": "draft_rule_2"
         }
         client.post("/api/rules/draft/save", json=payload)
         
@@ -109,39 +119,54 @@ class TestSaveDraftSuccess:
         profile = repo.get_by_id(TEST_BASELINE_ID)
         assert profile is not None
         assert profile.working_draft is not None
-        assert profile.working_draft["rule_id"] == "draft_rule_1"
-        assert profile.working_draft["rule_type"] == "threshold"
+        assert profile.working_draft.get("active_rule_id") == "draft_rule_2"
+        assert "draft_rule_2" in profile.working_draft.get("rule_set", {})
 
     def test_save_draft_overwrites_previous(self):
         # Save first draft
         payload1 = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "draft_v1",
-            "rule_type": "threshold",
-            "params": {"metric_type": "count"},
+            "rule_set": {
+                "draft_v1": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "high",
+                    "params": {"metric_type": "count"}
+                }
+            },
+            "active_rule_id": "draft_v1"
         }
         client.post("/api/rules/draft/save", json=payload1)
         
         # Save second draft (should overwrite)
         payload2 = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "draft_v2",
-            "rule_type": "single_fact",
-            "params": {"field": "status"},
+            "rule_set": {
+                "draft_v2": {
+                    "rule_type": "template",
+                    "template": "single_fact",
+                    "target_type": "devices",
+                    "severity": "info",
+                    "params": {"field": "status"}
+                }
+            },
+            "active_rule_id": "draft_v2"
         }
         response = client.post("/api/rules/draft/save", json=payload2)
         assert response.status_code == 200
         
         repo = BaselineRepository()
         profile = repo.get_by_id(TEST_BASELINE_ID)
-        assert profile.working_draft["rule_id"] == "draft_v2"
-        assert profile.working_draft["rule_type"] == "single_fact"
+        assert profile.working_draft["active_rule_id"] == "draft_v2"
+        assert "draft_v2" in profile.working_draft["rule_set"]
 
 
 class TestLoadDraftSuccess:
     """A1-9.2: Load draft successfully."""
 
     def test_load_draft_when_none_exists(self):
+        # Ensure it handles no existing draft
         response = client.get(f"/api/rules/draft/{TEST_BASELINE_ID}")
         assert response.status_code == 200
         data = response.json()
@@ -152,9 +177,16 @@ class TestLoadDraftSuccess:
         # Save a draft first
         payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "saved_rule",
-            "rule_type": "threshold",
-            "params": {"metric_type": "count"},
+            "rule_set": {
+                "saved_rule": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "warning",
+                    "params": {"metric_type": "count"}
+                }
+            },
+            "active_rule_id": "saved_rule"
         }
         client.post("/api/rules/draft/save", json=payload)
         
@@ -164,7 +196,8 @@ class TestLoadDraftSuccess:
         data = response.json()
         assert data["has_draft"] is True
         assert data["draft_data"] is not None
-        assert data["draft_data"]["rule_id"] == "saved_rule"
+        assert data["draft_data"]["active_rule_id"] == "saved_rule"
+        assert "saved_rule" in data["draft_data"]["rule_set"]
         assert data["saved_at"] is not None
 
 
@@ -175,9 +208,16 @@ class TestClearDraftSuccess:
         # Save a draft first
         payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "to_be_cleared",
-            "rule_type": "threshold",
-            "params": {},
+            "rule_set": {
+                "to_be_cleared": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "warning",
+                    "params": {}
+                }
+            },
+            "active_rule_id": "to_be_cleared"
         }
         client.post("/api/rules/draft/save", json=payload)
         
@@ -205,11 +245,16 @@ class TestReloadRestoresDraft:
         # Save a draft with specific data
         payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "recovery_test",
-            "rule_type": "threshold",
-            "target_type": "devices",
-            "severity": "error",
-            "params": {"metric_type": "distinct_count", "metric_field": "device_type", "operator": "gt", "expected_value": 5},
+            "rule_set": {
+                "recovery_test": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "error",
+                    "params": {"metric_type": "distinct_count", "metric_field": "device_type", "operator": "gt", "expected_value": 5}
+                }
+            },
+            "active_rule_id": "recovery_test"
         }
         client.post("/api/rules/draft/save", json=payload)
         
@@ -219,12 +264,14 @@ class TestReloadRestoresDraft:
         
         assert data["has_draft"] is True
         draft = data["draft_data"]
-        assert draft["rule_id"] == "recovery_test"
-        assert draft["rule_type"] == "threshold"
-        assert draft["target_type"] == "devices"
-        assert draft["severity"] == "error"
-        assert draft["params"]["metric_type"] == "distinct_count"
-        assert draft["params"]["operator"] == "gt"
+        assert draft["active_rule_id"] == "recovery_test"
+        rule_draft = draft["rule_set"]["recovery_test"]
+        assert rule_draft["rule_type"] == "template"
+        assert rule_draft["template"] == "threshold"
+        assert rule_draft["target_type"] == "devices"
+        assert rule_draft["severity"] == "error"
+        assert rule_draft["params"]["metric_type"] == "distinct_count"
+        assert rule_draft["params"]["operator"] == "gt"
 
 
 class TestPublishClearsDraft:
@@ -234,9 +281,16 @@ class TestPublishClearsDraft:
         # Save a draft first
         save_payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "publish_test_rule",
-            "rule_type": "threshold",
-            "params": {"metric_type": "count", "threshold_key": "T1"},
+            "rule_set": {
+                "publish_test_rule": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "error",
+                    "params": {"metric_type": "count", "threshold_key": "T1"}
+                }
+            },
+            "active_rule_id": "publish_test_rule"
         }
         client.post("/api/rules/draft/save", json=save_payload)
         
@@ -244,13 +298,19 @@ class TestPublishClearsDraft:
         load_resp = client.get(f"/api/rules/draft/{TEST_BASELINE_ID}")
         assert load_resp.json()["has_draft"] is True
         
-        # Publish the rule (valid params)
+        # The test originally expected a successful publish to clear the draft.
+        # But we modified the publish endpoint structure. Let's make sure the payload has a rule_set.
         publish_payload = {
-            "rule_id": "publish_test_rule",
-            "rule_type": "threshold",
-            "target_type": "devices",
-            "severity": "error",
-            "params": {"metric_type": "count", "threshold_key": "T1"},
+            "baseline_id": TEST_BASELINE_ID,
+            "rule_set": {
+                "publish_test_rule": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "error",
+                    "params": {"metric_type": "count", "threshold_key": "T1"}
+                }
+            }
         }
         response = client.post(f"/api/rules/publish/{TEST_BASELINE_ID}", json=publish_payload)
         assert response.status_code == 200
@@ -269,9 +329,16 @@ class TestInvalidDraftCanSave:
         """Invalid draft (missing required params) should still be saveable."""
         payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "invalid_rule",
-            "rule_type": "threshold",
-            "params": {},  # Missing metric_type and threshold_key — invalid for compilation
+            "rule_set": {
+                "invalid_rule": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "warning",
+                    "params": {}  # Missing metric_type and threshold_key — invalid for compilation
+                }
+            },
+            "active_rule_id": "invalid_rule"
         }
         response = client.post("/api/rules/draft/save", json=payload)
         assert response.status_code == 200
@@ -282,9 +349,13 @@ class TestInvalidDraftCanSave:
         """Even garbage data should be saveable — it's just a draft."""
         payload = {
             "baseline_id": TEST_BASELINE_ID,
-            "rule_id": "garbage_rule",
-            "rule_type": "nonexistent_type",
-            "params": {"random": "data", "numbers": 42},
+            "rule_set": {
+                "garbage_rule": {
+                    "rule_type": "nonexistent_type",
+                    "params": {"random": "data", "numbers": 42}
+                }
+            },
+            "active_rule_id": "garbage_rule"
         }
         response = client.post("/api/rules/draft/save", json=payload)
         assert response.status_code == 200
@@ -297,11 +368,16 @@ class TestInvalidDraftCannotPublish:
 
     def test_publish_invalid_draft_is_blocked(self):
         payload = {
-            "rule_id": "bad_publish_rule",
-            "rule_type": "threshold",
-            "target_type": "devices",
-            "severity": "warning",
-            "params": {},  # Missing required fields
+            "baseline_id": TEST_BASELINE_ID,
+            "rule_set": {
+                "bad_publish_rule": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "target_type": "devices",
+                    "severity": "warning",
+                    "params": {},  # Missing required fields
+                }
+            }
         }
         response = client.post(f"/api/rules/publish/{TEST_BASELINE_ID}", json=payload)
         assert response.status_code == 200
@@ -386,9 +462,14 @@ class TestSaveDraftBaselineNotFound:
     def test_save_draft_nonexistent_baseline_returns_404(self):
         payload = {
             "baseline_id": "NONEXISTENT_BASELINE",
-            "rule_id": "test",
-            "rule_type": "threshold",
-            "params": {},
+            "rule_set": {
+                "test": {
+                    "rule_type": "template",
+                    "template": "threshold",
+                    "params": {}
+                }
+            },
+            "active_rule_id": "test"
         }
         response = client.post("/api/rules/draft/save", json=payload)
         assert response.status_code == 404

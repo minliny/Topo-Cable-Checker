@@ -86,11 +86,13 @@ class ValidateRequestDTO(BaseModel):
 
 class PublishRequestDTO(BaseModel):
     """P1.0-1: Explicit request body for publish endpoint."""
-    rule_id: str = ""
-    rule_type: str
-    target_type: str = "devices"
-    severity: str = "warning"
-    params: Dict[str, Any]
+    rule_set: Optional[Dict[str, Any]] = None
+    # For backward compatibility
+    rule_id: Optional[str] = None
+    rule_type: Optional[str] = None
+    target_type: Optional[str] = None
+    severity: Optional[str] = None
+    params: Optional[Dict[str, Any]] = None
 
 class RollbackRequestDTO(BaseModel):
     baseline_id: str
@@ -103,20 +105,17 @@ class RollbackRequestDTO(BaseModel):
 class SaveDraftRequestDTO(BaseModel):
     """A1-4: Request body for saving a working draft."""
     baseline_id: str
-    rule_id: str = ""
-    rule_type: str
-    target_type: str = "devices"
-    severity: str = "warning"
-    params: Dict[str, Any]
+    rule_set: Dict[str, Any]
+    active_rule_id: Optional[str] = None
 
 class SaveDraftResultDTO(BaseModel):
     """A1-4: Response for save draft operation."""
     success: bool
-    saved_at: Optional[str] = None
-    message: Optional[str] = None
+    saved_at: str
+    draft_snapshot: Dict[str, Any]
 
 class LoadDraftResultDTO(BaseModel):
     """A1-4: Response for load draft operation."""
     has_draft: bool
-    draft_data: Optional[Any] = None
+    draft_data: Optional[Dict[str, Any]] = None
     saved_at: Optional[str] = None

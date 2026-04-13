@@ -43,10 +43,20 @@ const EditorView: React.FC<EditorViewProps> = ({
 
   // Sync external draft data to form
   useEffect(() => {
-    form.setFieldsValue({
-      rule_type: draftData.rule_type || 'threshold',
-      params: draftData.params || '',
-    });
+    const activeRuleId = draftData.active_rule_id;
+    const ruleDef = activeRuleId ? draftData.rule_set?.[activeRuleId] : null;
+    
+    if (ruleDef) {
+      form.setFieldsValue({
+        rule_type: ruleDef.template || ruleDef.rule_type || 'threshold',
+        params: typeof ruleDef.params === 'string' ? ruleDef.params : JSON.stringify(ruleDef.params || {}, null, 2),
+      });
+    } else {
+      form.setFieldsValue({
+        rule_type: 'threshold',
+        params: '{\n  \n}',
+      });
+    }
   }, [draftData, form]);
 
   // Scroll to target field if requested
@@ -84,7 +94,32 @@ const EditorView: React.FC<EditorViewProps> = ({
   }, [targetFieldPath, form]);
 
   const handleValuesChange = (_changedValues: any, allValues: any) => {
-    onChange(allValues);
+    // Merge changes back into draftData's rule_set
+    const activeRuleId = draftData.active_rule_id || 'new_rule';
+    const existingRule = draftData.rule_set?.[activeRuleId] || {};
+    
+    // We attempt to parse params if it's a valid JSON string to store as object
+    // or keep as string if user is still typing
+    let parsedParams = allValues.params;
+    try {
+      parsedParams = JSON.parse(allValues.params);
+    } catch(e) {}
+    
+    const newDraftData: DraftData = {
+      ...draftData,
+      active_rule_id: activeRuleId,
+      rule_set: {
+        ...(draftData.rule_set || {}),
+        [activeRuleId]: {
+          ...existingRule,
+          template: allValues.rule_type,
+          rule_type: 'template', // default
+          params: parsedParams
+        }
+      }
+    };
+    
+    onChange(newDraftData);
     onDirtyChange(true);
   };
 

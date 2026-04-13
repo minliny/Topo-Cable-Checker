@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 import datetime
 import copy
-from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView
+from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView, RuleDraftValidationResult
 from src.application.rule_editor_services.rule_editor_governance_bridge_service import RuleEditorGovernanceBridgeService
 from src.domain.interfaces import IBaselineRepository
 from src.infrastructure.repository import BaselineRepository
@@ -44,19 +44,32 @@ class RulePublishWorkflowService:
         self.repo = repo or BaselineRepository()
         self.bridge = bridge or RuleEditorGovernanceBridgeService()
 
-    def publish_draft(self, baseline_id: str, draft: RuleDraftView, change_note: str = "") -> RulePublishResult:
-        # 1. Compile & Validate using the bridge
-        compile_result = self.bridge.compile_draft_preview(draft)
+    def publish_draft(self, baseline_id: str, draft: dict, change_note: str = "") -> RulePublishResult:
+        # 1. Compile & Validate using the bridge for each rule in the draft
+        failures = []
+        for rule_id, rule_def in draft.items():
+            # Build temporary RuleDraftView for bridge validation
+            draft_view = RuleDraftView(
+                rule_id=rule_id,
+                rule_type=rule_def.get("template", "unknown"),
+                target_type=rule_def.get("target_type", "unknown"),
+                severity=rule_def.get("severity", "unknown"),
+                params=rule_def.get("params", {}),
+                validation_result=RuleDraftValidationResult(True, {})
+            )
+            compile_result = self.bridge.compile_draft_preview(draft_view)
+            
+            if not compile_result.compile_success:
+                for err in compile_result.validation_errors:
+                    failures.append(
+                        RulePublishFailure(
+                            error_type=err.error_type,
+                            message=f"[{rule_id}] {err.message}",
+                            field_name=err.field_name
+                        )
+                    )
         
-        if not compile_result.compile_success:
-            failures = [
-                RulePublishFailure(
-                    error_type=err.error_type,
-                    message=err.message,
-                    field_name=err.field_name
-                )
-                for err in compile_result.validation_errors
-            ]
+        if failures:
             return RulePublishResult(publish_success=False, errors=failures)
 
         # 2. Retrieve baseline
@@ -92,13 +105,15 @@ class RulePublishWorkflowService:
 
         # 5. Calculate Diff for Summary
         new_rule_set = copy.deepcopy(old_rule_set)
-        rule_def = draft.to_rule_def()
         
-        is_new = draft.rule_id not in new_rule_set
-        new_rule_set[draft.rule_id] = rule_def
-
-        added = 1 if is_new else 0
-        modified = 0 if is_new else 1
+        added = 0
+        modified = 0
+        for rule_id, rule_def in draft.items():
+            if rule_id not in new_rule_set:
+                added += 1
+            else:
+                modified += 1
+            new_rule_set[rule_id] = rule_def
         
         # 6. Apply updates and save
         if isinstance(baseline, dict):
@@ -117,8 +132,9 @@ class RulePublishWorkflowService:
         self.repo.save(baseline)
 
         # 7. Build summary
-        action_verb = "Added" if is_new else "Modified"
-        summary_text = f"{action_verb} rule '{draft.rule_id}' ({draft.rule_type}). {change_note}".strip()
+        action_verb = "Modified" if modified > 0 else "Added"
+        rule_ids = ", ".join(draft.keys())
+        summary_text = f"{action_verb} rules '{rule_ids}'. {change_note}".strip()
 
         summary = PublishedBaselineSummaryView(
             baseline_id=baseline_id,

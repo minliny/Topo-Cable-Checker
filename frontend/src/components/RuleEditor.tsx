@@ -40,14 +40,45 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
   // Sync form with external draftData when it mounts or changes externally
   useEffect(() => {
-    form.setFieldsValue({
-      rule_type: draftData.rule_type || 'threshold',
-      params: draftData.params || '',
-    });
+    const activeRuleId = draftData.active_rule_id;
+    const ruleDef = activeRuleId ? draftData.rule_set?.[activeRuleId] : null;
+    if (ruleDef) {
+      form.setFieldsValue({
+        rule_type: ruleDef.template || ruleDef.rule_type || 'threshold',
+        params: typeof ruleDef.params === 'string' ? ruleDef.params : JSON.stringify(ruleDef.params || {}, null, 2),
+      });
+    } else {
+      form.setFieldsValue({
+        rule_type: 'threshold',
+        params: '{\n  \n}',
+      });
+    }
   }, [draftData, form]);
 
   const handleValuesChange = (_changedValues: any, allValues: any) => {
-    onChange(allValues);
+    const activeRuleId = draftData.active_rule_id || 'new_rule';
+    const existingRule = draftData.rule_set?.[activeRuleId] || {};
+    
+    let parsedParams = allValues.params;
+    try {
+      parsedParams = JSON.parse(allValues.params);
+    } catch(e) {}
+
+    const newDraftData: DraftData = {
+      ...draftData,
+      active_rule_id: activeRuleId,
+      rule_set: {
+        ...(draftData.rule_set || {}),
+        [activeRuleId]: {
+          ...existingRule,
+          template: allValues.rule_type,
+          rule_type: 'template',
+          params: parsedParams
+        }
+      }
+    };
+    
+    onChange(newDraftData);
     onDirtyChange(true);
   };
 
