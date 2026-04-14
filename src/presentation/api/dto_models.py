@@ -82,6 +82,11 @@ class RollbackEffectDiffDTO(BaseModel):
     target_version_id: str
     rollback_effect_diff: DiffSourceTargetDTO
 
+class BaselineVersionRuleSetDTO(BaseModel):
+    baseline_id: str
+    version_id: str
+    rule_set: Dict[str, Any]
+
 # ==========================================
 # Requests DTOs (Inbound from UI)
 # ==========================================

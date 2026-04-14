@@ -36,7 +36,7 @@ maturity_rating:
     main_flow_completeness: "L4"
     input_experience: "L3"             # Input Contract with header mapping + row constraints
     error_validation_experience: "L4"  # 全局错误处理 + request ID + 验证门
-    diff_publish_rollback_experience: "L4"  # Deep Diff + 完整 Rule Set Rollback
+    diff_publish_rollback_experience: "L4+"  # Deep Diff + Rollback effect diff + 回滚确认页目标 rule_set 预览
     data_reliability: "L4+"
     self_maintenance: "L3"
     observability_troubleshooting: "L4"

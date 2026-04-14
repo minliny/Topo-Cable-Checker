@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 import json
-from src.presentation.api.dto_models import BaselineNodeDTO, VersionMetaDTO, DiffSourceTargetDTO, RollbackEffectDiffDTO
+from src.presentation.api.dto_models import BaselineNodeDTO, VersionMetaDTO, DiffSourceTargetDTO, RollbackEffectDiffDTO, BaselineVersionRuleSetDTO
 from src.presentation.api.dependencies import get_baseline_service, get_history_service
 from src.application.baseline_services.baseline_service import BaselineService
 from src.application.rule_editor_services.rule_baseline_history_service import RuleBaselineHistoryService
@@ -83,6 +83,28 @@ def get_version_meta(baseline_id: str, version_id: str, svc: BaselineService = D
         published_at=meta.get("published_at", "2026-04-10T00:00:00Z"),
         parent_version_id=meta.get("parent_version", None)
     )
+
+
+@router.get("/{baseline_id}/versions/{version_id}/rule-set", response_model=BaselineVersionRuleSetDTO)
+def get_version_rule_set(
+    baseline_id: str,
+    version_id: str,
+    hist_svc: RuleBaselineHistoryService = Depends(get_history_service),
+    svc: BaselineService = Depends(get_baseline_service),
+):
+    baseline = svc.get_baseline(baseline_id)
+    if not baseline:
+        raise HTTPException(status_code=404, detail="Baseline not found")
+
+    rule_set = hist_svc.get_baseline_version(baseline_id, version_id)
+    if rule_set is None:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    return {
+        "baseline_id": baseline_id,
+        "version_id": version_id,
+        "rule_set": rule_set
+    }
 
 
 @router.get("/{baseline_id}/diff", response_model=DiffSourceTargetDTO)

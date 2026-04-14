@@ -1,14 +1,18 @@
 import React from 'react';
-import { Card, Typography, Button, Space, Alert, Spin, Divider } from 'antd';
+import { Card, Typography, Button, Space, Alert, Spin, Divider, Collapse, Tag } from 'antd';
 import { RotateCcw, AlertTriangle } from 'lucide-react';
-import { DiffSourceTargetDTO, DiffFieldChangeDTO } from '../../types/dto';
+import { DiffSourceTargetDTO, DiffFieldChangeDTO, BaselineVersionRuleSetDTO } from '../../types/dto';
 
 const { Title, Text } = Typography;
+const { Panel } = Collapse;
 
 interface RollbackConfirmViewProps {
   versionId?: string;
   rollbackEffectDiff?: DiffSourceTargetDTO | null;
   loadingRollbackEffectDiff?: boolean;
+  targetRuleSet?: BaselineVersionRuleSetDTO | null;
+  loadingTargetRuleSet?: boolean;
+  targetRuleSetError?: string | null;
   onRollbackConfirmRequest: () => void;
   onCancelRollback: () => void;
 }
@@ -17,6 +21,9 @@ const RollbackConfirmView: React.FC<RollbackConfirmViewProps> = ({
   versionId,
   rollbackEffectDiff,
   loadingRollbackEffectDiff,
+  targetRuleSet,
+  loadingTargetRuleSet,
+  targetRuleSetError,
   onRollbackConfirmRequest,
   onCancelRollback
 }) => {
@@ -24,10 +31,12 @@ const RollbackConfirmView: React.FC<RollbackConfirmViewProps> = ({
   const addedRules = diffData?.rules.filter(r => r.change_type === 'added') || [];
   const removedRules = diffData?.rules.filter(r => r.change_type === 'removed') || [];
   const modifiedRules = diffData?.rules.filter(r => r.change_type === 'modified') || [];
+  const currentVersionId = diffData?.source_version_id;
+  const targetRuleEntries = targetRuleSet?.rule_set ? Object.entries(targetRuleSet.rule_set) : [];
 
   return (
     <div className="h-full flex flex-col items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-lg shadow-lg border-orange-200 rounded-xl overflow-hidden p-6 text-center bg-orange-50/30">
+      <Card className="w-full max-w-3xl shadow-lg border-orange-200 rounded-xl overflow-hidden p-6 text-center bg-orange-50/30">
         <RotateCcw size={48} className="text-orange-500 mx-auto mb-4" />
         <Title level={3} className="!m-0 mb-2 text-gray-800">Confirm Rollback</Title>
         
@@ -45,6 +54,15 @@ const RollbackConfirmView: React.FC<RollbackConfirmViewProps> = ({
           icon={<AlertTriangle size={20} />}
           className="mb-6 text-left"
         />
+
+        <div className="text-left mb-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Text strong className="text-gray-700">Current Production:</Text>
+            <Tag color="blue">{currentVersionId || 'Unknown'}</Tag>
+            <Text strong className="text-gray-700 ml-2">Target Version:</Text>
+            <Tag color="purple">{versionId || 'Unknown'}</Tag>
+          </div>
+        </div>
 
         <Divider className="my-4" />
         <div className="text-left">
@@ -125,6 +143,57 @@ const RollbackConfirmView: React.FC<RollbackConfirmViewProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Divider className="my-4" />
+        <div className="text-left">
+          <Text strong className="text-gray-700">Target Rule Set Preview</Text>
+          <div className="mt-3">
+            {loadingTargetRuleSet ? (
+              <div className="flex justify-center py-6">
+                <Spin />
+              </div>
+            ) : targetRuleSetError ? (
+              <Alert message={targetRuleSetError} type="error" showIcon />
+            ) : !targetRuleSet ? (
+              <Text type="secondary">No target rule_set available.</Text>
+            ) : (
+              <div>
+                <div className="mb-2">
+                  <Text type="secondary">Total rules: {targetRuleEntries.length}</Text>
+                </div>
+                <Collapse className="bg-white">
+                  {targetRuleEntries.map(([ruleId, ruleDef]) => {
+                    const template = (ruleDef as any)?.template || (ruleDef as any)?.rule_type || 'rule';
+                    const params = (ruleDef as any)?.params || {};
+                    const paramKeys = (params && typeof params === 'object' && !Array.isArray(params)) ? Object.keys(params) : [];
+                    const severity = (ruleDef as any)?.severity;
+                    return (
+                      <Panel
+                        key={ruleId}
+                        header={
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Text strong>{ruleId}</Text>
+                            <Tag>{String(template)}</Tag>
+                            {severity && <Tag color="orange">{String(severity)}</Tag>}
+                            {paramKeys.length > 0 && (
+                              <Text type="secondary" className="text-xs">
+                                params: {paramKeys.slice(0, 6).join(', ')}{paramKeys.length > 6 ? '…' : ''}
+                              </Text>
+                            )}
+                          </div>
+                        }
+                      >
+                        <pre className="text-xs bg-gray-50 p-3 rounded border border-gray-200 overflow-x-auto font-mono">
+                          {JSON.stringify(ruleDef, null, 2)}
+                        </pre>
+                      </Panel>
+                    );
+                  })}
+                </Collapse>
               </div>
             )}
           </div>

@@ -4,7 +4,8 @@ import {
   ValidationResultDTO, 
   PublishResultDTO, 
   DiffSourceTargetDTO, 
-  RollbackCandidateDTO
+  RollbackCandidateDTO,
+  BaselineVersionRuleSetDTO
 } from '../types/dto';
 
 /**
@@ -245,6 +246,21 @@ export function normalizeDiffResponse(raw: any, sourceVersionId: string, targetV
 export function normalizeRollbackEffectDiffResponse(raw: any, sourceVersionId: string, targetVersionId: string): DiffSourceTargetDTO {
   const diff = raw?.rollback_effect_diff || raw?.rollback_effect || raw;
   return normalizeDiffResponse(diff, sourceVersionId, targetVersionId);
+}
+
+export function normalizeBaselineVersionRuleSetResponse(raw: any): BaselineVersionRuleSetDTO {
+  if (!raw) throw new Error('normalizeBaselineVersionRuleSetResponse: Raw response is empty');
+  if (!raw.baseline_id || !raw.version_id || !raw.rule_set) {
+    throw new Error('normalizeBaselineVersionRuleSetResponse: Missing required fields');
+  }
+  if (typeof raw.rule_set !== 'object' || Array.isArray(raw.rule_set)) {
+    throw new Error('normalizeBaselineVersionRuleSetResponse: rule_set must be an object');
+  }
+  return {
+    baseline_id: raw.baseline_id,
+    version_id: raw.version_id,
+    rule_set: raw.rule_set,
+  };
 }
 
 export function normalizeRollbackCandidateResponse(raw: any, fallbackBaselineId: string, fallbackSourceId: string): RollbackCandidateDTO {

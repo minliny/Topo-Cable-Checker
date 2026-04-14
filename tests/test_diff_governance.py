@@ -96,6 +96,30 @@ def setup_test_data(monkeypatch, tmp_path):
                 "v1.0": {"published_at": "2026-01-01T00:00:00Z", "publisher": "admin", "summary": "Initial"},
                 "v2.0": {"published_at": "2026-04-01T00:00:00Z", "publisher": "admin", "summary": "Severity changed"}
             }
+        },
+        "B003": {
+            "baseline_id": "B003",
+            "baseline_version": "v1.1",
+            "recognition_profile": {"strategy": "excel_basic"},
+            "naming_profile": {"strategy": "snake_case"},
+            "parameter_profile": {},
+            "threshold_profile": {},
+            "rule_set": {
+                "R1": {"rule_type": "template", "template": "threshold_check", "params": {"metric_type": "count", "threshold_key": "T1"}, "severity": "warning"},
+                "R2": {"rule_type": "template", "template": "single_fact", "params": {"field": "status", "type": "field_equals", "expected": "up"}, "severity": "critical"},
+                "R3": {"rule_type": "template", "template": "group_consistency", "params": {"group_key": "device_type", "comparison_field": "status"}, "severity": "warning"}
+            },
+            "baseline_version_snapshot": {
+                "v1.0": {
+                    "R1": {"rule_type": "template", "template": "threshold_check", "params": {"metric_type": "count", "threshold_key": "T1"}, "severity": "warning"},
+                    "R2": {"rule_type": "template", "template": "single_fact", "params": {"field": "status", "type": "field_equals", "expected": "up"}, "severity": "critical"},
+                    "R3": {"rule_type": "template", "template": "group_consistency", "params": {"group_key": "device_type", "comparison_field": "status"}, "severity": "warning"}
+                }
+            },
+            "version_history_meta": {
+                "v1.0": {"published_at": "2026-01-01T00:00:00Z", "publisher": "admin", "summary": "Initial"},
+                "v1.1": {"published_at": "2026-04-01T00:00:00Z", "publisher": "admin", "summary": "No-op"}
+            }
         }
     }
     with open(os.path.join(test_data_dir, "baselines.json"), "w") as f:
@@ -229,3 +253,16 @@ class TestDiffGovernanceSemantics:
         assert len(severity_changes) == 1
         assert severity_changes[0]["old_value"] == "error"
         assert severity_changes[0]["new_value"] == "warning"
+
+    def test_target_version_rule_set_endpoint_returns_full_ruleset(self, client):
+        response = client.get("/api/baselines/B003/versions/v1.0/rule-set")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["baseline_id"] == "B003"
+        assert data["version_id"] == "v1.0"
+        assert isinstance(data["rule_set"], dict)
+        assert set(data["rule_set"].keys()) == {"R1", "R2", "R3"}
+
+    def test_target_version_rule_set_endpoint_404_when_version_missing(self, client):
+        response = client.get("/api/baselines/B003/versions/v9.9/rule-set")
+        assert response.status_code == 404

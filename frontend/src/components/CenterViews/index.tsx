@@ -1,6 +1,6 @@
 import React from 'react';
 import { CenterMode, DraftData } from '../../types/ui';
-import { ValidationResultDTO, DiffSourceTargetDTO } from '../../types/dto';
+import { ValidationResultDTO, DiffSourceTargetDTO, BaselineVersionRuleSetDTO } from '../../types/dto';
 import { Spin, Result, Button, Typography, Empty, List } from 'antd';
 import { XCircle, CheckCircle } from 'lucide-react';
 import EditorView from './EditorView';
@@ -22,6 +22,9 @@ interface CenterContainerProps {
   diffData: DiffSourceTargetDTO | null;
   rollbackEffectDiff?: DiffSourceTargetDTO | null;
   loadingRollbackEffectDiff?: boolean;
+  targetRuleSet?: BaselineVersionRuleSetDTO | null;
+  loadingTargetRuleSet?: boolean;
+  targetRuleSetError?: string | null;
   targetFieldPath?: string;
   targetRuleId?: string;
   selectedVersionId?: string;
@@ -53,6 +56,9 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
   diffData,
   rollbackEffectDiff,
   loadingRollbackEffectDiff,
+  targetRuleSet,
+  loadingTargetRuleSet,
+  targetRuleSetError,
   targetFieldPath,
   targetRuleId,
   selectedVersionId,
@@ -169,6 +175,9 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
           versionId={selectedVersionId}
           rollbackEffectDiff={rollbackEffectDiff}
           loadingRollbackEffectDiff={loadingRollbackEffectDiff}
+          targetRuleSet={targetRuleSet}
+          loadingTargetRuleSet={loadingTargetRuleSet}
+          targetRuleSetError={targetRuleSetError}
           onRollbackConfirmRequest={onRollbackConfirmRequest}
           onCancelRollback={onCancelRollback}
         />

@@ -98,7 +98,7 @@ Pain Score = Frequency × 2 + Severity × 3 + Workflow Blocking × 2 + Trust Ris
 | **Trust Risk** | 3 |
 | **Pain Score** | 3×2 + 2×3 + 3×2 + 3×4 = **30** (Critical) |
 | **建议方案** | 前端 RollbackConfirmView 展示完整 rule_set 规则列表，支持逐条确认 |
-| **当前状态** | Open |
+| **当前状态** | Closed |
 
 ---
 

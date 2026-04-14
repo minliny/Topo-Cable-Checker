@@ -7,7 +7,7 @@ import RightPanel from './components/RightPanel';
 import { rulesApi } from './api/rules';
 import { PageState, DraftData, BaselineTreeNode } from './types/ui';
 import { pageReducer } from './store/pageReducer';
-import { BaselineNodeDTO, DiffSourceTargetDTO } from './types/dto';
+import { BaselineNodeDTO, DiffSourceTargetDTO, BaselineVersionRuleSetDTO } from './types/dto';
 import './api/mock';
 
 const { Header, Content } = Layout;
@@ -39,6 +39,9 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [loadingRollbackEffectDiff, setLoadingRollbackEffectDiff] = useState(false);
   const [rollbackEffectDiff, setRollbackEffectDiff] = useState<DiffSourceTargetDTO | null>(null);
+  const [loadingTargetRuleSet, setLoadingTargetRuleSet] = useState(false);
+  const [targetRuleSet, setTargetRuleSet] = useState<BaselineVersionRuleSetDTO | null>(null);
+  const [targetRuleSetError, setTargetRuleSetError] = useState<string | null>(null);
 
   // --- 2. Initialization ---
   useEffect(() => {
@@ -286,6 +289,44 @@ function App() {
     };
   }, [pageState.centerMode, pageState.selectedBaselineId, pageState.selectedVersionId]);
 
+  useEffect(() => {
+    if (pageState.centerMode !== 'rollback_confirm') {
+      if (targetRuleSet) setTargetRuleSet(null);
+      if (targetRuleSetError) setTargetRuleSetError(null);
+      if (loadingTargetRuleSet) setLoadingTargetRuleSet(false);
+      return;
+    }
+
+    if (!pageState.selectedBaselineId || !pageState.selectedVersionId) return;
+
+    const baselineId = pageState.selectedBaselineId;
+    const targetVersionId = pageState.selectedVersionId;
+
+    let cancelled = false;
+    const fetchTargetRuleSet = async () => {
+      setLoadingTargetRuleSet(true);
+      setTargetRuleSetError(null);
+      try {
+        const data = await rulesApi.getBaselineVersionRuleSet(baselineId, targetVersionId);
+        if (!cancelled) setTargetRuleSet(data);
+      } catch (error) {
+        console.error('Failed to fetch target version rule_set', error);
+        if (!cancelled) {
+          setTargetRuleSet(null);
+          setTargetRuleSetError('Failed to load target version rule_set');
+        }
+      } finally {
+        if (!cancelled) setLoadingTargetRuleSet(false);
+      }
+    };
+
+    fetchTargetRuleSet();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pageState.centerMode, pageState.selectedBaselineId, pageState.selectedVersionId]);
+
   const handleRequestRollbackClick = () => {
     // If there is already a draft, prompt user
     const hasDraft = baselines.find(b => b.id === pageState.selectedBaselineId)?.status === 'draft';
@@ -436,6 +477,9 @@ function App() {
               diffData={pageState.diffData}
               rollbackEffectDiff={rollbackEffectDiff}
               loadingRollbackEffectDiff={loadingRollbackEffectDiff}
+              targetRuleSet={targetRuleSet}
+              loadingTargetRuleSet={loadingTargetRuleSet}
+              targetRuleSetError={targetRuleSetError}
               targetFieldPath={pageState.targetFieldPath}
               targetRuleId={pageState.targetRuleId}
               selectedVersionId={pageState.selectedVersionId}

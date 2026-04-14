@@ -262,7 +262,7 @@ npm run build       # vite build — 应成功生成 dist/
 | 3 | 前端 bundle >500KB | P2 | RISK-007 | Parking Lot |
 | 4 | GroupConsistencyExecutor 缺配置静默 false negative | P3 | RISK-008 | Closed |
 | 5 | RuleEditor JSON 手工编辑易出错 | High | PAIN-001 | Active |
-| 6 | 回滚确认只展示第一条规则 | Critical | PAIN-002 | Active |
+| 6 | 回滚确认目标规则集不可预览 | Critical | PAIN-002 | Closed |
 
 ---
 

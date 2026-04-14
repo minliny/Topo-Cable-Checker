@@ -18,7 +18,6 @@
 
 | Pain ID | 项目 | Pain Score | 目标 | 关联风险 |
 |---------|------|-----------|------|---------|
-| PAIN-002 | 回滚确认展示完整 rule_set | 30 (Critical) | RollbackConfirmView 展示完整规则列表 + 逐条确认 | — |
 | PAIN-001 | RuleEditor JSON 编辑体验 | 26 (High) | Monaco Editor + Schema 暴露 + 编译错误精确映射 | — |
 
 ---
@@ -39,6 +38,7 @@
 
 | ID | 项目 | 关闭日期 | 方案 |
 |----|------|----------|------|
+| PAIN-002 | 回滚确认页完整预览闭环 | 2026-04-14 | RollbackConfirmView 同屏展示 rollback_effect_diff + target version 完整 rule_set（可折叠展开） |
 | PAIN-003 | Rollback 预览 Diff 方向治理 | 2026-04-14 | 新增 `GET /api/baselines/{id}/rollback-effect-diff`，返回 `rollback_effect_diff`（Current Production → Target Historical） |
 | BL-002 / RISK-008 | GroupConsistencyExecutor 缺配置静默 false negative | 2026-04-14 | 执行期返回 `execution_error` issue，禁止 silent no-op |
 
