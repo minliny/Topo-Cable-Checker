@@ -66,6 +66,36 @@ def setup_test_data(monkeypatch, tmp_path):
                 "v1.0": {"published_at": "2026-01-01T00:00:00Z", "publisher": "admin", "summary": "Initial"},
                 "v2.0": {"published_at": "2026-04-01T00:00:00Z", "publisher": "admin", "summary": "Added R2"}
             }
+        },
+        "B002": {
+            "baseline_id": "B002",
+            "baseline_version": "v2.0",
+            "recognition_profile": {"strategy": "excel_basic"},
+            "naming_profile": {"strategy": "snake_case"},
+            "parameter_profile": {},
+            "threshold_profile": {},
+            "rule_set": {
+                "R1": {
+                    "rule_type": "template",
+                    "template": "threshold_check",
+                    "params": {"metric_type": "count", "threshold_key": "T1"},
+                    "severity": "error"
+                }
+            },
+            "baseline_version_snapshot": {
+                "v1.0": {
+                    "R1": {
+                        "rule_type": "template",
+                        "template": "threshold_check",
+                        "params": {"metric_type": "count", "threshold_key": "T1"},
+                        "severity": "warning"
+                    }
+                }
+            },
+            "version_history_meta": {
+                "v1.0": {"published_at": "2026-01-01T00:00:00Z", "publisher": "admin", "summary": "Initial"},
+                "v2.0": {"published_at": "2026-04-01T00:00:00Z", "publisher": "admin", "summary": "Severity changed"}
+            }
         }
     }
     with open(os.path.join(test_data_dir, "baselines.json"), "w") as f:
@@ -170,3 +200,32 @@ class TestDiffGovernanceSemantics:
 
         # Summary should match
         assert data["diff_summary"]["added"] == len(added_ids)
+
+    def test_rollback_effect_diff_added_removed_semantics(self, client):
+        response = client.get("/api/baselines/B001/rollback-effect-diff?target=v1.0")
+        assert response.status_code == 200
+        data = response.json()
+
+        diff = data["rollback_effect_diff"]
+        assert diff["source_version_id"] == "v2.0"
+        assert diff["target_version_id"] == "v1.0"
+        assert diff["diff_summary"]["added"] == 0
+        assert diff["diff_summary"]["removed"] == 1
+
+        removed_ids = {r["rule_id"] for r in diff["rules"] if r["change_type"] == "removed"}
+        assert removed_ids == {"R2"}
+
+    def test_rollback_effect_diff_modified_before_after_semantics(self, client):
+        response = client.get("/api/baselines/B002/rollback-effect-diff?target=v1.0")
+        assert response.status_code == 200
+        data = response.json()
+
+        diff = data["rollback_effect_diff"]
+        assert diff["diff_summary"]["modified"] == 1
+        modified = [r for r in diff["rules"] if r["change_type"] == "modified"]
+        assert len(modified) == 1
+
+        severity_changes = [fc for fc in (modified[0].get("field_changes") or []) if fc["field_name"] == "severity"]
+        assert len(severity_changes) == 1
+        assert severity_changes[0]["old_value"] == "error"
+        assert severity_changes[0]["new_value"] == "warning"

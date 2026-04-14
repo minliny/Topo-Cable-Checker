@@ -242,6 +242,11 @@ export function normalizeDiffResponse(raw: any, sourceVersionId: string, targetV
   };
 }
 
+export function normalizeRollbackEffectDiffResponse(raw: any, sourceVersionId: string, targetVersionId: string): DiffSourceTargetDTO {
+  const diff = raw?.rollback_effect_diff || raw?.rollback_effect || raw;
+  return normalizeDiffResponse(diff, sourceVersionId, targetVersionId);
+}
+
 export function normalizeRollbackCandidateResponse(raw: any, fallbackBaselineId: string, fallbackSourceId: string): RollbackCandidateDTO {
   if (!raw) throw new Error('normalizeRollbackCandidateResponse: Raw response is empty');
   

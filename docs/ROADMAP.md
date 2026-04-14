@@ -28,11 +28,19 @@
 | ID | 项目 | 来源 | 说明 |
 |----|------|------|------|
 | BL-001 | tasks.json Schema Migration | RISK-003 | 为 tasks.json 增加 `__schema_version__` + migration registry |
-| BL-002 | GroupConsistencyExecutor TypeError 修复 | RISK-008 | `parameter_key` 找不到时 fallback 返回 None 导致 TypeError |
 | BL-003 | 前端 bundle 体积优化 | RISK-007 | 当前 >500KB，考虑 code splitting |
 | BL-004 | 修复 Pre-existing CLI Test | test_run_core.py | task lifecycle 状态机与 test fixture 不匹配 |
 | BL-005 | 编译错误 field_path 精确映射 | PAIN-001 子项 | RuleCompileError 的 field_path 粒度不够，返回 `params` 而非 `params.operator` |
 | BL-006 | 回滚版本链追踪 | P2-4 | rollback 记录中保留 `rollback_target_version` + `reason` 到 `version_history_meta` |
+
+---
+
+## Closed（本轮已完成）
+
+| ID | 项目 | 关闭日期 | 方案 |
+|----|------|----------|------|
+| PAIN-003 | Rollback 预览 Diff 方向治理 | 2026-04-14 | 新增 `GET /api/baselines/{id}/rollback-effect-diff`，返回 `rollback_effect_diff`（Current Production → Target Historical） |
+| BL-002 / RISK-008 | GroupConsistencyExecutor 缺配置静默 false negative | 2026-04-14 | 执行期返回 `execution_error` issue，禁止 silent no-op |
 
 ---
 

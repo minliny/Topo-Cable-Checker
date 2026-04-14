@@ -20,6 +20,8 @@ interface CenterContainerProps {
   validationResult: ValidationResultDTO | null;
   publishBlockedIssues: any[] | null;
   diffData: DiffSourceTargetDTO | null;
+  rollbackEffectDiff?: DiffSourceTargetDTO | null;
+  loadingRollbackEffectDiff?: boolean;
   targetFieldPath?: string;
   targetRuleId?: string;
   selectedVersionId?: string;
@@ -49,6 +51,8 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
   validationResult,
   publishBlockedIssues,
   diffData,
+  rollbackEffectDiff,
+  loadingRollbackEffectDiff,
   targetFieldPath,
   targetRuleId,
   selectedVersionId,
@@ -163,6 +167,8 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
       return (
         <RollbackConfirmView 
           versionId={selectedVersionId}
+          rollbackEffectDiff={rollbackEffectDiff}
+          loadingRollbackEffectDiff={loadingRollbackEffectDiff}
           onRollbackConfirmRequest={onRollbackConfirmRequest}
           onCancelRollback={onCancelRollback}
         />

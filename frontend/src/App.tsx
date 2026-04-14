@@ -7,7 +7,7 @@ import RightPanel from './components/RightPanel';
 import { rulesApi } from './api/rules';
 import { PageState, DraftData, BaselineTreeNode } from './types/ui';
 import { pageReducer } from './store/pageReducer';
-import { BaselineNodeDTO } from './types/dto';
+import { BaselineNodeDTO, DiffSourceTargetDTO } from './types/dto';
 import './api/mock';
 
 const { Header, Content } = Layout;
@@ -37,6 +37,8 @@ function App() {
   const [loadingDiff, setLoadingDiff] = useState(false);
   const [validating, setValidating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadingRollbackEffectDiff, setLoadingRollbackEffectDiff] = useState(false);
+  const [rollbackEffectDiff, setRollbackEffectDiff] = useState<DiffSourceTargetDTO | null>(null);
 
   // --- 2. Initialization ---
   useEffect(() => {
@@ -251,6 +253,39 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    if (pageState.centerMode !== 'rollback_confirm') {
+      if (rollbackEffectDiff) setRollbackEffectDiff(null);
+      if (loadingRollbackEffectDiff) setLoadingRollbackEffectDiff(false);
+      return;
+    }
+
+    if (!pageState.selectedBaselineId || !pageState.selectedVersionId) return;
+
+    const baselineId = pageState.selectedBaselineId;
+    const targetVersionId = pageState.selectedVersionId;
+
+    let cancelled = false;
+    const fetchRollbackEffectDiff = async () => {
+      setLoadingRollbackEffectDiff(true);
+      try {
+        const data = await rulesApi.getRollbackEffectDiff(baselineId, targetVersionId);
+        if (!cancelled) setRollbackEffectDiff(data);
+      } catch (error) {
+        console.error('Failed to fetch rollback effect diff', error);
+        if (!cancelled) setRollbackEffectDiff(null);
+      } finally {
+        if (!cancelled) setLoadingRollbackEffectDiff(false);
+      }
+    };
+
+    fetchRollbackEffectDiff();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pageState.centerMode, pageState.selectedBaselineId, pageState.selectedVersionId]);
+
   const handleRequestRollbackClick = () => {
     // If there is already a draft, prompt user
     const hasDraft = baselines.find(b => b.id === pageState.selectedBaselineId)?.status === 'draft';
@@ -399,6 +434,8 @@ function App() {
               validationResult={pageState.validationResult}
               publishBlockedIssues={pageState.publishBlockedIssues}
               diffData={pageState.diffData}
+              rollbackEffectDiff={rollbackEffectDiff}
+              loadingRollbackEffectDiff={loadingRollbackEffectDiff}
               targetFieldPath={pageState.targetFieldPath}
               targetRuleId={pageState.targetRuleId}
               selectedVersionId={pageState.selectedVersionId}

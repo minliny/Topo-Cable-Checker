@@ -7,7 +7,7 @@ project:
   name: "Topo-Cable-Checker"
   identity: "Rule Governance Workbench — 规则治理工作台"
   status: "L4.0 稳定，Input Contract + Rule Engine Externalization 已合并"
-  last_audit: "2026-04-12"
+  last_audit: "2026-04-14"
 
 branch_state:
   trusted_mainline: "main"
@@ -131,7 +131,9 @@ remaining_risks:
     file: "frontend/"
   - id: "RISK-008"
     severity: "P3"
-    description: "GroupConsistencyExecutor: parameter_key 找不到时 fallback 返回 None 导致 TypeError"
+    status: "Closed"
+    closed_at: "2026-04-14"
+    description: "GroupConsistencyExecutor: 缺失 group_consistency 必要配置时不再静默，改为返回 execution_error issue"
     file: "src/domain/executors/group_consistency_executor.py"
 
 next_steps:

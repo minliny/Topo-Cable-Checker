@@ -15,7 +15,8 @@ import {
   normalizeValidationResponse,
   normalizePublishResponse,
   normalizeDiffResponse,
-  normalizeRollbackCandidateResponse
+  normalizeRollbackCandidateResponse,
+  normalizeRollbackEffectDiffResponse
 } from './adapters';
 
 export interface ValidateRequest {
@@ -81,6 +82,11 @@ export const rulesApi = {
   getBaselineDiff: async (baselineId: string, sourceId: string, targetId: string): Promise<DiffSourceTargetDTO> => {
     const raw = await apiClient.get(`/baselines/${baselineId}/diff?source=${sourceId}&target=${targetId}`);
     return normalizeDiffResponse(raw, sourceId, targetId);
+  },
+
+  getRollbackEffectDiff: async (baselineId: string, targetId: string): Promise<DiffSourceTargetDTO> => {
+    const raw = await apiClient.get(`/baselines/${baselineId}/rollback-effect-diff?target=${targetId}`);
+    return normalizeRollbackEffectDiffResponse(raw, 'previous_version', targetId);
   },
 
   // Rollback Create

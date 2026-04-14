@@ -24,6 +24,30 @@ class GroupConsistencyExecutor(RuleExecutor):
             comparison_field = compiled_rule.params.get("comparison_field")
             
         severity = compiled_rule.message.severity
+
+        if not group_key_field or not comparison_field:
+            msg = f"Rule {rule_id} (group_consistency) execution_error: missing required config (group_key/comparison_field)."
+            issues.append(IssueItem(
+                issue_id=generate_id(),
+                message=msg,
+                evidence={
+                    "rule_id": rule_id,
+                    "parameter_key": param_key,
+                    "resolved_group_key": group_key_field,
+                    "resolved_comparison_field": comparison_field,
+                    "parameter_source": "parameter_profile" if param_key else "inline"
+                },
+                expected="valid group_consistency config",
+                actual={
+                    "group_key": group_key_field,
+                    "comparison_field": comparison_field
+                },
+                details={"target_type": target_type},
+                source_row=0,
+                severity="critical",
+                category="execution_error"
+            ))
+            return issues
         
         target_list = dataset.get(target_type, [])
         if not target_list:
