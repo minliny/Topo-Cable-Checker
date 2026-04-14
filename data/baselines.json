@@ -65,7 +65,7 @@
       }
     },
     "baseline_version_snapshot": {
-      "B001": "v1.0",
+      "B001": {},
       "v1.1": {
         "R1_scoped": {
           "rule_type": "template",
@@ -179,6 +179,42 @@
           "severity": "error"
         }
       }
-    }
+    },
+    "version_history_meta": {},
+    "working_draft": null
+  },
+  "__schema_version__": "1.2",
+  "TEST_DRAFT_B001": {
+    "baseline_id": "TEST_DRAFT_B001",
+    "baseline_version": "v1.0",
+    "recognition_profile": {},
+    "naming_profile": {},
+    "parameter_profile": {
+      "P1": {
+        "group_key": "device_type",
+        "comparison_field": "status"
+      }
+    },
+    "threshold_profile": {
+      "T1": {
+        "operator": "gt",
+        "expected_value": 0
+      }
+    },
+    "rule_set": {
+      "rule_threshold_1": {
+        "rule_type": "template",
+        "template": "threshold",
+        "target_type": "devices",
+        "severity": "warning",
+        "params": {
+          "metric_type": "count",
+          "threshold_key": "T1"
+        }
+      }
+    },
+    "baseline_version_snapshot": {},
+    "version_history_meta": {},
+    "working_draft": null
   }
 }
