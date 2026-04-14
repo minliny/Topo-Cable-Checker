@@ -7,7 +7,8 @@ import {
   DiffSourceTargetDTO,
   RollbackCandidateDTO,
   SaveDraftResultDTO,
-  LoadDraftResultDTO
+  LoadDraftResultDTO,
+  BaselineVersionRuleSetDTO
 } from '../types/dto';
 import {
   normalizeBaselineTreeResponse,
@@ -15,7 +16,9 @@ import {
   normalizeValidationResponse,
   normalizePublishResponse,
   normalizeDiffResponse,
-  normalizeRollbackCandidateResponse
+  normalizeRollbackCandidateResponse,
+  normalizeRollbackEffectDiffResponse,
+  normalizeBaselineVersionRuleSetResponse
 } from './adapters';
 
 export interface ValidateRequest {
@@ -81,6 +84,16 @@ export const rulesApi = {
   getBaselineDiff: async (baselineId: string, sourceId: string, targetId: string): Promise<DiffSourceTargetDTO> => {
     const raw = await apiClient.get(`/baselines/${baselineId}/diff?source=${sourceId}&target=${targetId}`);
     return normalizeDiffResponse(raw, sourceId, targetId);
+  },
+
+  getRollbackEffectDiff: async (baselineId: string, targetId: string): Promise<DiffSourceTargetDTO> => {
+    const raw = await apiClient.get(`/baselines/${baselineId}/rollback-effect-diff?target=${targetId}`);
+    return normalizeRollbackEffectDiffResponse(raw, 'previous_version', targetId);
+  },
+
+  getBaselineVersionRuleSet: async (baselineId: string, versionId: string): Promise<BaselineVersionRuleSetDTO> => {
+    const raw = await apiClient.get(`/baselines/${baselineId}/versions/${versionId}/rule-set`);
+    return normalizeBaselineVersionRuleSetResponse(raw);
   },
 
   // Rollback Create

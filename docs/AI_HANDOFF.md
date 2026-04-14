@@ -247,6 +247,7 @@ npm run build       # vite build — 应成功生成 dist/
 | 15 | Diff 仅浅层 key 比较 | deep_diff() 递归比较 + DeepDiffChange dot-path | `rule_baseline_history_service.py` |
 | 16 | Rollback 仅取第一条规则 | RollbackCandidateDTO 增加 rule_set 字段 + _get_rule_set_for_version 返回 None | `rules.py + rule_baseline_history_service.py` |
 | 17 | 空 rule_set 回滚误报"版本不存在" | is None 替代 not 判断 | `rule_baseline_history_service.py` |
+| 18 | Rollback Preview Diff 方向误导 | rollback_effect_diff 专用 API + 回滚确认页使用 rollback effect diff | `src/presentation/api/routers/baselines.py + frontend/src/components/CenterViews/RollbackConfirmView.tsx` |
 
 ---
 
@@ -259,9 +260,9 @@ npm run build       # vite build — 应成功生成 dist/
 | 1 | tasks.json 无 schema 版本迁移 | P2 | RISK-003 | Backlog |
 | 2 | 根目录残留一次性脚本 | P2 | RISK-004 | Parking Lot |
 | 3 | 前端 bundle >500KB | P2 | RISK-007 | Parking Lot |
-| 4 | GroupConsistencyExecutor parameter_key TypeError | P3 | RISK-008 | Backlog |
+| 4 | GroupConsistencyExecutor 缺配置静默 false negative | P3 | RISK-008 | Closed |
 | 5 | RuleEditor JSON 手工编辑易出错 | High | PAIN-001 | Active |
-| 6 | 回滚确认只展示第一条规则 | Critical | PAIN-002 | Active |
+| 6 | 回滚确认目标规则集不可预览 | Critical | PAIN-002 | Closed |
 
 ---
 

@@ -76,6 +76,17 @@ class DiffSourceTargetDTO(BaseModel):
     human_readable_summary: Optional[str] = None  # P1.1-2: e.g. "2 rules added, 1 modified (severity changes)"
     rules: List[DiffRuleDTO]
 
+class RollbackEffectDiffDTO(BaseModel):
+    baseline_id: str
+    current_version_id: str
+    target_version_id: str
+    rollback_effect_diff: DiffSourceTargetDTO
+
+class BaselineVersionRuleSetDTO(BaseModel):
+    baseline_id: str
+    version_id: str
+    rule_set: Dict[str, Any]
+
 # ==========================================
 # Requests DTOs (Inbound from UI)
 # ==========================================

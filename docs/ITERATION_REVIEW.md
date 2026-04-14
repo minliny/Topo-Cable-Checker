@@ -91,3 +91,36 @@
 ### 下一轮验证点
 - 回滚确认页是否能展示完整规则列表
 - 编辑体验是否有改善
+
+---
+
+## Iteration 2026-W16 / 2026-04-14
+
+### 本周期使用概况
+- 使用场景：回滚确认语义验收 + executor 配置错误可观测性验收
+
+### Pain 合并/去重
+- PAIN-003 关闭：Rollback 预览 Diff 方向已修复为“Current Production → Target Historical”
+- PAIN-002 关闭：RollbackConfirmView 现支持“Rollback Effect Summary + Target Rule Set Preview（完整多规则可展开）”
+
+### Top Priority This Cycle
+1. **PAIN-003**：Rollback Preview Diff 方向修复
+2. **RISK-008**：GroupConsistencyExecutor 缺配置不允许静默 false negative
+3. **PAIN-002**：RollbackConfirmView 展示完整目标 rule_set
+
+### 本轮优化目标
+- [x] PAIN-003：新增 rollback-effect-diff 专用 API，RollbackConfirmView 使用 rollback_effect_diff 展示真实 rollback effect
+- [x] RISK-008：缺失 group_consistency 必要配置时返回 execution_error issue，不得 silent no-op
+- [x] PAIN-002：新增版本 rule_set 只读接口 + RollbackConfirmView 展示完整目标规则集（可折叠展开）
+
+### 完成结果
+| 目标 | 状态 | 产出 |
+|------|------|------|
+| PAIN-003 | Done | `GET /api/baselines/{id}/rollback-effect-diff` + `tests/test_diff_governance.py` + `frontend/src/__tests__/rollbackEffectDiffAdapter.test.ts` |
+| RISK-008 | Done | `src/domain/executors/group_consistency_executor.py` + `tests/test_group_consistency_executor.py` |
+| PAIN-002 | Done | `GET /api/baselines/{id}/versions/{version}/rule-set` + `RollbackConfirmView Target Rule Set Preview` + 对应测试 |
+
+### 下一轮验证点
+- RollbackConfirmView 中 Added/Removed/Modified 是否与真实 rollback effect 一致（含 Modified before/after）
+- group_consistency 缺配置时 UI/结果是否能明确看到 execution_error
+- 目标版本 rule_set 预览是否覆盖多规则且可完整浏览（不截断）

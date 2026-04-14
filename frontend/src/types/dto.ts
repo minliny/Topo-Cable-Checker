@@ -130,3 +130,9 @@ export interface LoadDraftResultDTO {
   draft_data?: any;
   saved_at?: string;
 }
+
+export interface BaselineVersionRuleSetDTO {
+  baseline_id: string;
+  version_id: string;
+  rule_set: Record<string, any>;
+}

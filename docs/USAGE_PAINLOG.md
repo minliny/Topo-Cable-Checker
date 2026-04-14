@@ -98,15 +98,36 @@ Pain Score = Frequency × 2 + Severity × 3 + Workflow Blocking × 2 + Trust Ris
 | **Trust Risk** | 3 |
 | **Pain Score** | 3×2 + 2×3 + 3×2 + 3×4 = **30** (Critical) |
 | **建议方案** | 前端 RollbackConfirmView 展示完整 rule_set 规则列表，支持逐条确认 |
-| **当前状态** | Open |
+| **当前状态** | Closed |
 
 ---
 
-### PAIN-003：（模板行 — 复制此块新增条目）
+### PAIN-003：Rollback 预览 Diff 方向错误导致 Added/Removed/Modified 语义反转
 
 | 字段 | 值 |
 |------|-----|
 | **Pain ID** | PAIN-003 |
+| **日期** | 2026-04-14 |
+| **使用场景** | 从历史版本回滚前确认变更影响 |
+| **触发路径** | 选择历史版本 → Rollback Confirm → 查看 Added/Removed/Modified 预览 |
+| **问题描述** | Rollback Preview 实际请求为 Historical → Current Production 的 diff，但 UI 语义用于表达“回滚后将发生的变化”，导致 Added/Removed/Modified（以及 Modified 的 before/after）整体反转，误导用户判断 |
+| **实际影响** | 用户会对回滚影响产生相反认知，属于高信任风险，可能导致错误发布或回滚决策 |
+| **临时绕过方式** | 手动反向理解 diff（Added 当 Removed、Modified 前后互换），或改用离线对比 |
+| **Frequency** | 2 |
+| **Severity** | 4 |
+| **Workflow Blocking** | 3 |
+| **Trust Risk** | 4 |
+| **Pain Score** | 2×2 + 4×3 + 3×2 + 4×4 = **38** (Critical) |
+| **建议方案** | 提供专用 rollback effect diff（Current Production → Target Historical），或在适配层严格翻转 diff 语义并同步 summary/counts/labels |
+| **当前状态** | Fixed |
+
+---
+
+### PAIN-004：（模板行 — 复制此块新增条目）
+
+| 字段 | 值 |
+|------|-----|
+| **Pain ID** | PAIN-004 |
 | **日期** | _填写日期_ |
 | **使用场景** | _描述你在做什么_ |
 | **触发路径** | _具体操作步骤_ |
