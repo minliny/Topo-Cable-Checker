@@ -428,5 +428,79 @@
     "total_ports": 1,
     "total_links": 0,
     "device_type_distribution": {}
+  },
+  "265c59b4-ea56-450f-873a-7c14103d9d82": {
+    "run_id": "265c59b4-ea56-450f-873a-7c14103d9d82",
+    "total_devices": 0,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {}
+  },
+  "e98f4c15-ec03-44dd-960a-3078e2cefbe4": {
+    "run_id": "e98f4c15-ec03-44dd-960a-3078e2cefbe4",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "d36d7814-93b8-4bae-aab7-2db6359654a4": {
+    "run_id": "d36d7814-93b8-4bae-aab7-2db6359654a4",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "1321d441-d2aa-4fac-813c-d7f5d530f67a": {
+    "run_id": "1321d441-d2aa-4fac-813c-d7f5d530f67a",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "cb0939f2-6f1e-42e1-a96b-9356a7ed7fc1": {
+    "run_id": "cb0939f2-6f1e-42e1-a96b-9356a7ed7fc1",
+    "total_devices": 0,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {}
+  },
+  "1b516c7d-c822-4bf3-aa94-2e97dd9d6816": {
+    "run_id": "1b516c7d-c822-4bf3-aa94-2e97dd9d6816",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "599ff576-1f89-45a3-8308-053ef6945ea1": {
+    "run_id": "599ff576-1f89-45a3-8308-053ef6945ea1",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
+  },
+  "2cd95258-5e2c-48c1-bf3a-7ebb97ffae70": {
+    "run_id": "2cd95258-5e2c-48c1-bf3a-7ebb97ffae70",
+    "total_devices": 2,
+    "total_ports": 1,
+    "total_links": 0,
+    "device_type_distribution": {
+      "Firewall": 1,
+      "Switch": 1
+    }
   }
 }

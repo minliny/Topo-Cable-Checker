@@ -498,13 +498,21 @@ class ResultRepository:
 
     def save_issue_aggregate(self, snap: IssueAggregateSnapshot):
         d = _read_json("issue_aggregates.json")
+        # Compatibility fix: if the file was corrupted by the previous bug (single snapshot at root)
+        if "run_id" in d and "issues" in d and isinstance(d["issues"], list):
+            d = {d["run_id"]: d}
+            
         dd = snap.__dict__.copy()
         dd["issues"] = [i.__dict__ for i in dd["issues"]]
         d[snap.run_id] = dd
-        _write_json("issue_aggregates.json", dd)
+        _write_json("issue_aggregates.json", d)
         
     def get_issue_aggregate(self, run_id: str) -> IssueAggregateSnapshot:
         d = _read_json("issue_aggregates.json")
+        # Compatibility fix: if the file was corrupted by the previous bug (single snapshot at root)
+        if "run_id" in d and "issues" in d and isinstance(d["issues"], list):
+            d = {d["run_id"]: d}
+            
         if run_id in d:
             dd = d[run_id]
             dd["issues"] = [IssueItem(**i) for i in dd["issues"]]
