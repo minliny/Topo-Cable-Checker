@@ -5,7 +5,7 @@ import {
   ValidationResultDTO,
   PublishResultDTO,
   DiffSourceTargetDTO,
-  RollbackCandidateDTO,
+  RestoreDraftResultDTO,
   SaveDraftResultDTO,
   LoadDraftResultDTO,
   BaselineVersionRuleSetDTO
@@ -16,7 +16,7 @@ import {
   normalizeValidationResponse,
   normalizePublishResponse,
   normalizeDiffResponse,
-  normalizeRollbackCandidateResponse,
+  normalizeRestoreDraftResponse,
   normalizeRollbackEffectDiffResponse,
   normalizeBaselineVersionRuleSetResponse
 } from './adapters';
@@ -86,8 +86,8 @@ export const rulesApi = {
     return normalizeDiffResponse(raw, sourceId, targetId);
   },
 
-  getRollbackEffectDiff: async (baselineId: string, targetId: string): Promise<DiffSourceTargetDTO> => {
-    const raw = await apiClient.get(`/baselines/${baselineId}/rollback-effect-diff?target=${targetId}`);
+  getRestoreDraftEffectDiff: async (baselineId: string, targetId: string): Promise<DiffSourceTargetDTO> => {
+    const raw = await apiClient.get(`/baselines/${baselineId}/restore-draft-effect-diff?target=${targetId}`);
     return normalizeRollbackEffectDiffResponse(raw, 'previous_version', targetId);
   },
 
@@ -96,10 +96,9 @@ export const rulesApi = {
     return normalizeBaselineVersionRuleSetResponse(raw);
   },
 
-  // Rollback Create
-  createRollbackCandidate: async (baselineId: string, versionId: string): Promise<RollbackCandidateDTO> => {
-    const raw = await apiClient.post('/rules/rollback', { baseline_id: baselineId, version_id: versionId });
-    return normalizeRollbackCandidateResponse(raw, baselineId, versionId);
+  restoreHistoricalDraft: async (baselineId: string, versionId: string): Promise<RestoreDraftResultDTO> => {
+    const raw = await apiClient.post('/rules/restore-draft', { baseline_id: baselineId, version_id: versionId });
+    return normalizeRestoreDraftResponse(raw, baselineId, versionId);
   },
 
   // A1-4: Save draft — real API call (replaces setTimeout mock)

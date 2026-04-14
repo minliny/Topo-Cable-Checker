@@ -221,13 +221,17 @@ def get_baseline_diff(
     }
 
 
-@router.get("/{baseline_id}/rollback-effect-diff", response_model=RollbackEffectDiffDTO)
-def get_rollback_effect_diff(
+@router.get("/{baseline_id}/restore-draft-effect-diff", response_model=RollbackEffectDiffDTO)
+def get_restore_draft_effect_diff(
     baseline_id: str,
     target: str,
     hist_svc: RuleBaselineHistoryService = Depends(get_history_service),
     svc: BaselineService = Depends(get_baseline_service),
 ):
+    """
+    Preview how restoring a historical version into the draft would differ from
+    the current published baseline. This endpoint does not mutate server state.
+    """
     baseline = svc.get_baseline(baseline_id)
     if not baseline:
         raise HTTPException(status_code=404, detail="Baseline not found")

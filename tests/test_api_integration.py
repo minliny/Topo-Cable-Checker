@@ -119,14 +119,14 @@ def test_get_diff_after_publish():
     else:
         pytest.fail(f"Unexpected status code: {response.status_code}")
     
-def test_create_rollback_candidate():
+def test_restore_historical_version_to_draft():
     payload = {"baseline_id": "B001", "version_id": "v1.0"}
-    response = client.post("/api/rules/rollback", json=payload)
+    response = client.post("/api/rules/restore-draft", json=payload)
     
     if response.status_code == 404:
         pytest.skip("Baseline B001 or Version v1.0 not found in test environment")
         
     assert response.status_code == 200
     data = response.json()
-    assert data["source_version_id"] == "v1.0"
+    assert data["restored_from_version_id"] == "v1.0"
     assert "draft_data" in data

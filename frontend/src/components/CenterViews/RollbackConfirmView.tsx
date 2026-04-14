@@ -38,15 +38,15 @@ const RollbackConfirmView: React.FC<RollbackConfirmViewProps> = ({
     <div className="h-full flex flex-col items-center justify-center bg-gray-50">
       <Card className="w-full max-w-3xl shadow-lg border-orange-200 rounded-xl overflow-hidden p-6 text-center bg-orange-50/30">
         <RotateCcw size={48} className="text-orange-500 mx-auto mb-4" />
-        <Title level={3} className="!m-0 mb-2 text-gray-800">Confirm Rollback</Title>
+        <Title level={3} className="!m-0 mb-2 text-gray-800">Restore Historical Version to Draft</Title>
         
         <Alert
-          message="Rollback Action Warning"
+          message="Restore to Draft"
           description={
             <div>
-              You are about to rollback to version <Text strong className="text-blue-600">{versionId}</Text>.
+              You are about to load version <Text strong className="text-blue-600">{versionId}</Text> into the draft editor.
               <br/><br/>
-              This will <b>NOT</b> immediately publish the old rules. Instead, it will <b>generate a new Draft</b> based on the contents of version {versionId}. You can review and edit it before publishing.
+              This will <b>NOT</b> change the published baseline immediately. It will <b>restore that historical rule set into the current draft</b> so you can review, edit, save, and publish it as a new version.
             </div>
           }
           type="warning"
@@ -66,14 +66,14 @@ const RollbackConfirmView: React.FC<RollbackConfirmViewProps> = ({
 
         <Divider className="my-4" />
         <div className="text-left">
-          <Text strong className="text-gray-700">Rollback Effect Preview</Text>
+          <Text strong className="text-gray-700">Restore Effect Preview</Text>
           <div className="mt-3">
             {loadingRollbackEffectDiff ? (
               <div className="flex justify-center py-6">
                 <Spin />
               </div>
             ) : !diffData ? (
-              <Text type="secondary">No rollback preview available.</Text>
+              <Text type="secondary">No restore preview available.</Text>
             ) : (
               <div className="space-y-3">
                 {diffData.human_readable_summary && (
@@ -211,7 +211,7 @@ const RollbackConfirmView: React.FC<RollbackConfirmViewProps> = ({
             onClick={onRollbackConfirmRequest}
             className="flex items-center"
           >
-            Create Rollback Draft
+            Restore to Draft
           </Button>
         </Space>
       </Card>

@@ -50,7 +50,7 @@ describe('pageReducer - State Machine Transitions', () => {
     });
   });
 
-  describe('Rollback Flow', () => {
+  describe('Restore Historical Draft Flow', () => {
     const historyState: PageState = {
       ...initialState,
       centerMode: 'history_detail',
@@ -60,26 +60,23 @@ describe('pageReducer - State Machine Transitions', () => {
       dirty: false,
     };
 
-    it('should transition from history_detail -> rollback_confirm -> rollback_preparing -> rollback_ready_edit', () => {
+    it('should transition from history_detail -> restore_confirm -> restore_preparing -> restored_draft_edit', () => {
       let state = { ...historyState };
 
-      // 1. Request Rollback Confirm
-      state = pageReducer(state, { type: 'REQUEST_ROLLBACK_CONFIRM' });
-      expect(state.centerMode).toBe('rollback_confirm');
+      state = pageReducer(state, { type: 'REQUEST_RESTORE_CONFIRM' });
+      expect(state.centerMode).toBe('restore_confirm');
 
-      // 2. Confirm Rollback
-      state = pageReducer(state, { type: 'REQUEST_ROLLBACK' });
-      expect(state.centerMode).toBe('rollback_preparing');
+      state = pageReducer(state, { type: 'REQUEST_RESTORE' });
+      expect(state.centerMode).toBe('restore_preparing');
 
-      // 3. Rollback Ready
       const mockDraft = { rule_type: 'rollback', params: '{}' };
       state = pageReducer(state, { 
-        type: 'ROLLBACK_READY', 
-        payload: { draftData: mockDraft, sourceVersionId: 'v1.0', sourceVersionLabel: 'v1.0' } 
+        type: 'RESTORE_READY', 
+        payload: { draftData: mockDraft, restoredFromVersionId: 'v1.0', restoredFromVersionLabel: 'v1.0' } 
       });
       
-      expect(state.centerMode).toBe('rollback_ready_edit');
-      expect(state.selectedNodeType).toBe('rollback_candidate');
+      expect(state.centerMode).toBe('restored_draft_edit');
+      expect(state.selectedNodeType).toBe('restored_draft');
       expect(state.dirty).toBe(true);
       expect(state.draftData).toEqual(mockDraft);
     });

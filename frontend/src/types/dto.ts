@@ -4,13 +4,13 @@
  */
 export interface BaselineNodeDTO {
   id: string; // UI requirement
-  type: 'baseline_root' | 'working_draft' | 'published_version' | 'rollback_candidate'; // UI requirement
+  type: 'baseline_root' | 'working_draft' | 'published_version' | 'restored_draft'; // UI requirement
   name: string; // UI requirement
   baseline_id: string; // UI requirement
   parent_id?: string;
   version_id?: string; // UI requirement
-  source_version_id?: string; // Used for UI state recovery (rollback)
-  source_version_label?: string; // Used for UI display
+  restored_from_version_id?: string; // Used for UI state recovery
+  restored_from_version_label?: string; // Used for UI display
   status?: 'draft' | 'testing' | 'published';
   created_at?: string;
   updated_at?: string;
@@ -60,14 +60,14 @@ export interface PublishResultDTO {
 }
 
 /**
- * POST /api/rules/rollback
+ * POST /api/rules/restore-draft
  */
-export interface RollbackCandidateDTO {
+export interface RestoreDraftResultDTO {
   baseline_id: string; // UI requirement
-  source_version_id: string; // Used for UI state recovery
-  source_version_label: string; // UI requirement
+  restored_from_version_id: string; // Used for UI state recovery
+  restored_from_version_label: string; // UI requirement
   draft_data: any; // Used to hydrate UI editor
-  rule_set?: Record<string, any>; // B2: Full rule set for complete rollback
+  rule_set?: Record<string, any>;
 }
 
 /**

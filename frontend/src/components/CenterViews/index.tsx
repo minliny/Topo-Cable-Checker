@@ -37,10 +37,9 @@ interface CenterContainerProps {
   onCancelPublish: () => void;
   onRequestDiff: () => void;
   onCloseDiff: () => void;
-  onRequestRollback: () => void;
-  onRollbackConfirmRequest: () => void;
-  onCancelRollback: () => void;
-  onDiscardRollbackCandidate: () => void;
+  onRequestRestoreDraft: () => void;
+  onRestoreDraftConfirmRequest: () => void;
+  onCancelRestoreDraft: () => void;
 }
 
 const CenterContainer: React.FC<CenterContainerProps> = ({
@@ -71,10 +70,9 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
   onCancelPublish,
   onRequestDiff,
   onCloseDiff,
-  onRequestRollback,
-  onRollbackConfirmRequest,
-  onCancelRollback,
-  onDiscardRollbackCandidate
+  onRequestRestoreDraft,
+  onRestoreDraftConfirmRequest,
+  onCancelRestoreDraft
 }) => {
   switch (mode) {
     case 'empty':
@@ -85,7 +83,7 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
       );
       
     case 'edit':
-    case 'rollback_ready_edit': // rollback results in an editable state with slightly different intent
+    case 'restored_draft_edit':
       return (
         <EditorView
           draftData={draftData}
@@ -94,13 +92,12 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
           validationPassed={validationPassed}
           saving={saving}
           targetFieldPath={targetFieldPath}
-          isRollbackCandidate={mode === 'rollback_ready_edit'}
+          isRestoredDraft={mode === 'restored_draft_edit'}
           onChange={onChange}
           onDirtyChange={onDirtyChange}
           onValidateRequest={onValidateRequest}
           onSaveDraft={onSaveDraft}
           onPublishConfirmRequest={onPublishConfirmRequest}
-          onDiscardRollbackCandidate={onDiscardRollbackCandidate}
         />
       );
 
@@ -165,11 +162,11 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
         <HistoryDetailView 
           versionId={selectedVersionId}
           onRequestDiff={onRequestDiff}
-          onRequestRollback={onRequestRollback}
+          onRequestRestoreDraft={onRequestRestoreDraft}
         />
       );
 
-    case 'rollback_confirm':
+    case 'restore_confirm':
       return (
         <RollbackConfirmView 
           versionId={selectedVersionId}
@@ -178,14 +175,14 @@ const CenterContainer: React.FC<CenterContainerProps> = ({
           targetRuleSet={targetRuleSet}
           loadingTargetRuleSet={loadingTargetRuleSet}
           targetRuleSetError={targetRuleSetError}
-          onRollbackConfirmRequest={onRollbackConfirmRequest}
-          onCancelRollback={onCancelRollback}
+          onRollbackConfirmRequest={onRestoreDraftConfirmRequest}
+          onCancelRollback={onCancelRestoreDraft}
         />
       );
 
     case 'publish_checking':
     case 'publishing':
-    case 'rollback_preparing':
+    case 'restore_preparing':
       return (
         <div className="h-full flex items-center justify-center bg-gray-50 flex-col gap-4">
           <Spin size="large" />

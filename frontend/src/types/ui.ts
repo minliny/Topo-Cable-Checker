@@ -10,9 +10,9 @@ export type CenterMode =
   | 'publish_blocked'
   | 'publishing'
   | 'published'
-  | 'rollback_confirm'
-  | 'rollback_preparing'
-  | 'rollback_ready_edit';
+  | 'restore_confirm'
+  | 'restore_preparing'
+  | 'restored_draft_edit';
 
 export type RightPanelMode = 
   | 'help'
@@ -34,7 +34,7 @@ export type BaselineNodeType =
   | 'baseline_root'
   | 'working_draft'
   | 'published_version'
-  | 'rollback_candidate';
+  | 'restored_draft';
 
 // Tree structure for left navigation
 export interface BaselineTreeNode {
@@ -45,8 +45,8 @@ export interface BaselineTreeNode {
   baselineId: string;
   parentId?: string;
   versionId: string;
-  sourceVersionId?: string;
-  sourceVersionLabel?: string;
+  restoredFromVersionId?: string;
+  restoredFromVersionLabel?: string;
   status?: 'published' | 'draft' | 'testing';
   children?: BaselineTreeNode[];
 }

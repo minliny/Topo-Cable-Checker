@@ -7,13 +7,13 @@ from typing import List, Optional, Dict, Any
 
 class BaselineNodeDTO(BaseModel):
     id: str
-    type: str  # 'baseline_root', 'working_draft', 'published_version', 'rollback_candidate'
+    type: str  # 'baseline_root', 'working_draft', 'published_version', 'restored_draft'
     name: str
     baseline_id: str
     parent_id: Optional[str] = None
     version_id: Optional[str] = None
-    source_version_id: Optional[str] = None
-    source_version_label: Optional[str] = None
+    restored_from_version_id: Optional[str] = None
+    restored_from_version_label: Optional[str] = None
     status: Optional[str] = None
 
 class VersionMetaDTO(BaseModel):
@@ -42,12 +42,12 @@ class PublishResultDTO(BaseModel):
     summary: Optional[str] = None
     blocked_issues: Optional[List[ValidationIssueDTO]] = None
 
-class RollbackCandidateDTO(BaseModel):
+class RestoreDraftResultDTO(BaseModel):
     baseline_id: str
-    source_version_id: str
-    source_version_label: str
+    restored_from_version_id: str
+    restored_from_version_label: str
     draft_data: Any
-    rule_set: Optional[Dict[str, Any]] = None  # B2: Full rule set for complete rollback
+    rule_set: Optional[Dict[str, Any]] = None
 
 class DiffFieldChangeDTO(BaseModel):
     """P1.1-2: Single field-level before/after change for human readability."""
@@ -103,7 +103,7 @@ class PublishRequestDTO(BaseModel):
     severity: str = "warning"
     params: Dict[str, Any]
 
-class RollbackRequestDTO(BaseModel):
+class RestoreDraftRequestDTO(BaseModel):
     baseline_id: str
     version_id: str
 

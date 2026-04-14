@@ -4,7 +4,7 @@ import {
   ValidationResultDTO, 
   PublishResultDTO, 
   DiffSourceTargetDTO, 
-  RollbackCandidateDTO,
+  RestoreDraftResultDTO,
   BaselineVersionRuleSetDTO
 } from '../types/dto';
 
@@ -26,8 +26,8 @@ export function normalizeBaselineTreeResponse(raw: any): BaselineNodeDTO[] {
     baseline_id: item.baseline_id || item.id,
     parent_id: item.parent_id,
     version_id: item.version_id || 'root',
-    source_version_id: item.source_version_id,
-    source_version_label: item.source_version_label,
+    restored_from_version_id: item.restored_from_version_id,
+    restored_from_version_label: item.restored_from_version_label,
     status: item.status || 'draft',
   }));
 }
@@ -263,13 +263,14 @@ export function normalizeBaselineVersionRuleSetResponse(raw: any): BaselineVersi
   };
 }
 
-export function normalizeRollbackCandidateResponse(raw: any, fallbackBaselineId: string, fallbackSourceId: string): RollbackCandidateDTO {
-  if (!raw) throw new Error('normalizeRollbackCandidateResponse: Raw response is empty');
+export function normalizeRestoreDraftResponse(raw: any, fallbackBaselineId: string, fallbackVersionId: string): RestoreDraftResultDTO {
+  if (!raw) throw new Error('normalizeRestoreDraftResponse: Raw response is empty');
   
   return {
     baseline_id: raw.baseline_id || fallbackBaselineId,
-    source_version_id: raw.source_version_id || fallbackSourceId,
-    source_version_label: raw.source_version_label || raw.source_version_id || fallbackSourceId,
-    draft_data: raw.draft_data || raw.data || raw, // If the backend just returns the rule data directly
+    restored_from_version_id: raw.restored_from_version_id || fallbackVersionId,
+    restored_from_version_label: raw.restored_from_version_label || raw.restored_from_version_id || fallbackVersionId,
+    draft_data: raw.draft_data || raw.data || raw,
+    rule_set: raw.rule_set,
   };
 }

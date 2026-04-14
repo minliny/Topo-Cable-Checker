@@ -7,13 +7,13 @@ const { Title } = Typography;
 interface HistoryDetailViewProps {
   versionId?: string;
   onRequestDiff: () => void;
-  onRequestRollback: () => void;
+  onRequestRestoreDraft: () => void;
 }
 
 const HistoryDetailView: React.FC<HistoryDetailViewProps> = ({
   versionId,
   onRequestDiff,
-  onRequestRollback
+  onRequestRestoreDraft
 }) => {
   return (
     <div className="h-full flex flex-col p-6 bg-gray-50">
@@ -29,10 +29,10 @@ const HistoryDetailView: React.FC<HistoryDetailViewProps> = ({
           <Button 
             danger 
             icon={<RotateCcw size={16} />} 
-            onClick={onRequestRollback}
+            onClick={onRequestRestoreDraft}
             className="flex items-center"
           >
-            Rollback to this version
+            Restore this version to draft
           </Button>
         </Space>
       </div>

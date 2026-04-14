@@ -69,7 +69,7 @@ function App() {
 
   // --- 4. Event Handlers (Dispatching Actions) ---
 
-  const switchNavContext = async (baselineId: string, versionId: string, nodeType: string, sourceVersionId?: string, sourceVersionLabel?: string) => {
+  const switchNavContext = async (baselineId: string, versionId: string, nodeType: string, restoredFromVersionId?: string, restoredFromVersionLabel?: string) => {
     const isDraft = versionId === 'draft';
     let draftData = {};
     
@@ -95,8 +95,8 @@ function App() {
                 ...(draftResult.draft_data.severity ? { severity: draftResult.draft_data.severity } : {}),
               },
               nodeType: nodeType as any,
-              sourceVersionId,
-              sourceVersionLabel
+              restoredFromVersionId,
+              restoredFromVersionLabel
             } 
           });
           return;
@@ -107,8 +107,8 @@ function App() {
     }
 
     if (isDraft) {
-      if (nodeType === 'rollback_candidate') {
-        draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning",\n  "_comment": "Rolled back from ' + sourceVersionId + '"\n}' };
+      if (nodeType === 'restored_draft') {
+        draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning",\n  "_comment": "Restored from ' + restoredFromVersionId + '"\n}' };
       } else {
         draftData = { rule_type: 'threshold', params: '{\n  "threshold": 10,\n  "severity": "warning"\n}' };
       }
@@ -121,8 +121,8 @@ function App() {
         isDraft, 
         draftData,
         nodeType: nodeType as any,
-        sourceVersionId,
-        sourceVersionLabel
+        restoredFromVersionId,
+        restoredFromVersionLabel
       } 
     });
   };
@@ -140,11 +140,11 @@ function App() {
         okType: 'danger',
         cancelText: 'Cancel',
         onOk: () => {
-          switchNavContext(node.baselineId, node.versionId, node.type, node.sourceVersionId, node.sourceVersionLabel);
+          switchNavContext(node.baselineId, node.versionId, node.type, node.restoredFromVersionId, node.restoredFromVersionLabel);
         }
       });
     } else {
-      switchNavContext(node.baselineId, node.versionId, node.type, node.sourceVersionId, node.sourceVersionLabel);
+      switchNavContext(node.baselineId, node.versionId, node.type, node.restoredFromVersionId, node.restoredFromVersionLabel);
     }
   };
 
@@ -237,7 +237,7 @@ function App() {
   };
 
   const requestDiff = async () => {
-    const sourceVersionId = pageState.selectedNodeType === 'working_draft' || pageState.selectedNodeType === 'rollback_candidate' 
+    const sourceVersionId = pageState.selectedNodeType === 'working_draft' || pageState.selectedNodeType === 'restored_draft' 
       ? pageState.selectedVersionId || 'draft' 
       : pageState.selectedVersionId!;
     const targetVersionId = 'previous_version'; // Simplified for MVP
@@ -257,7 +257,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (pageState.centerMode !== 'rollback_confirm') {
+    if (pageState.centerMode !== 'restore_confirm') {
       if (rollbackEffectDiff) setRollbackEffectDiff(null);
       if (loadingRollbackEffectDiff) setLoadingRollbackEffectDiff(false);
       return;
@@ -272,7 +272,7 @@ function App() {
     const fetchRollbackEffectDiff = async () => {
       setLoadingRollbackEffectDiff(true);
       try {
-        const data = await rulesApi.getRollbackEffectDiff(baselineId, targetVersionId);
+        const data = await rulesApi.getRestoreDraftEffectDiff(baselineId, targetVersionId);
         if (!cancelled) setRollbackEffectDiff(data);
       } catch (error) {
         console.error('Failed to fetch rollback effect diff', error);
@@ -290,7 +290,7 @@ function App() {
   }, [pageState.centerMode, pageState.selectedBaselineId, pageState.selectedVersionId]);
 
   useEffect(() => {
-    if (pageState.centerMode !== 'rollback_confirm') {
+    if (pageState.centerMode !== 'restore_confirm') {
       if (targetRuleSet) setTargetRuleSet(null);
       if (targetRuleSetError) setTargetRuleSetError(null);
       if (loadingTargetRuleSet) setLoadingTargetRuleSet(false);
@@ -327,48 +327,46 @@ function App() {
     };
   }, [pageState.centerMode, pageState.selectedBaselineId, pageState.selectedVersionId]);
 
-  const handleRequestRollbackClick = () => {
-    // If there is already a draft, prompt user
+  const handleRequestRestoreDraftClick = () => {
     const hasDraft = baselines.find(b => b.id === pageState.selectedBaselineId)?.status === 'draft';
-    // Simplified logic: assume we warn them
     if (pageState.dirty || hasDraft) {
       Modal.confirm({
         title: 'Draft Conflict',
-        content: 'There is an existing working draft. Creating a rollback candidate will overwrite or conflict. Proceed?',
-        onOk: () => dispatch({ type: 'REQUEST_ROLLBACK_CONFIRM' })
+        content: 'There is an existing working draft. Restoring a historical version will replace the draft currently shown in the editor. Proceed?',
+        onOk: () => dispatch({ type: 'REQUEST_RESTORE_CONFIRM' })
       });
     } else {
-      dispatch({ type: 'REQUEST_ROLLBACK_CONFIRM' });
+      dispatch({ type: 'REQUEST_RESTORE_CONFIRM' });
     }
   };
 
-  const confirmRollback = async () => {
-    dispatch({ type: 'REQUEST_ROLLBACK' });
+  const confirmRestoreDraft = async () => {
+    dispatch({ type: 'REQUEST_RESTORE' });
     
     try {
-      const res = await rulesApi.createRollbackCandidate(pageState.selectedBaselineId!, pageState.selectedVersionId!);
+      const res = await rulesApi.restoreHistoricalDraft(pageState.selectedBaselineId!, pageState.selectedVersionId!);
       
       dispatch({ 
-        type: 'ROLLBACK_READY', 
+        type: 'RESTORE_READY', 
         payload: { 
           draftData: { 
             rule_type: res.draft_data?.rule_type || 'threshold', 
             params: typeof res.draft_data?.params === 'string' ? res.draft_data.params : JSON.stringify(res.draft_data?.params || {}, null, 2)
           },
-          sourceVersionId: res.source_version_id,
-          sourceVersionLabel: res.source_version_label
+          restoredFromVersionId: res.restored_from_version_id,
+          restoredFromVersionLabel: res.restored_from_version_label
         } 
       });
-      message.success(`Successfully created rollback candidate from version ${res.source_version_label}`);
+      message.success(`Restored ${res.restored_from_version_label} into the draft editor`);
     } catch (error) {
       console.error(error);
-      message.error('Failed to create rollback candidate');
-      dispatch({ type: 'CANCEL_ROLLBACK' });
+      message.error('Failed to restore historical version to draft');
+      dispatch({ type: 'CANCEL_RESTORE' });
     }
   };
 
-  const cancelRollback = () => {
-    dispatch({ type: 'CANCEL_ROLLBACK' });
+  const cancelRestoreDraft = () => {
+    dispatch({ type: 'CANCEL_RESTORE' });
   };
 
   const handleSaveDraft = async () => {
@@ -411,19 +409,6 @@ function App() {
 
   const closeDiff = () => {
     dispatch({ type: 'CLOSE_DIFF' });
-  };
-
-  const discardRollbackCandidate = () => {
-    Modal.confirm({
-      title: 'Discard Rollback Candidate',
-      content: 'Are you sure you want to discard this rollback candidate? Your changes will be lost.',
-      okText: 'Discard',
-      okType: 'danger',
-      onOk: () => {
-        dispatch({ type: 'DISCARD_ROLLBACK_CANDIDATE' });
-        message.success('Rollback candidate discarded');
-      }
-    });
   };
 
   // Target Jump interactions from Right Panel
@@ -492,10 +477,9 @@ function App() {
               onCancelPublish={cancelPublish}
               onRequestDiff={requestDiff}
               onCloseDiff={closeDiff}
-              onRequestRollback={handleRequestRollbackClick}
-              onRollbackConfirmRequest={confirmRollback}
-              onCancelRollback={cancelRollback}
-              onDiscardRollbackCandidate={discardRollbackCandidate}
+              onRequestRestoreDraft={handleRequestRestoreDraftClick}
+              onRestoreDraftConfirmRequest={confirmRestoreDraft}
+              onCancelRestoreDraft={cancelRestoreDraft}
             />
           </div>
 

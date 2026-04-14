@@ -2,9 +2,9 @@
 B2: Rollback completeness tests.
 
 Verifies:
-1. Rollback endpoint returns the FULL rule_set, not just the first rule
+1. Restore-draft endpoint returns the FULL rule_set, not just the first rule
 2. RuleBaselineHistoryService.rollback_to_version restores complete rule_set
-3. API integration: POST /api/rules/rollback returns rule_set field
+3. API integration: POST /api/rules/restore-draft returns rule_set field
 """
 
 import pytest
@@ -187,11 +187,11 @@ class TestRollbackEdgeCases:
 
 
 # ==========================================
-# API Integration Tests: POST /api/rules/rollback
+# API Integration Tests: POST /api/rules/restore-draft
 # ==========================================
 
 class TestRollbackAPIIntegration:
-    """Verify the rollback API endpoint returns complete rule_set."""
+    """Verify the restore-draft API endpoint returns complete rule_set."""
 
     @pytest.fixture
     def app_client(self):
@@ -199,10 +199,10 @@ class TestRollbackAPIIntegration:
         from src.presentation.api.main import app
         return TestClient(app)
 
-    def test_rollback_endpoint_returns_rule_set(self, app_client):
-        """POST /api/rules/rollback should return rule_set in the response."""
+    def test_restore_draft_endpoint_returns_rule_set(self, app_client):
+        """POST /api/rules/restore-draft should return rule_set in the response."""
         # We test against whatever baselines exist in the data files
-        resp = app_client.post("/api/rules/rollback", json={
+        resp = app_client.post("/api/rules/restore-draft", json={
             "baseline_id": "baseline-001",
             "version_id": "v1.0"
         })
@@ -214,13 +214,13 @@ class TestRollbackAPIIntegration:
             # rule_set should be a dict (even if empty)
             assert isinstance(data["rule_set"], dict)
 
-    def test_rollback_endpoint_still_has_draft_data(self, app_client):
-        """Rollback candidate should still have draft_data for backward compatibility."""
-        resp = app_client.post("/api/rules/rollback", json={
+    def test_restore_draft_endpoint_still_has_draft_data(self, app_client):
+        """Restore-draft response should still include draft_data for editor hydration."""
+        resp = app_client.post("/api/rules/restore-draft", json={
             "baseline_id": "baseline-001",
             "version_id": "v1.0"
         })
         if resp.status_code == 200:
             data = resp.json()
-            # draft_data should still be present (first rule for single-rule editing UX)
+            assert data["restored_from_version_id"] == "v1.0"
             assert "draft_data" in data

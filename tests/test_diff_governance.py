@@ -225,8 +225,8 @@ class TestDiffGovernanceSemantics:
         # Summary should match
         assert data["diff_summary"]["added"] == len(added_ids)
 
-    def test_rollback_effect_diff_added_removed_semantics(self, client):
-        response = client.get("/api/baselines/B001/rollback-effect-diff?target=v1.0")
+    def test_restore_draft_effect_diff_added_removed_semantics(self, client):
+        response = client.get("/api/baselines/B001/restore-draft-effect-diff?target=v1.0")
         assert response.status_code == 200
         data = response.json()
 
@@ -239,8 +239,8 @@ class TestDiffGovernanceSemantics:
         removed_ids = {r["rule_id"] for r in diff["rules"] if r["change_type"] == "removed"}
         assert removed_ids == {"R2"}
 
-    def test_rollback_effect_diff_modified_before_after_semantics(self, client):
-        response = client.get("/api/baselines/B002/rollback-effect-diff?target=v1.0")
+    def test_restore_draft_effect_diff_modified_before_after_semantics(self, client):
+        response = client.get("/api/baselines/B002/restore-draft-effect-diff?target=v1.0")
         assert response.status_code == 200
         data = response.json()
 

@@ -1,7 +1,7 @@
 import { PageState, CenterMode, RightPanelMode, DraftData, BaselineNodeType } from '../types/ui';
 
 export type PageAction =
-  | { type: 'SWITCH_CONTEXT', payload: { baselineId: string; versionId: string; isDraft: boolean; draftData?: DraftData; nodeType?: BaselineNodeType; sourceVersionId?: string; sourceVersionLabel?: string } }
+  | { type: 'SWITCH_CONTEXT', payload: { baselineId: string; versionId: string; isDraft: boolean; draftData?: DraftData; nodeType?: BaselineNodeType; restoredFromVersionId?: string; restoredFromVersionLabel?: string } }
   | { type: 'UPDATE_DRAFT', payload: { draftData: DraftData; dirty: boolean } }
   | { type: 'REQUEST_VALIDATION' }
   | { type: 'VALIDATION_SUCCESS', payload: { result: any } }
@@ -16,11 +16,10 @@ export type PageAction =
   | { type: 'DIFF_SUCCESS', payload: { diffData: any } }
   | { type: 'DIFF_FAILED' }
   | { type: 'CLOSE_DIFF' }
-  | { type: 'REQUEST_ROLLBACK_CONFIRM' }
-  | { type: 'CANCEL_ROLLBACK' }
-  | { type: 'REQUEST_ROLLBACK' }
-  | { type: 'ROLLBACK_READY', payload: { draftData: DraftData; sourceVersionId: string; sourceVersionLabel: string } }
-  | { type: 'DISCARD_ROLLBACK_CANDIDATE' }
+  | { type: 'REQUEST_RESTORE_CONFIRM' }
+  | { type: 'CANCEL_RESTORE' }
+  | { type: 'REQUEST_RESTORE' }
+  | { type: 'RESTORE_READY', payload: { draftData: DraftData; restoredFromVersionId: string; restoredFromVersionLabel: string } }
   | { type: 'JUMP_TO_FIELD', payload: { fieldPath: string } }
   | { type: 'JUMP_TO_RULE', payload: { ruleId: string } }
   | { type: 'CLEAR_DIRTY' }
@@ -49,7 +48,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
       };
 
     case 'UPDATE_DRAFT':
-      if (state.centerMode !== 'edit' && state.centerMode !== 'rollback_ready_edit') return state;
+      if (state.centerMode !== 'edit' && state.centerMode !== 'restored_draft_edit') return state;
       return {
         ...state,
         draftData: action.payload.draftData,
@@ -58,7 +57,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
       };
 
     case 'REQUEST_VALIDATION':
-      if (state.centerMode !== 'edit' && state.centerMode !== 'rollback_ready_edit') return state;
+      if (state.centerMode !== 'edit' && state.centerMode !== 'restored_draft_edit') return state;
       return { ...state }; 
 
     case 'VALIDATION_SUCCESS':
@@ -73,7 +72,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
       return { ...state };
 
     case 'PREPARE_PUBLISH':
-      if (state.centerMode !== 'edit' && state.centerMode !== 'rollback_ready_edit') return state;
+      if (state.centerMode !== 'edit' && state.centerMode !== 'restored_draft_edit') return state;
       return {
         ...state,
         centerMode: 'publish_confirm',
@@ -84,7 +83,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
       if (state.centerMode !== 'publish_confirm' && state.centerMode !== 'publish_blocked') return state;
       return {
         ...state,
-        centerMode: state.selectedNodeType === 'rollback_candidate' ? 'rollback_ready_edit' : 'edit',
+        centerMode: state.selectedNodeType === 'restored_draft' ? 'restored_draft_edit' : 'edit',
         rightPanelMode: 'validation',
       };
 
@@ -149,52 +148,43 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
     case 'CLOSE_DIFF':
       return {
         ...state,
-        centerMode: state.selectedNodeType === 'working_draft' || state.selectedNodeType === 'rollback_candidate' ? 'edit' : 'history_detail',
-        rightPanelMode: state.selectedNodeType === 'working_draft' || state.selectedNodeType === 'rollback_candidate' ? 'help' : 'version_meta',
+        centerMode: state.selectedNodeType === 'working_draft' || state.selectedNodeType === 'restored_draft' ? 'edit' : 'history_detail',
+        rightPanelMode: state.selectedNodeType === 'working_draft' || state.selectedNodeType === 'restored_draft' ? 'help' : 'version_meta',
         diffData: null,
         diffContext: undefined,
       };
 
-    case 'REQUEST_ROLLBACK_CONFIRM':
+    case 'REQUEST_RESTORE_CONFIRM':
       if (state.centerMode !== 'history_detail') return state;
       return {
         ...state,
-        centerMode: 'rollback_confirm',
+        centerMode: 'restore_confirm',
       };
 
-    case 'CANCEL_ROLLBACK':
-      if (state.centerMode !== 'rollback_confirm') return state;
+    case 'CANCEL_RESTORE':
+      if (state.centerMode !== 'restore_confirm') return state;
       return {
         ...state,
         centerMode: 'history_detail',
       };
 
-    case 'REQUEST_ROLLBACK':
-      if (state.centerMode !== 'rollback_confirm') return state;
+    case 'REQUEST_RESTORE':
+      if (state.centerMode !== 'restore_confirm') return state;
       return {
         ...state,
-        centerMode: 'rollback_preparing',
+        centerMode: 'restore_preparing',
       };
 
-    case 'ROLLBACK_READY':
-      if (state.centerMode !== 'rollback_preparing') return state;
+    case 'RESTORE_READY':
+      if (state.centerMode !== 'restore_preparing') return state;
       return {
         ...state,
-        centerMode: 'rollback_ready_edit',
+        centerMode: 'restored_draft_edit',
         rightPanelMode: 'help',
         draftData: action.payload.draftData,
         dirty: true,
-        selectedNodeType: 'rollback_candidate',
+        selectedNodeType: 'restored_draft',
         selectedVersionId: 'draft',
-      };
-      
-    case 'DISCARD_ROLLBACK_CANDIDATE':
-      return {
-        ...state,
-        selectedNodeType: 'working_draft',
-        dirty: false,
-        centerMode: 'empty',
-        draftData: {}
       };
 
     case 'JUMP_TO_FIELD':
@@ -202,7 +192,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         ...state,
         targetFieldPath: action.payload.fieldPath,
         centerMode: state.centerMode === 'publish_blocked' 
-          ? (state.selectedNodeType === 'rollback_candidate' ? 'rollback_ready_edit' : 'edit') 
+          ? (state.selectedNodeType === 'restored_draft' ? 'restored_draft_edit' : 'edit') 
           : state.centerMode,
       };
 

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any
 from src.presentation.api.dto_models import (
     ValidateRequestDTO, ValidationResultDTO, ValidationIssueDTO,
-    PublishRequestDTO, PublishResultDTO, RollbackRequestDTO, RollbackCandidateDTO,
+    PublishRequestDTO, PublishResultDTO, RestoreDraftRequestDTO, RestoreDraftResultDTO,
     SaveDraftRequestDTO, SaveDraftResultDTO, LoadDraftResultDTO
 )
 from src.presentation.api.dependencies import get_baseline_service, get_history_service, get_draft_save_service
@@ -145,38 +145,31 @@ def publish_baseline(
     )
 
 
-@router.post("/rollback", response_model=RollbackCandidateDTO)
-def create_rollback_candidate(
-    req: RollbackRequestDTO,
+@router.post("/restore-draft", response_model=RestoreDraftResultDTO)
+def restore_historical_version_to_draft(
+    req: RestoreDraftRequestDTO,
     hist_svc: RuleBaselineHistoryService = Depends(get_history_service)
 ):
     """
-    Hydrates a historical version's rule configuration so the UI can edit it as a new candidate.
+    Load a historical version's rules into an editable draft payload.
+
+    This endpoint does not perform a persistent rollback and does not create a
+    server-side candidate entity. It only hydrates historical rules so the UI
+    can review, edit, save, and later publish them as a new version.
     """
-    # Fetch historical rule set using application service
     rule_set = hist_svc.get_baseline_version(req.baseline_id, req.version_id)
     if rule_set is None:
         raise HTTPException(status_code=404, detail="Version not found")
 
-    # B2: Return the FULL rule set (not just the first rule) for complete rollback semantics
-    # The first rule is still kept as draft_data for backward compatibility with single-rule editing UX
     first_rule = list(rule_set.values())[0] if rule_set else {"rule_type": "threshold", "params": {}}
 
-    return RollbackCandidateDTO(
+    return RestoreDraftResultDTO(
         baseline_id=req.baseline_id,
-        source_version_id=req.version_id,
-        source_version_label=f"{req.version_id} (History)",
+        restored_from_version_id=req.version_id,
+        restored_from_version_label=f"{req.version_id} (History)",
         draft_data=first_rule,
-        rule_set=rule_set  # B2: Complete rule set for full baseline rollback
+        rule_set=rule_set
     )
-
-
-@router.delete("/rollback/{candidate_id}", status_code=status.HTTP_204_NO_CONTENT)
-def discard_rollback_candidate(candidate_id: str):
-    """
-    Discards a rollback candidate. (Mock implementation for UI flow completeness)
-    """
-    return None
 
 
 # ==========================================

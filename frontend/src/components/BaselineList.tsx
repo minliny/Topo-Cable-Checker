@@ -51,8 +51,8 @@ const BaselineList: React.FC<BaselineListProps> = ({
             baselineId: node.baseline_id,
             parentId: node.parent_id,
             versionId: node.version_id,
-            sourceVersionId: node.source_version_id,
-            sourceVersionLabel: node.source_version_label,
+            restoredFromVersionId: node.restored_from_version_id,
+            restoredFromVersionLabel: node.restored_from_version_label,
             status: node.status as any
           });
         }
@@ -67,7 +67,7 @@ const BaselineList: React.FC<BaselineListProps> = ({
     return data.map((item) => {
       let icon = <Database size={14} className="text-gray-500" />;
       if (item.type === 'working_draft') icon = <Edit3 size={14} className="text-orange-500" />;
-      else if (item.type === 'rollback_candidate') icon = <History size={14} className="text-purple-500" />;
+      else if (item.type === 'restored_draft') icon = <History size={14} className="text-purple-500" />;
       else if (item.type === 'published_version') icon = <Archive size={14} className="text-green-600" />;
       else icon = <GitBranch size={14} className="text-blue-600" />;
 
@@ -97,8 +97,8 @@ const BaselineList: React.FC<BaselineListProps> = ({
   };
 
   // Determine actual selected key based on node type and version
-  const activeKey = selectedNodeType === 'rollback_candidate' 
-    ? `${selectedKey?.split('-')[0]}-rollback-candidate` 
+  const activeKey = selectedNodeType === 'restored_draft' 
+    ? `${selectedKey?.split('-')[0]}-draft` 
     : selectedKey;
 
   return (
