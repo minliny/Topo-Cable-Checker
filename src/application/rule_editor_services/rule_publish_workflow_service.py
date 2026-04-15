@@ -30,6 +30,7 @@ class RulePublishResult:
     publish_success: bool
     summary: Optional[PublishedBaselineSummaryView] = None
     errors: List[RulePublishFailure] = None  # None = no errors, [] = empty error list
+    new_revision: Optional[int] = None
 
 class RulePublishWorkflowService:
     """
@@ -44,7 +45,7 @@ class RulePublishWorkflowService:
         self.repo = repo or BaselineRepository()
         self.bridge = bridge or RuleEditorGovernanceBridgeService()
 
-    def publish_draft(self, baseline_id: str, draft: RuleDraftView, change_note: str = "") -> RulePublishResult:
+    def publish_draft(self, baseline_id: str, draft: RuleDraftView, expected_revision: int, change_note: str = "") -> RulePublishResult:
         # 1. Compile & Validate using the bridge
         compile_result = self.bridge.compile_draft_preview(draft)
         
@@ -114,7 +115,10 @@ class RulePublishWorkflowService:
             # A1-7: Clear working_draft after successful publish
             baseline.working_draft = None
 
-        self.repo.save(baseline)
+        self.repo.save(baseline, expected_revision=expected_revision)
+
+        updated_baseline = self.repo.get_by_id(baseline_id)
+        new_rev = updated_baseline.revision if not isinstance(updated_baseline, dict) else updated_baseline.get("revision", 1)
 
         # 7. Build summary
         action_verb = "Added" if is_new else "Modified"
@@ -132,4 +136,4 @@ class RulePublishWorkflowService:
             published_at=datetime.datetime.now().isoformat()
         )
 
-        return RulePublishResult(publish_success=True, summary=summary, errors=[])
+        return RulePublishResult(publish_success=True, summary=summary, errors=[], new_revision=new_rev)

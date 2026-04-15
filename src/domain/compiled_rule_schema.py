@@ -40,8 +40,8 @@ class CompiledRule:
         return {
             "rule_id": self.rule_id,
             "rule_type": self.rule_type,
-            "executor": {"type": self.executor},
-            "target": {"type": self.target.type, "filter": self.target.filter or None},
+            "executor": self.executor,
+            "target": {"type": self.target.type, "filter": self.target.filter},
             "message": {"template": self.message.template, "severity": self.message.severity},
             "params": self.params,
         }

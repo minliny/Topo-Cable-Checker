@@ -56,6 +56,7 @@ export interface PageState {
   selectedBaselineId?: string;
   selectedVersionId?: string;
   selectedNodeType?: BaselineNodeType;
+  baseRevision?: number;
   
   // View State
   centerMode: CenterMode;

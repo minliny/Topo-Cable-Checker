@@ -21,6 +21,15 @@ client = TestClient(app)
 # Use a dedicated test data directory to avoid polluting real data
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "_test_publish_data")
 
+def _get_revision(baseline_id: str = "B001") -> int:
+    resp = client.get("/api/baselines")
+    if resp.status_code != 200:
+        return 1
+    for n in (resp.json() or []):
+        if n.get("id") == baseline_id and n.get("type") == "baseline_root":
+            return n.get("revision", 1)
+    return 1
+
 
 @pytest.fixture(autouse=True)
 def setup_test_data(monkeypatch, tmp_path):
@@ -75,6 +84,7 @@ def test_publish_request_body_is_bound():
     """P1.0-1: PublishRequestDTO body is properly parsed — draft_data not None."""
     payload = {
         "rule_id": "test_rule_1",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "high",
@@ -93,6 +103,7 @@ def test_publish_body_binding_persists_draft_data(setup_test_data):
     """P1.0-1: Published rule data actually persists — read back and verify."""
     payload = {
         "rule_id": "my_new_threshold",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "error",
@@ -121,6 +132,7 @@ def test_publish_body_binding_persists_draft_data(setup_test_data):
 def test_publish_without_rule_id_uses_default():
     """P1.0-1: When rule_id is empty, a default is generated."""
     payload = {
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "warning",
@@ -140,6 +152,7 @@ def test_publish_invalid_draft_is_blocked():
     """P1.0-2: Invalid draft (missing required params) is blocked from publishing."""
     payload = {
         "rule_id": "bad_rule",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "warning",
@@ -166,6 +179,7 @@ def test_publish_invalid_draft_does_not_modify_baseline(setup_test_data):
     # Try to publish invalid draft
     payload = {
         "rule_id": "bad_rule",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "warning",
@@ -187,6 +201,7 @@ def test_publish_valid_threshold_rule_succeeds():
     """P1.0-2: Valid threshold rule can be published."""
     payload = {
         "rule_id": "valid_threshold",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "error",
@@ -203,6 +218,7 @@ def test_publish_valid_group_consistency_rule_succeeds():
     """P1.0-2: Valid group_consistency rule can be published."""
     payload = {
         "rule_id": "valid_gc",
+        "expected_revision": _get_revision(),
         "rule_type": "group_consistency",
         "target_type": "devices",
         "severity": "warning",
@@ -218,6 +234,7 @@ def test_publish_valid_single_fact_rule_succeeds():
     """P1.0-2: Valid single_fact rule can be published."""
     payload = {
         "rule_id": "valid_sf",
+        "expected_revision": _get_revision(),
         "rule_type": "single_fact",
         "target_type": "devices",
         "severity": "medium",
@@ -233,6 +250,7 @@ def test_publish_blocked_returns_structured_error():
     """P1.0-2: Blocked publish returns structured error with field_path info."""
     payload = {
         "rule_id": "bad_rule",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "warning",
@@ -252,6 +270,7 @@ def test_publish_blocked_returns_structured_error():
 def test_publish_nonexistent_baseline_returns_404():
     """P1.0-1: Publishing to a non-existent baseline returns 404."""
     payload = {
+        "expected_revision": 1,
         "rule_type": "threshold",
         "params": {"metric_type": "count", "threshold_key": "T1"}
     }
@@ -282,6 +301,7 @@ def test_validation_endpoint_and_publish_endpoint_consistent():
 
     publish_resp = client.post("/api/rules/publish/B001", json={
         "rule_id": "consistency_test_invalid",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "params": invalid_params
     })
@@ -300,6 +320,7 @@ def test_validation_endpoint_and_publish_endpoint_consistent():
 
     publish_resp2 = client.post("/api/rules/publish/B001", json={
         "rule_id": "consistency_test_valid",
+        "expected_revision": _get_revision(),
         "rule_type": "threshold",
         "params": valid_params
     })

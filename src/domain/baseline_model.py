@@ -19,6 +19,4 @@ class BaselineProfile:
     # A1-1: Working draft storage — None means no draft, dict means draft exists
     # Strict: {} is NOT used to mean "no draft" — always use None
     working_draft: Optional[Dict[str, Any]] = None
-
-    # C2: Optimistic Concurrency Control
     revision: int = 1

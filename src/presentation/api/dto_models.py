@@ -42,6 +42,7 @@ class PublishResultDTO(BaseModel):
     version_label: Optional[str] = None
     summary: Optional[str] = None
     blocked_issues: Optional[List[ValidationIssueDTO]] = None
+    new_revision: Optional[int] = None
 
 class RestoreDraftResultDTO(BaseModel):
     baseline_id: str
@@ -99,6 +100,7 @@ class ValidateRequestDTO(BaseModel):
 class PublishRequestDTO(BaseModel):
     """P1.0-1: Explicit request body for publish endpoint."""
     rule_id: str = ""
+    expected_revision: int
     rule_type: str
     target_type: str = "devices"
     severity: str = "warning"

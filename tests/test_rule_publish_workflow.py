@@ -8,7 +8,7 @@ class FakeBaselineRepository(IBaselineRepository):
     def __init__(self):
         self._store = {}
 
-    def save(self, baseline):
+    def save(self, baseline, expected_revision: int = None):
         if isinstance(baseline, dict):
             self._store[baseline["baseline_id"]] = baseline
         else:
@@ -66,7 +66,7 @@ def test_publish_draft_success(publish_service, fake_repo):
         validation_result=RuleDraftValidationResult(is_valid=True, errors={})
     )
     
-    result = publish_service.publish_draft("b1", draft, "Added new threshold rule")
+    result = publish_service.publish_draft("b1", draft, expected_revision=1, change_note="Added new threshold rule")
     
     assert result.publish_success is True
     assert len(result.errors) == 0
@@ -98,7 +98,7 @@ def test_publish_draft_rejects_form_validation_error(publish_service):
         validation_result=RuleDraftValidationResult(is_valid=False, errors={"metric_type": "Required"})
     )
     
-    result = publish_service.publish_draft("b1", draft)
+    result = publish_service.publish_draft("b1", draft, expected_revision=1)
     
     assert result.publish_success is False
     assert result.summary is None
@@ -117,7 +117,7 @@ def test_publish_draft_rejects_compile_error(publish_service):
         validation_result=RuleDraftValidationResult(is_valid=True, errors={})
     )
     
-    result = publish_service.publish_draft("b1", draft)
+    result = publish_service.publish_draft("b1", draft, expected_revision=1)
     
     assert result.publish_success is False
     assert result.summary is None
@@ -137,7 +137,7 @@ def test_publish_modifies_existing_rule(publish_service, fake_repo):
         validation_result=RuleDraftValidationResult(is_valid=True, errors={})
     )
     
-    result = publish_service.publish_draft("b1", draft, "Modified status to inactive")
+    result = publish_service.publish_draft("b1", draft, expected_revision=1, change_note="Modified status to inactive")
     
     assert result.publish_success is True
     assert result.summary.added_rules == 0

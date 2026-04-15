@@ -77,14 +77,16 @@ if (USE_MOCK_API) {
   mock.onPost('/rules/draft/save').reply(200, {
     success: true,
     saved_at: new Date().toISOString(),
-    message: 'Draft saved successfully (mock)'
+    message: 'Draft saved successfully (mock)',
+    new_revision: 2
   });
 
   // A1-4: Load Draft (returns no draft by default in mock)
   mock.onGet(new RegExp('/rules/draft/.*')).reply(200, {
     has_draft: false,
     draft_data: null,
-    saved_at: null
+    saved_at: null,
+    base_revision: 1
   });
 
   // A1-4: Clear Draft

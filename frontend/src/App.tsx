@@ -72,11 +72,13 @@ function App() {
   const switchNavContext = async (baselineId: string, versionId: string, nodeType: string, restoredFromVersionId?: string, restoredFromVersionLabel?: string) => {
     const isDraft = versionId === 'draft';
     let draftData = {};
+    let baseRevision: number | undefined;
     
     // A1-6: Auto-recover saved draft when entering a baseline editing context
     if (isDraft && baselineId) {
       try {
         const draftResult = await rulesApi.loadDraft(baselineId);
+        baseRevision = draftResult.base_revision;
         if (draftResult.has_draft && draftResult.draft_data) {
           // Use the saved working draft
           dispatch({ 
@@ -85,6 +87,7 @@ function App() {
               baselineId, 
               versionId, 
               isDraft, 
+              baseRevision,
               draftData: {
                 rule_type: draftResult.draft_data.rule_type || 'threshold',
                 params: typeof draftResult.draft_data.params === 'string' 
@@ -119,6 +122,7 @@ function App() {
         baselineId, 
         versionId, 
         isDraft, 
+        baseRevision,
         draftData,
         nodeType: nodeType as any,
         restoredFromVersionId,
@@ -221,11 +225,17 @@ function App() {
     dispatch({ type: 'REQUEST_PUBLISH' });
     
     try {
+      if (!pageState.selectedBaselineId || pageState.baseRevision === undefined) {
+        message.error('Baseline is not ready. Please refresh baselines.');
+        dispatch({ type: 'CANCEL_PUBLISH' });
+        return;
+      }
       // P1.0-1: Send explicit PublishRequest body matching backend PublishRequestDTO
       const draftPayload = {
         rule_type: pageState.draftData.rule_type || 'threshold',
         target_type: 'devices',
         severity: 'warning',
+        expected_revision: pageState.baseRevision,
         params: pageState.draftData.params ? JSON.parse(pageState.draftData.params) : {}
       };
       
@@ -238,7 +248,7 @@ function App() {
       }
 
       message.success(`Published version ${res.version_label}: ${res.summary}`);
-      dispatch({ type: 'PUBLISH_SUCCESS', payload: { versionId: res.version_id! } });
+      dispatch({ type: 'PUBLISH_SUCCESS', payload: { versionId: res.version_id!, newRevision: res.new_revision } });
       
       // After a short delay to show "published" success view, auto-navigate to history
       setTimeout(() => {
@@ -247,8 +257,14 @@ function App() {
       
     } catch (error) {
       console.error(error);
-      message.error('Failed to publish rules');
-      dispatch({ type: 'CANCEL_PUBLISH' });
+      const err: any = error;
+      if (err?.error_code === 'P1009') {
+        message.warning('Publish conflict detected. Please refresh baselines.');
+        dispatch({ type: 'CANCEL_PUBLISH' });
+      } else {
+        message.error('Failed to publish rules');
+        dispatch({ type: 'CANCEL_PUBLISH' });
+      }
     }
   };
 
@@ -392,6 +408,11 @@ function App() {
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
+      if (!pageState.selectedBaselineId || pageState.baseRevision === undefined) {
+        message.error('Baseline is not ready. Please refresh baselines.');
+        setSaving(false);
+        return;
+      }
       // A1-5: Real Save Draft API call — replaces setTimeout mock
       let parsedParams = {};
       try {
@@ -404,6 +425,7 @@ function App() {
 
       const res = await rulesApi.saveDraft({
         baseline_id: pageState.selectedBaselineId || '',
+        expected_revision: pageState.baseRevision,
         rule_id: pageState.draftData.rule_id || '',
         rule_type: pageState.draftData.rule_type || 'threshold',
         target_type: pageState.draftData.target_type || 'devices',
@@ -412,7 +434,7 @@ function App() {
       });
 
       if (res.success) {
-        dispatch({ type: 'DRAFT_SAVE_SUCCESS', payload: { savedAt: res.saved_at } });
+        dispatch({ type: 'DRAFT_SAVE_SUCCESS', payload: { savedAt: res.saved_at, newRevision: res.new_revision } });
         message.success('Draft saved successfully');
       } else {
         dispatch({ type: 'DRAFT_SAVE_FAILED' });
@@ -421,7 +443,12 @@ function App() {
     } catch (error) {
       console.error('Save draft error:', error);
       dispatch({ type: 'DRAFT_SAVE_FAILED' });
-      message.error('Failed to save draft');
+      const err: any = error;
+      if (err?.error_code === 'P1009') {
+        message.warning('Draft is stale. Please refresh baselines.');
+      } else {
+        message.error('Failed to save draft');
+      }
     } finally {
       setSaving(false);
     }

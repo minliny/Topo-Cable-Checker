@@ -12,6 +12,7 @@ export interface BaselineNodeDTO {
   restored_from_version_id?: string; // Used for UI state recovery
   restored_from_version_label?: string; // Used for UI display
   status?: 'draft' | 'testing' | 'published';
+  revision?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -57,6 +58,7 @@ export interface PublishResultDTO {
   version_label?: string; // UI requirement
   summary?: string; // UI requirement
   blocked_issues?: ValidationIssueDTO[]; // Used for publish_blocked UI
+  new_revision?: number;
 }
 
 /**
@@ -109,6 +111,7 @@ export interface DiffSourceTargetDTO {
  */
 export interface SaveDraftRequestDTO {
   baseline_id: string;
+  expected_revision: number;
   rule_id?: string;
   rule_type: string;
   target_type?: string;
@@ -120,6 +123,7 @@ export interface SaveDraftResultDTO {
   success: boolean;
   saved_at?: string;
   message?: string;
+  new_revision?: number;
 }
 
 /**
@@ -129,6 +133,7 @@ export interface LoadDraftResultDTO {
   has_draft: boolean;
   draft_data?: any;
   saved_at?: string;
+  base_revision?: number;
 }
 
 export interface BaselineVersionRuleSetDTO {

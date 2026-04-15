@@ -29,6 +29,7 @@ export function normalizeBaselineTreeResponse(raw: any): BaselineNodeDTO[] {
     restored_from_version_id: item.restored_from_version_id,
     restored_from_version_label: item.restored_from_version_label,
     status: item.status || 'draft',
+    revision: item.revision,
   }));
 }
 
@@ -97,6 +98,7 @@ export function normalizePublishResponse(raw: any): PublishResultDTO {
     version_label: raw.version_label || raw.version,
     summary: raw.summary || 'Published successfully',
     blocked_issues,
+    new_revision: raw.new_revision,
   };
 }
 

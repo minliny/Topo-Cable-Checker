@@ -26,7 +26,7 @@ from src.domain.result_model import (
 from src.crosscutting.config.settings import settings
 from src.crosscutting.errors.exceptions import (
     PersistenceCorruptionError, PersistenceRecoveryError, PersistenceError,
-    PersistenceSchemaError, ErrorCode
+    PersistenceSchemaError, ErrorCode, ConcurrencyError
 )
 from src.crosscutting.logging.logger import get_logger
 import datetime
@@ -439,24 +439,28 @@ class BaselineRepository:
             "baselines.json", data, BASELINES_SCHEMA_VERSION,
             BASELINES_MIGRATIONS, "__schema_version__"
         )
-        
-        # C2: Optimistic concurrency check
+
         baseline_id = profile.get("baseline_id") if isinstance(profile, dict) else profile.baseline_id
+        db_record = data.get(baseline_id) if isinstance(data.get(baseline_id), dict) else None
+        if db_record is None:
+            current_db_revision = 0
+        else:
+            current_db_revision = db_record.get("revision", 1)
+
         if expected_revision is not None:
-            current_db_revision = 1
-            if baseline_id in data:
-                db_record = data[baseline_id]
-                current_db_revision = db_record.get("revision", 1)
             if current_db_revision != expected_revision:
-                raise ConcurrencyError(f"Baseline {baseline_id} has been modified by another process. Expected revision: {expected_revision}, got: {current_db_revision}")
-        
+                raise ConcurrencyError(
+                    f"Baseline {baseline_id} has been modified by another process. "
+                    f"Expected revision: {expected_revision}, got: {current_db_revision}"
+                )
+
+        new_revision = current_db_revision + 1
+
         if isinstance(profile, dict):
-            current_rev = profile.get("revision", 1)
-            profile["revision"] = current_rev + 1
+            profile["revision"] = new_revision
             data[baseline_id] = profile
         else:
-            current_rev = getattr(profile, "revision", 1)
-            profile.revision = current_rev + 1
+            profile.revision = new_revision
             data[baseline_id] = dataclasses.asdict(profile)
             
         # P1.1-3: Stamp schema version on write

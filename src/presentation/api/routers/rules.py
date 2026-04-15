@@ -109,7 +109,7 @@ def publish_baseline(
     publish_svc = RulePublishWorkflowService(
         repo=svc.repo,
     )
-    result = publish_svc.publish_draft(baseline_id, draft)
+    result = publish_svc.publish_draft(baseline_id, draft, expected_revision=req.expected_revision)
 
     if not result.publish_success:
         # P1.0-2: Validation genuinely blocked the publish
@@ -142,6 +142,7 @@ def publish_baseline(
         version_id=summary.baseline_version,
         version_label=summary.baseline_version,
         summary=summary.summary_text,
+        new_revision=result.new_revision,
     )
 
 
@@ -229,6 +230,7 @@ def load_draft(
         has_draft=result.has_draft,
         draft_data=result.draft_data,
         saved_at=result.saved_at,
+        base_revision=result.base_revision,
     )
 
 

@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from src.crosscutting.errors.exceptions import (
     CheckToolBaseError, PersistenceError, PersistenceCorruptionError,
     PersistenceRecoveryError, DomainError, ConfigurationError,
-    ValidationError, ErrorCode
+    ValidationError, ErrorCode, ConcurrencyError
 )
 from src.crosscutting.logging.logger import get_logger
 
@@ -67,6 +67,8 @@ def register_error_handlers(app: FastAPI):
         status_code = 500
         if isinstance(exc, (ValidationError, DomainError)):
             status_code = 422
+        elif isinstance(exc, ConcurrencyError):
+            status_code = 409
         elif isinstance(exc, PersistenceCorruptionError):
             status_code = 503  # Service unavailable - data corrupted
         elif isinstance(exc, PersistenceRecoveryError):

@@ -1,7 +1,7 @@
 import { PageState, CenterMode, RightPanelMode, DraftData, BaselineNodeType } from '../types/ui';
 
 export type PageAction =
-  | { type: 'SWITCH_CONTEXT', payload: { baselineId: string; versionId: string; isDraft: boolean; draftData?: DraftData; nodeType?: BaselineNodeType; restoredFromVersionId?: string; restoredFromVersionLabel?: string } }
+  | { type: 'SWITCH_CONTEXT', payload: { baselineId: string; versionId: string; isDraft: boolean; baseRevision?: number; draftData?: DraftData; nodeType?: BaselineNodeType; restoredFromVersionId?: string; restoredFromVersionLabel?: string } }
   | { type: 'UPDATE_DRAFT', payload: { draftData: DraftData; dirty: boolean } }
   | { type: 'REQUEST_VALIDATION' }
   | { type: 'VALIDATION_SUCCESS', payload: { result: any } }
@@ -10,7 +10,7 @@ export type PageAction =
   | { type: 'CANCEL_PUBLISH' }
   | { type: 'REQUEST_PUBLISH' }
   | { type: 'PUBLISH_BLOCKED', payload: { issues: any[] } }
-  | { type: 'PUBLISH_SUCCESS', payload: { versionId: string } }
+  | { type: 'PUBLISH_SUCCESS', payload: { versionId: string; newRevision?: number } }
   | { type: 'TRIGGER_POST_PUBLISH_NAVIGATION', payload: { versionId: string } }
   | { type: 'REQUEST_DIFF', payload: { sourceVersionId: string; targetVersionId: string } }
   | { type: 'DIFF_SUCCESS', payload: { diffData: any } }
@@ -23,7 +23,7 @@ export type PageAction =
   | { type: 'JUMP_TO_FIELD', payload: { fieldPath: string } }
   | { type: 'JUMP_TO_RULE', payload: { ruleId: string } }
   | { type: 'CLEAR_DIRTY' }
-  | { type: 'DRAFT_SAVE_SUCCESS', payload: { savedAt?: string } }
+  | { type: 'DRAFT_SAVE_SUCCESS', payload: { savedAt?: string; newRevision?: number } }
   | { type: 'DRAFT_SAVE_FAILED' }
   | { type: 'DRAFT_LOADED', payload: { draftData: any; savedAt?: string } };
 
@@ -35,6 +35,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         selectedBaselineId: action.payload.baselineId,
         selectedVersionId: action.payload.versionId,
         selectedNodeType: action.payload.nodeType,
+        baseRevision: action.payload.baseRevision,
         centerMode: action.payload.isDraft ? 'edit' : 'history_detail',
         rightPanelMode: action.payload.isDraft ? 'help' : 'version_meta',
         draftData: action.payload.draftData || {},
@@ -108,6 +109,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
         ...state,
         centerMode: 'published',
         dirty: false,
+        baseRevision: action.payload.newRevision ?? state.baseRevision,
       };
 
     case 'TRIGGER_POST_PUBLISH_NAVIGATION':
@@ -213,6 +215,7 @@ export function pageReducer(state: PageState, action: PageAction): PageState {
       return {
         ...state,
         dirty: false,
+        baseRevision: action.payload.newRevision ?? state.baseRevision,
       };
 
     case 'DRAFT_SAVE_FAILED':

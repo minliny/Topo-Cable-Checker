@@ -29,6 +29,7 @@ export interface ValidateRequest {
 /** P1.0-1: Explicit publish request matching backend PublishRequestDTO */
 export interface PublishRequest {
   rule_id?: string;
+  expected_revision?: number;
   rule_type: string;
   target_type?: string;
   severity?: string;
@@ -38,6 +39,7 @@ export interface PublishRequest {
 /** A1-4: Save draft request matching backend SaveDraftRequestDTO */
 export interface SaveDraftRequest {
   baseline_id: string;
+  expected_revision: number;
   rule_id?: string;
   rule_type: string;
   target_type?: string;
@@ -112,6 +114,7 @@ export const rulesApi = {
       success: raw.success,
       saved_at: raw.saved_at,
       message: raw.message,
+      new_revision: (raw as any).new_revision,
     };
   },
 
@@ -122,6 +125,7 @@ export const rulesApi = {
       has_draft: raw.has_draft,
       draft_data: raw.draft_data,
       saved_at: raw.saved_at,
+      base_revision: (raw as any).base_revision,
     };
   },
 

@@ -107,7 +107,10 @@ class RuleDraftSaveService:
 
         draft = baseline.working_draft
         if draft is None:
-            return LoadDraftResult(has_draft=False)
+            return LoadDraftResult(
+                has_draft=False,
+                base_revision=baseline.get("revision", 1) if isinstance(baseline, dict) else getattr(baseline, "revision", 1)
+            )
 
         return LoadDraftResult(
             has_draft=True,

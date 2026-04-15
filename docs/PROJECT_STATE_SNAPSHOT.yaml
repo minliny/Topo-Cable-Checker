@@ -52,8 +52,8 @@ architecture_summary:
         - "CompiledRule (compiled_rule_schema.py) — 简洁 dataclass 编译后规则模型"
         - "RuleEngine (engine.py) — 编译→作用域→分发→外部规则注入"
         - "4 Executors: SingleFactExecutor, GroupConsistencyExecutor, ThresholdExecutor, TopologyExecutor"
-        - "ExecutionContext (rule_engine/execution_context.py) — 执行上下文"
         - "ParameterSchemaRegistry, RuleMetaRegistry, RuleCapabilityRegistry (rule_engine/)"
+        - "BaselineProfile.revision — optimistic concurrency token for draft/publish"
       protocols:
         - "IBaselineRepository (interfaces.py)"
         - "ITaskRepository (interfaces.py)"
@@ -75,6 +75,7 @@ architecture_summary:
       path: "src/infrastructure/"
       key_classes:
         - "BaselineRepository — + schema migration v0→v1.0→v1.1→v1.2"
+        - "BaselineRepository.save(expected_revision=...) — optimistic concurrency check"
         - "TaskRepository, ResultRepository"
         - "ExcelReader"
     presentation:

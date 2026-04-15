@@ -35,6 +35,12 @@ client = TestClient(app)
 TEST_BASELINE_ID = "TEST_DRAFT_B001"
 
 
+def _current_revision(baseline_id: str = TEST_BASELINE_ID) -> int:
+    repo = BaselineRepository()
+    b = repo.get_by_id(baseline_id)
+    return getattr(b, "revision", 1) if b else 1
+
+
 @pytest.fixture(autouse=True)
 def ensure_test_baseline():
     """Ensure a test baseline exists for draft operations."""
@@ -80,6 +86,7 @@ class TestSaveDraftSuccess:
     def test_save_draft_returns_success(self):
         payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "draft_rule_1",
             "rule_type": "threshold",
             "target_type": "devices",
@@ -96,6 +103,7 @@ class TestSaveDraftSuccess:
     def test_save_draft_persists_working_draft(self):
         payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "draft_rule_1",
             "rule_type": "threshold",
             "target_type": "devices",
@@ -116,21 +124,30 @@ class TestSaveDraftSuccess:
         # Save first draft
         payload1 = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "draft_v1",
             "rule_type": "threshold",
             "params": {"metric_type": "count"},
         }
-        client.post("/api/rules/draft/save", json=payload1)
+        resp1 = client.post("/api/rules/draft/save", json=payload1)
+        assert resp1.status_code == 200
+        new_rev = resp1.json().get("new_revision")
         
         # Save second draft (should overwrite)
         payload2 = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": payload1["expected_revision"],
             "rule_id": "draft_v2",
             "rule_type": "single_fact",
             "params": {"field": "status"},
         }
         response = client.post("/api/rules/draft/save", json=payload2)
-        assert response.status_code == 200
+        assert response.status_code == 409
+        
+        payload3 = dict(payload2)
+        payload3["expected_revision"] = new_rev
+        response2 = client.post("/api/rules/draft/save", json=payload3)
+        assert response2.status_code == 200
         
         repo = BaselineRepository()
         profile = repo.get_by_id(TEST_BASELINE_ID)
@@ -147,11 +164,13 @@ class TestLoadDraftSuccess:
         data = response.json()
         assert data["has_draft"] is False
         assert data["draft_data"] is None
+        assert data["base_revision"] is not None
 
     def test_load_draft_after_save(self):
         # Save a draft first
         payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "saved_rule",
             "rule_type": "threshold",
             "params": {"metric_type": "count"},
@@ -175,6 +194,7 @@ class TestClearDraftSuccess:
         # Save a draft first
         payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "to_be_cleared",
             "rule_type": "threshold",
             "params": {},
@@ -205,6 +225,7 @@ class TestReloadRestoresDraft:
         # Save a draft with specific data
         payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "recovery_test",
             "rule_type": "threshold",
             "target_type": "devices",
@@ -234,6 +255,7 @@ class TestPublishClearsDraft:
         # Save a draft first
         save_payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "publish_test_rule",
             "rule_type": "threshold",
             "params": {"metric_type": "count", "threshold_key": "T1"},
@@ -247,6 +269,7 @@ class TestPublishClearsDraft:
         # Publish the rule (valid params)
         publish_payload = {
             "rule_id": "publish_test_rule",
+            "expected_revision": _current_revision(),
             "rule_type": "threshold",
             "target_type": "devices",
             "severity": "error",
@@ -269,6 +292,7 @@ class TestInvalidDraftCanSave:
         """Invalid draft (missing required params) should still be saveable."""
         payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "invalid_rule",
             "rule_type": "threshold",
             "params": {},  # Missing metric_type and threshold_key — invalid for compilation
@@ -282,6 +306,7 @@ class TestInvalidDraftCanSave:
         """Even garbage data should be saveable — it's just a draft."""
         payload = {
             "baseline_id": TEST_BASELINE_ID,
+            "expected_revision": _current_revision(),
             "rule_id": "garbage_rule",
             "rule_type": "nonexistent_type",
             "params": {"random": "data", "numbers": 42},
@@ -298,6 +323,7 @@ class TestInvalidDraftCannotPublish:
     def test_publish_invalid_draft_is_blocked(self):
         payload = {
             "rule_id": "bad_publish_rule",
+            "expected_revision": _current_revision(),
             "rule_type": "threshold",
             "target_type": "devices",
             "severity": "warning",
@@ -386,6 +412,7 @@ class TestSaveDraftBaselineNotFound:
     def test_save_draft_nonexistent_baseline_returns_404(self):
         payload = {
             "baseline_id": "NONEXISTENT_BASELINE",
+            "expected_revision": 1,
             "rule_id": "test",
             "rule_type": "threshold",
             "params": {},

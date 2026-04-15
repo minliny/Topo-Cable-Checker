@@ -133,6 +133,12 @@ cd frontend
 npm run check
 ```
 
+CI（GitHub Actions）：
+
+- 后端：pytest
+- 前端：npm run check
+- 配置文件：.github/workflows/ci.yml
+
 手工验收：
 
 * [docs/ACCEPTANCE_CHECKLIST.md](docs/ACCEPTANCE_CHECKLIST.md)

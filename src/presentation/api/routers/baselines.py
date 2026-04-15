@@ -18,7 +18,8 @@ def bootstrap_default_baseline(
         type="baseline_root",
         name=f"Baseline {profile.baseline_id}",
         baseline_id=profile.baseline_id,
-        version_id="root"
+        version_id="root",
+        revision=getattr(profile, "revision", None)
     )
 
 @router.get("", response_model=List[BaselineNodeDTO])
@@ -41,7 +42,8 @@ def get_baselines(
             type="baseline_root",
             name=f"Baseline {p.baseline_id}",
             baseline_id=root_id,
-            version_id="root"
+            version_id="root",
+            revision=getattr(p, "revision", None)
         ))
 
         # 2. Draft Node
@@ -52,7 +54,8 @@ def get_baselines(
             baseline_id=root_id,
             parent_id=root_id,
             version_id="draft",
-            status="draft"
+            status="draft",
+            revision=getattr(p, "revision", None)
         ))
 
         # 3. History Version Nodes

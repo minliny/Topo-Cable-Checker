@@ -57,9 +57,16 @@ def test_validate_draft_blocked():
 
 def test_publish_baseline_blocked():
     """P1.0-2: Invalid draft (missing required params) is blocked by validation gate."""
+    tree = client.get("/api/baselines").json()
+    rev = 1
+    for n in tree:
+        if n.get("id") == "B001" and n.get("type") == "baseline_root":
+            rev = n.get("revision", 1)
+            break
     # Send a threshold rule without required params — compile will fail
     payload = {
         "rule_id": "bad_rule",
+        "expected_revision": rev,
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "warning",
@@ -79,8 +86,15 @@ def test_publish_baseline_blocked():
 
 def test_publish_baseline_success():
     """P1.0-1: Valid draft with proper PublishRequestDTO body is published."""
+    tree = client.get("/api/baselines").json()
+    rev = 1
+    for n in tree:
+        if n.get("id") == "B001" and n.get("type") == "baseline_root":
+            rev = n.get("revision", 1)
+            break
     payload = {
         "rule_id": "test_threshold_rule",
+        "expected_revision": rev,
         "rule_type": "threshold",
         "target_type": "devices",
         "severity": "error",

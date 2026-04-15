@@ -20,7 +20,7 @@ class FakeBaselineRepository(IBaselineRepository):
     def __init__(self):
         self._store = {}
 
-    def save(self, baseline):
+    def save(self, baseline, expected_revision: int = None):
         if isinstance(baseline, dict):
             self._store[baseline["baseline_id"]] = baseline
         else:
