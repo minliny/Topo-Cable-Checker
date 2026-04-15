@@ -4,6 +4,7 @@ import copy
 import datetime
 from src.domain.interfaces import IBaselineRepository
 from src.infrastructure.repository import BaselineRepository
+from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView
 
 
 # ==========================================
@@ -143,10 +144,32 @@ class RuleBaselineHistoryService:
             current_version = baseline.get("baseline_version", "v1.0")
             snapshots = baseline.get("baseline_version_snapshot", {})
             current_rule_set = baseline.get("rule_set", {})
+            working_draft = baseline.get("working_draft")
         else:
             current_version = getattr(baseline, "baseline_version", "v1.0")
             snapshots = getattr(baseline, "baseline_version_snapshot", {})
             current_rule_set = getattr(baseline, "rule_set", {})
+            working_draft = getattr(baseline, "working_draft", None)
+
+        if version == "draft":
+            draft_rule_set = copy.deepcopy(current_rule_set)
+            if not working_draft:
+                return draft_rule_set
+
+            draft_rule_id = working_draft.get("rule_id") if isinstance(working_draft, dict) else None
+            if not draft_rule_id:
+                return draft_rule_set
+
+            draft_view = RuleDraftView(
+                rule_id=draft_rule_id,
+                rule_type=working_draft.get("rule_type", "threshold"),
+                target_type=working_draft.get("target_type", "devices"),
+                severity=working_draft.get("severity", "warning"),
+                params=working_draft.get("params", {}) or {},
+                validation_result=None,
+            )
+            draft_rule_set[draft_rule_id] = draft_view.to_rule_def()
+            return draft_rule_set
 
         if version == current_version:
             return copy.deepcopy(current_rule_set)
@@ -203,12 +226,8 @@ class RuleBaselineHistoryService:
         rules_from = self._get_rule_set_for_version(baseline, from_version)
         rules_to = self._get_rule_set_for_version(baseline, to_version)
         
-        # B2: _get_rule_set_for_version now returns None for not-found, {} for empty rule_set
-        # Treat None as empty dict for diff purposes (comparing against missing version = all rules are new/removed)
-        if rules_from is None:
-            rules_from = {}
-        if rules_to is None:
-            rules_to = {}
+        if rules_from is None or rules_to is None:
+            return None
             
         added = []
         removed = []
