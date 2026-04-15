@@ -130,7 +130,11 @@ export const rulesApi = {
   },
 
   // A1-4: Clear draft — manual discard
-  clearDraft: async (baselineId: string): Promise<void> => {
-    await apiClient.delete(`/rules/draft/${baselineId}`);
+  clearDraft: async (baselineId: string, expectedRevision: number): Promise<{ success: boolean; new_revision?: number }> => {
+    const raw = await apiClient.delete(`/rules/draft/${baselineId}?expected_revision=${expectedRevision}`);
+    return {
+      success: (raw as any)?.success === true,
+      new_revision: (raw as any)?.new_revision,
+    };
   },
 };

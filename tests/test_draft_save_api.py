@@ -199,10 +199,12 @@ class TestClearDraftSuccess:
             "rule_type": "threshold",
             "params": {},
         }
-        client.post("/api/rules/draft/save", json=payload)
+        save_resp = client.post("/api/rules/draft/save", json=payload)
+        assert save_resp.status_code == 200
+        new_rev = save_resp.json().get("new_revision")
         
         # Clear it
-        response = client.delete(f"/api/rules/draft/{TEST_BASELINE_ID}")
+        response = client.delete(f"/api/rules/draft/{TEST_BASELINE_ID}?expected_revision={new_rev}")
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
@@ -214,7 +216,7 @@ class TestClearDraftSuccess:
 
     def test_clear_nonexistent_draft_is_idempotent(self):
         # Clear when no draft exists — should still return success
-        response = client.delete(f"/api/rules/draft/{TEST_BASELINE_ID}")
+        response = client.delete(f"/api/rules/draft/{TEST_BASELINE_ID}?expected_revision={_current_revision()}")
         assert response.status_code == 200
 
 
@@ -421,5 +423,5 @@ class TestSaveDraftBaselineNotFound:
         assert response.status_code == 404
 
     def test_clear_draft_nonexistent_baseline_returns_404(self):
-        response = client.delete("/api/rules/draft/NONEXISTENT_BASELINE")
+        response = client.delete("/api/rules/draft/NONEXISTENT_BASELINE?expected_revision=1")
         assert response.status_code == 404

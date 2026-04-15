@@ -16,7 +16,7 @@ import datetime
 from src.domain.interfaces import IBaselineRepository
 from src.infrastructure.repository import BaselineRepository
 from src.domain.baseline_model import BaselineProfile
-from src.crosscutting.errors.exceptions import DomainError, ErrorCode
+from src.crosscutting.errors.exceptions import DomainError, ErrorCode, ConcurrencyError
 from src.crosscutting.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -119,21 +119,26 @@ class RuleDraftSaveService:
             base_revision=baseline.get("revision", 1) if isinstance(baseline, dict) else getattr(baseline, "revision", 1)
         )
 
-    def clear_draft(self, baseline_id: str) -> bool:
-        """
-        Clear the working draft after successful publish.
-        Sets working_draft to None (strict: not {}).
-        
-        Returns True if draft was cleared, False if baseline not found.
-        """
+    def clear_draft(self, baseline_id: str, expected_revision: int) -> Optional[int]:
         baseline = self.repo.get_by_id(baseline_id)
         if not baseline:
             logger.warning(f"Cannot clear draft: baseline {baseline_id} not found")
-            return False
+            return None
 
-        if baseline.working_draft is not None:
-            baseline.working_draft = None
-            self.repo.save(baseline)
-            logger.info(f"Draft cleared for baseline={baseline_id}")
+        current_rev = baseline.get("revision", 1) if isinstance(baseline, dict) else getattr(baseline, "revision", 1)
+        if current_rev != expected_revision:
+            raise ConcurrencyError(
+                f"Baseline {baseline_id} has been modified by another process. "
+                f"Expected revision: {expected_revision}, got: {current_rev}"
+            )
 
-        return True
+        if baseline.working_draft is None:
+            return current_rev
+
+        baseline.working_draft = None
+        self.repo.save(baseline, expected_revision=expected_revision)
+
+        updated = self.repo.get_by_id(baseline_id)
+        new_rev = updated.get("revision", 1) if isinstance(updated, dict) else getattr(updated, "revision", 1)
+        logger.info(f"Draft cleared for baseline={baseline_id}")
+        return new_rev

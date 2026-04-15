@@ -92,7 +92,8 @@ if (USE_MOCK_API) {
   // A1-4: Clear Draft
   mock.onDelete(new RegExp('/rules/draft/.*')).reply(200, {
     success: true,
-    message: 'Draft cleared (mock)'
+    message: 'Draft cleared (mock)',
+    new_revision: 2
   });
 } else {
   console.log('🚀 Using REAL API Channel (default)');

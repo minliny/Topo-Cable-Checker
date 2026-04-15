@@ -237,18 +237,13 @@ def load_draft(
 @router.delete("/draft/{baseline_id}", status_code=status.HTTP_200_OK)
 def clear_draft(
     baseline_id: str,
+    expected_revision: int,
     svc: RuleDraftSaveService = Depends(get_draft_save_service)
 ):
-    """
-    A1-4: Clear the working draft for a baseline.
-    
-    Note: Draft is also automatically cleared after successful publish (A1-7).
-    This endpoint allows explicit manual clearing.
-    """
-    success = svc.clear_draft(baseline_id)
-    if not success:
+    new_rev = svc.clear_draft(baseline_id, expected_revision=expected_revision)
+    if new_rev is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Baseline {baseline_id} not found"
         )
-    return {"success": True, "message": "Draft cleared"}
+    return {"success": True, "message": "Draft cleared", "new_revision": new_rev}

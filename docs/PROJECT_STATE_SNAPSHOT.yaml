@@ -53,7 +53,7 @@ architecture_summary:
         - "RuleEngine (engine.py) — 编译→作用域→分发→外部规则注入"
         - "4 Executors: SingleFactExecutor, GroupConsistencyExecutor, ThresholdExecutor, TopologyExecutor"
         - "ParameterSchemaRegistry, RuleMetaRegistry, RuleCapabilityRegistry (rule_engine/)"
-        - "BaselineProfile.revision — optimistic concurrency token for draft/publish"
+        - "BaselineProfile.revision — optimistic concurrency token for baseline shared-state writes"
       protocols:
         - "IBaselineRepository (interfaces.py)"
         - "ITaskRepository (interfaces.py)"
@@ -88,6 +88,16 @@ architecture_summary:
       key_classes:
         - "ErrorCode, CheckToolBaseError hierarchy"
         - "RotatingFileHandler logger"
+
+occ_status:
+  mechanism: "revision-based optimistic concurrency control"
+  policy_doc: "docs/OCC_POLICY.md"
+  protected_write_paths:
+    - "POST /api/rules/draft/save (expected_revision)"
+    - "POST /api/rules/publish/{baseline_id} (expected_revision)"
+    - "DELETE /api/rules/draft/{baseline_id}?expected_revision=... (query param)"
+  exceptions:
+    - "POST /api/baselines/bootstrap-default — create-if-absent only; proven non-overwrite by tests"
 
 rule_externalization_status:
   completed_features:
