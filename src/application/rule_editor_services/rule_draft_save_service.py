@@ -27,6 +27,7 @@ class SaveDraftResult:
     success: bool
     saved_at: Optional[str] = None
     message: Optional[str] = None
+    new_revision: Optional[int] = None
 
 
 @dataclass
@@ -34,6 +35,7 @@ class LoadDraftResult:
     has_draft: bool
     draft_data: Optional[Dict[str, Any]] = None
     saved_at: Optional[str] = None
+    base_revision: Optional[int] = None
 
 
 class RuleDraftSaveService:
@@ -53,6 +55,7 @@ class RuleDraftSaveService:
         target_type: str,
         severity: str,
         params: Dict[str, Any],
+        expected_revision: int,
     ) -> SaveDraftResult:
         """
         Save a working draft to the baseline.
@@ -77,15 +80,20 @@ class RuleDraftSaveService:
         }
 
         baseline.working_draft = draft_data
-        self.repo.save(baseline)
+        self.repo.save(baseline, expected_revision=expected_revision)
 
         saved_at = draft_data["saved_at"]
         logger.info(f"Draft saved for baseline={baseline_id} rule_id={rule_id}")
 
+        # Re-fetch or get the updated revision after save
+        updated_baseline = self.repo.get_by_id(baseline_id)
+        new_rev = updated_baseline.revision if not isinstance(updated_baseline, dict) else updated_baseline.get("revision", 1)
+
         return SaveDraftResult(
             success=True,
             saved_at=saved_at,
-            message="Draft saved successfully"
+            message="Draft saved successfully",
+            new_revision=new_rev
         )
 
     def load_draft(self, baseline_id: str) -> LoadDraftResult:
@@ -104,7 +112,8 @@ class RuleDraftSaveService:
         return LoadDraftResult(
             has_draft=True,
             draft_data=draft,
-            saved_at=draft.get("saved_at")
+            saved_at=draft.get("saved_at"),
+            base_revision=baseline.get("revision", 1) if isinstance(baseline, dict) else getattr(baseline, "revision", 1)
         )
 
     def clear_draft(self, baseline_id: str) -> bool:

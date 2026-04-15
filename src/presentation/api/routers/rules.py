@@ -195,6 +195,7 @@ def save_draft(
         target_type=req.target_type,
         severity=req.severity,
         params=req.params,
+        expected_revision=req.expected_revision,
     )
     
     if not result.success:
@@ -207,6 +208,7 @@ def save_draft(
         success=result.success,
         saved_at=result.saved_at,
         message=result.message,
+        new_revision=result.new_revision,
     )
 
 
