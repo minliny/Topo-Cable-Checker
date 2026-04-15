@@ -7,7 +7,7 @@ Key fixes:
 3. Invalid drafts are BLOCKED from publishing — no bypass path
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import Dict, Any
 from src.presentation.api.dto_models import (
     ValidateRequestDTO, ValidationResultDTO, ValidationIssueDTO,
@@ -25,6 +25,7 @@ from src.application.rule_editor_services.rule_editor_mvp_service import (
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError
 from src.crosscutting.logging.logger import get_logger
 from src.crosscutting.errors.exceptions import DomainError, ErrorCode
+from src.crosscutting.observation.recorder import record_event
 
 logger = get_logger(__name__)
 
@@ -81,6 +82,7 @@ def validate_draft(req: ValidateRequestDTO):
 def publish_baseline(
     baseline_id: str,
     req: PublishRequestDTO,
+    request: Request,
     svc: BaselineService = Depends(get_baseline_service),
     hist_svc: RuleBaselineHistoryService = Depends(get_history_service)
 ):
@@ -136,6 +138,13 @@ def publish_baseline(
         f"Publish SUCCESS for baseline={baseline_id} version={summary.baseline_version} "
         f"rules={summary.published_rule_count}"
     )
+    record_event(
+        event_type="publish_executed",
+        baseline_id=baseline_id,
+        request_id=getattr(request.state, "request_id", None),
+        actor=request.headers.get("X-Actor"),
+        context={"version_id": summary.baseline_version, "rule_id": draft.rule_id},
+    )
 
     return PublishResultDTO(
         success=True,
@@ -180,6 +189,7 @@ def restore_historical_version_to_draft(
 @router.post("/draft/save", response_model=SaveDraftResultDTO)
 def save_draft(
     req: SaveDraftRequestDTO,
+    request: Request,
     svc: RuleDraftSaveService = Depends(get_draft_save_service)
 ):
     """
@@ -189,6 +199,11 @@ def save_draft(
     This allows users to save work-in-progress.
     Invalid drafts are still blocked from publishing by the Publish Validation Gate.
     """
+    prev = svc.load_draft(req.baseline_id)
+    prev_rule_id = None
+    if prev.has_draft and prev.draft_data:
+        prev_rule_id = prev.draft_data.get("rule_id")
+
     result = svc.save_draft(
         baseline_id=req.baseline_id,
         rule_id=req.rule_id,
@@ -203,6 +218,22 @@ def save_draft(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=result.message or "Baseline not found"
+        )
+
+    record_event(
+        event_type="draft_saved",
+        baseline_id=req.baseline_id,
+        request_id=getattr(request.state, "request_id", None),
+        actor=request.headers.get("X-Actor"),
+        context={"rule_id": req.rule_id, "rule_type": req.rule_type},
+    )
+    if prev_rule_id and prev_rule_id != req.rule_id:
+        record_event(
+            event_type="draft_overwritten",
+            baseline_id=req.baseline_id,
+            request_id=getattr(request.state, "request_id", None),
+            actor=request.headers.get("X-Actor"),
+            context={"prev_rule_id": prev_rule_id, "rule_id": req.rule_id},
         )
     
     return SaveDraftResultDTO(
@@ -238,6 +269,7 @@ def load_draft(
 def clear_draft(
     baseline_id: str,
     expected_revision: int,
+    request: Request,
     svc: RuleDraftSaveService = Depends(get_draft_save_service)
 ):
     new_rev = svc.clear_draft(baseline_id, expected_revision=expected_revision)
@@ -246,4 +278,11 @@ def clear_draft(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Baseline {baseline_id} not found"
         )
+    record_event(
+        event_type="clear_draft",
+        baseline_id=baseline_id,
+        request_id=getattr(request.state, "request_id", None),
+        actor=request.headers.get("X-Actor"),
+        context={"new_revision": new_rev},
+    )
     return {"success": True, "message": "Draft cleared", "new_revision": new_rev}

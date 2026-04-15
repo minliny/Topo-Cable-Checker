@@ -24,6 +24,7 @@ from src.crosscutting.errors.exceptions import (
     ValidationError, ErrorCode, ConcurrencyError
 )
 from src.crosscutting.logging.logger import get_logger
+from src.crosscutting.observation.recorder import record_event
 
 logger = get_logger(__name__)
 
@@ -58,6 +59,7 @@ def register_error_handlers(app: FastAPI):
     @app.exception_handler(CheckToolBaseError)
     async def checktool_error_handler(request: Request, exc: CheckToolBaseError):
         request_id = getattr(request.state, "request_id", _generate_request_id())
+        actor = request.headers.get("X-Actor")
         
         # Inject request_id into the exception if not already set
         if not exc.request_id:
@@ -69,6 +71,13 @@ def register_error_handlers(app: FastAPI):
             status_code = 422
         elif isinstance(exc, ConcurrencyError):
             status_code = 409
+            record_event(
+                event_type="occ_conflict",
+                baseline_id=_try_extract_baseline_id(request.url.path),
+                request_id=request_id,
+                actor=actor,
+                context={"path": request.url.path, "method": request.method},
+            )
         elif isinstance(exc, PersistenceCorruptionError):
             status_code = 503  # Service unavailable - data corrupted
         elif isinstance(exc, PersistenceRecoveryError):
@@ -146,3 +155,18 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         )
 
         return response
+
+
+def _try_extract_baseline_id(path: str) -> Optional[str]:
+    try:
+        parts = [p for p in path.split("/") if p]
+        if len(parts) >= 4 and parts[0] == "api" and parts[1] == "rules":
+            if parts[2] == "publish":
+                return parts[3]
+            if parts[2] == "draft":
+                return parts[3]
+        if len(parts) >= 3 and parts[0] == "api" and parts[1] == "baselines":
+            return parts[2]
+        return None
+    except Exception:
+        return None

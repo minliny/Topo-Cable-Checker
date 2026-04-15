@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List
 import json
 from src.presentation.api.dto_models import BaselineNodeDTO, VersionMetaDTO, DiffSourceTargetDTO, RollbackEffectDiffDTO, BaselineVersionRuleSetDTO
 from src.presentation.api.dependencies import get_baseline_service, get_history_service
 from src.application.baseline_services.baseline_service import BaselineService
 from src.application.rule_editor_services.rule_baseline_history_service import RuleBaselineHistoryService
+from src.crosscutting.observation.recorder import record_event
 
 router = APIRouter()
 
@@ -128,6 +129,7 @@ def get_baseline_diff(
     baseline_id: str, 
     source: str = "draft", 
     target: str = "previous_version",
+    request: Request = None,
     hist_svc: RuleBaselineHistoryService = Depends(get_history_service),
     svc: BaselineService = Depends(get_baseline_service)
 ):
@@ -151,6 +153,15 @@ def get_baseline_diff(
     
     if not diff_view:
         raise HTTPException(status_code=404, detail="Could not compute diff for versions")
+
+    if source == "draft":
+        record_event(
+            event_type="draft_diff_viewed",
+            baseline_id=baseline_id,
+            request_id=getattr(getattr(request, "state", None), "request_id", None) if request else None,
+            actor=request.headers.get("X-Actor") if request else None,
+            context={"target": actual_target},
+        )
 
     # Map the Domain DiffView to our API DTO
     rules = []

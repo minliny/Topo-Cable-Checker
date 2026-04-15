@@ -30,6 +30,7 @@ logs/
 
 # Data backups (runtime generated)
 data/backups/
+data/observations/
 
 # Test / temp artifacts
 .pytest_cache/
