@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Tree, Spin, Typography } from 'antd';
-import { Database, GitBranch, Edit3, Archive, History } from 'lucide-react';
+import { Tree, Spin, Typography, Button, Empty } from 'antd';
+import { Database, GitBranch, Edit3, Archive, History, Plus } from 'lucide-react';
 import { BaselineNodeDTO } from '../types/dto';
 import { BaselineTreeNode, BaselineNodeType } from '../types/ui';
 import type { DataNode } from 'antd/es/tree';
@@ -11,6 +11,7 @@ interface BaselineListProps {
   selectedKey?: string;
   selectedNodeType?: BaselineNodeType;
   onSelect: (node: BaselineTreeNode) => void;
+  onBootstrap?: () => void;
 }
 
 const BaselineList: React.FC<BaselineListProps> = ({ 
@@ -18,7 +19,8 @@ const BaselineList: React.FC<BaselineListProps> = ({
   loading, 
   selectedKey, 
   selectedNodeType,
-  onSelect 
+  onSelect,
+  onBootstrap
 }) => {
   
   // Transform flat baselines array into tree data
@@ -111,6 +113,23 @@ const BaselineList: React.FC<BaselineListProps> = ({
       {loading ? (
         <div className="flex justify-center items-center flex-1">
           <Spin />
+        </div>
+      ) : treeData.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
+          <Empty 
+            description={<span className="text-gray-500">No baselines found</span>}
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+          {onBootstrap && (
+            <Button 
+              type="primary" 
+              icon={<Plus size={16} className="mr-1 inline-block align-text-bottom" />}
+              onClick={onBootstrap}
+              className="mt-4 flex items-center justify-center"
+            >
+              Initialize Default
+            </Button>
+          )}
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto custom-scrollbar">

@@ -21,8 +21,8 @@ Also covers:
 
 import pytest
 from src.domain.executors.threshold_executor import ThresholdExecutor
-from src.domain.rule_engine.compiled_rule import CompiledRule
-from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
+
 from src.domain.fact_model import DeviceFact
 from src.domain.result_model import IssueItem
 
@@ -48,27 +48,19 @@ def _make_compiled_rule(rule_id: str, operator: str, expected_value=None,
     return CompiledRule(
         rule_id=rule_id,
         rule_type="template",
-        executor={"type": "threshold"},
-        target={"type": target_type, "filter": None},
-        message={"template": f"Rule {rule_id} threshold check"},
-        severity=severity,
-        params=params,
-        operator=operator,
-        metric_type=metric_type,
-        **({"expected_value": expected_value} if expected_value is not None else {}),
-        **({"min_value": min_value} if min_value is not None else {}),
-        **({"max_value": max_value} if max_value is not None else {}),
-        **({"metric_field": metric_field} if metric_field else {}),
-        **({"threshold_key": threshold_key} if threshold_key else {}),
+        executor="threshold",
+        target=RuleTarget(type=target_type),
+        message=RuleMessage(template=f"Rule {rule_id} threshold check", severity=severity),
+        params=params
     )
 
 
-def _make_context(threshold_profile=None, parameter_profile=None) -> ExecutionContext:
-    return ExecutionContext(
-        parameter_profile=parameter_profile or {},
-        threshold_profile=threshold_profile or {},
-        runtime_flags={},
-    )
+def _make_context(threshold_profile=None, parameter_profile=None):
+    return {
+        "parameter_profile": parameter_profile or {},
+        "threshold_profile": threshold_profile or {},
+        "runtime_flags": {},
+    }
 
 
 def _make_devices(count: int, device_type: str = "Switch") -> list:
@@ -296,12 +288,10 @@ class TestThresholdEq:
         compiled = CompiledRule(
             rule_id="default_eq_rule",
             rule_type="template",
-            executor={"type": "threshold"},
-            target={"type": "devices", "filter": None},
-            message={"template": "Default eq test"},
-            severity="warning",
-            params={"metric_type": "count", "expected_value": 5},
-            expected_value=5,
+            executor="threshold",
+            target=RuleTarget(type="devices"),
+            message=RuleMessage(template="Default eq test", severity="warning"),
+            params={"metric_type": "count", "expected_value": 5}
         )
         result = executor.execute("default_eq_rule", compiled, {"devices": devices}, _make_context())
         assert len(result) == 0

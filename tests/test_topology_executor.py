@@ -14,8 +14,8 @@ Covers:
 
 import pytest
 from src.domain.executors.topology_executor import TopologyExecutor
-from src.domain.rule_engine.compiled_rule import CompiledRule
-from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
+
 from src.domain.fact_model import DeviceFact, LinkFact, NormalizedDataset
 from src.domain.result_model import IssueItem
 
@@ -27,18 +27,15 @@ def _make_compiled_rule(rule_id: str, rule_subtype: str, params: dict = None,
     return CompiledRule(
         rule_id=rule_id,
         rule_type="template",
-        executor={"type": "topology"},
-        target={"type": target_type, "filter": None},
-        message={"template": f"Rule {rule_id} failed"},
-        severity=severity,
-        params={"type": rule_subtype, **extra_params},
-        type=rule_subtype,
-        **extra_params
+        executor="topology",
+        target=RuleTarget(type=target_type),
+        message=RuleMessage(template=f"Rule {rule_id} failed", severity=severity),
+        params={"type": rule_subtype, **extra_params}
     )
 
 
-def _make_context() -> ExecutionContext:
-    return ExecutionContext(parameter_profile={}, threshold_profile={}, runtime_flags={})
+def _make_context():
+    return {}
 
 
 class TestTopologyExecutorDuplicateLink:

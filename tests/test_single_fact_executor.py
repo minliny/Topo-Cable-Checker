@@ -17,8 +17,8 @@ Also covers:
 
 import pytest
 from src.domain.executors.single_fact_executor import SingleFactExecutor
-from src.domain.rule_engine.compiled_rule import CompiledRule
-from src.domain.rule_engine.execution_context import ExecutionContext
+from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
+
 from src.domain.fact_model import DeviceFact, PortFact
 from src.domain.result_model import IssueItem
 
@@ -34,19 +34,15 @@ def _make_compiled_rule(rule_id: str, subtype: str, field: str,
     return CompiledRule(
         rule_id=rule_id,
         rule_type="template",
-        executor={"type": "single_fact"},
-        target={"type": target_type, "filter": None},
-        message={"template": f"Rule {rule_id} single_fact check"},
-        severity=severity,
+        executor="single_fact",
+        target=RuleTarget(type=target_type),
+        message=RuleMessage(template=f"Rule {rule_id} single_fact check", severity=severity),
         params=params,
-        type=subtype,
-        field=field,
-        **({"expected": expected} if expected is not None else {}),
     )
 
 
-def _make_context() -> ExecutionContext:
-    return ExecutionContext(parameter_profile={}, threshold_profile={}, runtime_flags={})
+def _make_context(runtime_flags=None):
+    return {"runtime_flags": runtime_flags or {}}
 
 
 # ==========================================

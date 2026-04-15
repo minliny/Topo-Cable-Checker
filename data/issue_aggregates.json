@@ -1,0 +1,149 @@
+{
+  "9961a1fc-3bcc-4c0b-bd52-a8ba2d796c03": {
+    "run_id": "9961a1fc-3bcc-4c0b-bd52-a8ba2d796c03",
+    "issues": [
+      {
+        "issue_id": "558be5af-5bd7-49c0-aa99-f445a4f07249",
+        "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
+        "evidence": {
+          "sheet_type": "device",
+          "conflicting_sheets": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "expected": "1 sheet per type",
+        "actual": "2 sheets",
+        "details": {
+          "sheet_names": [
+            "device",
+            "device_dup"
+          ]
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "sheet_conflict",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "c222fd91-58d5-4b4c-af07-c8e1a03e8d09",
+        "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
+        "evidence": {
+          "sheet": "ports",
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "expected": "All headers mapped",
+        "actual": "1 unmapped headers",
+        "details": {
+          "unmapped_headers": [
+            "Extra Column"
+          ]
+        },
+        "source_row": 0,
+        "severity": "warning",
+        "category": "unmapped_header",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "523970ea-edda-40ff-adea-6c30fbcd8549",
+        "message": "Missing required sheet type 'link'.",
+        "evidence": {
+          "missing_sheet": "link"
+        },
+        "expected": "Sheet matching ['link', 'links', '\u94fe\u8def', '\u8fde\u63a5']",
+        "actual": null,
+        "details": {},
+        "source_row": 0,
+        "severity": "high",
+        "category": "missing_sheet",
+        "stage": "recognition"
+      },
+      {
+        "issue_id": "c750eb8b-3d33-4035-a8ad-c6ffacad6d16",
+        "message": "",
+        "evidence": {
+          "rule_id": "R2_threshold_count",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "critical",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "2d4e7437-1bff-4cd5-9828-e33792e6285b",
+        "message": "",
+        "evidence": {
+          "rule_id": "R3_threshold_distinct",
+          "metric_key": "devices.distinct_count",
+          "metric_field": "device_type",
+          "actual_value": 0,
+          "compare_operator": "gte",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_value": "3"
+        },
+        "expected": "3",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      },
+      {
+        "issue_id": "15288875-65d5-4656-9379-2d169fca9085",
+        "message": "",
+        "evidence": {
+          "rule_id": "test_threshold_rule",
+          "metric_key": "devices.count",
+          "metric_field": null,
+          "actual_value": 0,
+          "compare_operator": "between",
+          "scope": {},
+          "threshold_source": "threshold_profile",
+          "expected_range": "[5, 10]"
+        },
+        "expected": "[5, 10]",
+        "actual": 0,
+        "details": {
+          "target_type": "devices"
+        },
+        "source_row": 0,
+        "severity": "error",
+        "category": "threshold_check",
+        "stage": "engine"
+      }
+    ],
+    "by_device": {
+      "Unknown": 6
+    },
+    "by_rule": {
+      "Unknown": 3,
+      "R2_threshold_count": 1,
+      "R3_threshold_distinct": 1,
+      "test_threshold_rule": 1
+    },
+    "by_severity": {
+      "critical": 2,
+      "warning": 1,
+      "high": 1,
+      "error": 2
+    }
+  }
+}

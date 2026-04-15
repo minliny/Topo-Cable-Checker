@@ -128,6 +128,26 @@ function App() {
   };
 
   // Left Nav Tree Selection (With Dirty Guard)
+  const handleBootstrapDefault = async () => {
+    try {
+      setLoadingBaselines(true);
+      await rulesApi.bootstrapDefaultBaseline();
+      message.success('Default baseline initialized successfully');
+      
+      const data = await rulesApi.getBaselines();
+      const baselinesList = Array.isArray(data) ? data : (data as any)?.baselines || [];
+      setBaselines(baselinesList);
+      if (baselinesList.length > 0) {
+        switchNavContext(baselinesList[0].id, 'draft', 'working_draft');
+      }
+    } catch (error) {
+      console.error('Failed to initialize baseline', error);
+      message.error('Failed to initialize baseline');
+    } finally {
+      setLoadingBaselines(false);
+    }
+  };
+
   const handleNavSelect = (node: BaselineTreeNode) => {
     const isSameContext = node.baselineId === pageState.selectedBaselineId && node.versionId === pageState.selectedVersionId;
     if (isSameContext) return;
@@ -444,6 +464,7 @@ function App() {
               selectedKey={pageState.selectedVersionId ? `${pageState.selectedBaselineId}-${pageState.selectedVersionId}` : undefined}
               selectedNodeType={pageState.selectedNodeType}
               onSelect={handleNavSelect}
+              onBootstrap={handleBootstrapDefault}
             />
           </div>
 

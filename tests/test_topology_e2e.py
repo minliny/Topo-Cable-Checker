@@ -75,23 +75,19 @@ class TestTopologyEndToEnd:
 
         # Build a compiled rule manually that will trigger the topology_assertion path
         from src.domain.executors.topology_executor import TopologyExecutor
-        from src.domain.rule_engine.compiled_rule import CompiledRule
-        from src.domain.rule_engine.execution_context import ExecutionContext
+        from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
 
         compiled = CompiledRule(
             rule_id="self_loop_check",
             rule_type="template",
-            executor={"type": "topology"},
-            target={"type": "links", "filter": None},
-            message={"template": "Self-loop detected"},
-            severity="critical",
-            params={"assertion_type": "self_loop"},
-            type="topology_assertion",
-            assertion_type="self_loop"
+            executor="topology",
+            target=RuleTarget(type="links"),
+            message=RuleMessage(template="Self-loop detected", severity="critical"),
+            params={"type": "topology_assertion", "assertion_type": "self_loop"}
         )
 
         executor = TopologyExecutor()
-        context = ExecutionContext(parameter_profile={}, threshold_profile={}, runtime_flags={})
+        context = {"parameter_profile": {}, "threshold_profile": {}, "runtime_flags": {}}
         issues = executor.execute("self_loop_check", compiled, {"links": dataset.links, "devices": []}, context)
 
         # PROOF: topology_assertion now actually executes and finds the self-loop
@@ -105,8 +101,7 @@ class TestTopologyEndToEnd:
         This was also broken due to the same `rule_def` NameError.
         """
         from src.domain.executors.topology_executor import TopologyExecutor
-        from src.domain.rule_engine.compiled_rule import CompiledRule
-        from src.domain.rule_engine.execution_context import ExecutionContext
+        from src.domain.compiled_rule_schema import CompiledRule, RuleTarget, RuleMessage
 
         executor = TopologyExecutor()
         dataset = NormalizedDataset(
@@ -122,16 +117,13 @@ class TestTopologyEndToEnd:
         compiled = CompiledRule(
             rule_id="isolated_check",
             rule_type="template",
-            executor={"type": "topology"},
-            target={"type": "devices", "filter": None},
-            message={"template": "Isolated device detected"},
-            severity="high",
-            params={"assertion_type": "isolated_device"},
-            type="topology_assertion",
-            assertion_type="isolated_device"
+            executor="topology",
+            target=RuleTarget(type="devices"),
+            message=RuleMessage(template="Rule isolated_check failed", severity="high"),
+            params={"type": "topology_assertion", "assertion_type": "isolated_device"}
         )
 
-        context = ExecutionContext(parameter_profile={}, threshold_profile={}, runtime_flags={})
+        context = {"parameter_profile": {}, "threshold_profile": {}, "runtime_flags": {}}
         issues = executor.execute("isolated_check", compiled, 
                                   {"links": dataset.links, "devices": dataset.devices}, context)
 

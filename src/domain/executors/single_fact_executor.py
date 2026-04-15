@@ -18,7 +18,7 @@ class SingleFactExecutor(RuleExecutor):
         
         rule_id = compiled_rule.rule_id
         target = compiled_rule.target
-        target_type = target.type if hasattr(target, "type") else target.get("type")
+        target_type = target.type
 
         params = compiled_rule.params or {}
         target_field = params.get("field")
@@ -26,8 +26,8 @@ class SingleFactExecutor(RuleExecutor):
         expected_val = params.get("expected")
 
         msg = compiled_rule.message
-        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
-        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
+        severity = msg.severity
+        msg_template = msg.template
         
         target_list = dataset.get(target_type, [])
             

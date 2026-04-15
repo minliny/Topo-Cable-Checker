@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
-from src.domain.rule_engine.compiled_rule import RuleValidationError
+
+class RuleValidationError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
 
 @dataclass
 class RuleTarget:

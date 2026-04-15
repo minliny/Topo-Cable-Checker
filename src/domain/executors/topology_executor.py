@@ -18,13 +18,12 @@ class TopologyExecutor(RuleExecutor):
             raise TypeError("execute() expects (compiled_rule, dataset, context) or (rule_id, compiled_rule, dataset, context)")
         rule_id = compiled_rule.rule_id
         params = compiled_rule.params or {}
-        extra_type = compiled_rule.get("type") if hasattr(compiled_rule, "get") else None
-        rule_subtype = params.get("type") or extra_type or getattr(compiled_rule, "type", None) or compiled_rule.rule_type
+        rule_subtype = params.get("type") or compiled_rule.rule_type
 
         msg = compiled_rule.message
-        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
-        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
-        use_template_verbatim = hasattr(msg, "template") and bool(msg_template)
+        severity = msg.severity
+        msg_template = msg.template
+        use_template_verbatim = bool(msg_template) and not msg_template.startswith("Rule ")
         issues = []
         
         links = dataset.get("links", [])

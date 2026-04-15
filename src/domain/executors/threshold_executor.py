@@ -17,17 +17,14 @@ class ThresholdExecutor(RuleExecutor):
         
         rule_id = compiled_rule.rule_id
         target = compiled_rule.target
-        target_type = target.type if hasattr(target, "type") else target.get("type")
+        target_type = target.type
 
         params = compiled_rule.params or {}
         metric_type = params.get("metric_type", "count")
         metric_field = params.get("metric_field")
-        
-        if hasattr(context, "threshold_profile"):
-            threshold_profile = context.threshold_profile or {}
-        else:
-            threshold_profile = context.get("threshold_profile", {})
-        
+
+        threshold_profile = context.get("threshold_profile", {})
+
         # Read threshold definitions
         thresh_key = params.get("threshold_key")
         if thresh_key and thresh_key in threshold_profile:
@@ -41,10 +38,10 @@ class ThresholdExecutor(RuleExecutor):
             expected_val = params.get("expected_value", params.get("expected"))
             min_val = params.get("min_value")
             max_val = params.get("max_value")
-            
+
         msg = compiled_rule.message
-        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
-        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
+        severity = msg.severity
+        msg_template = msg.template
         target_list = dataset.get(target_type, [])
         
         # 1. Calculate metric

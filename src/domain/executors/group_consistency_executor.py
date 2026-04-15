@@ -17,7 +17,7 @@ class GroupConsistencyExecutor(RuleExecutor):
         
         rule_id = compiled_rule.rule_id
         target = compiled_rule.target
-        target_type = target.type if hasattr(target, "type") else target.get("type")
+        target_type = target.type
 
         # Resolve parameters either from rule_def or parameter_profile
         params = compiled_rule.params or {}
@@ -32,8 +32,8 @@ class GroupConsistencyExecutor(RuleExecutor):
             comparison_field = params.get("comparison_field")
             
         msg = compiled_rule.message
-        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
-        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
+        severity = msg.severity
+        msg_template = msg.template
 
         if not group_key_field or not comparison_field:
             msg = f"Rule {rule_id} (group_consistency) execution_error: missing required config (group_key/comparison_field)."

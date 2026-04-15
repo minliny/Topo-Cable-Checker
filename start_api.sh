@@ -7,7 +7,7 @@ echo "=============================================="
 
 # 1. Install dependencies if not already installed
 echo "[1/3] Checking dependencies..."
-pip install fastapi uvicorn pydantic pytest httpx
+pip install -r requirements.txt
 
 # 2. Run minimal regression tests
 echo "[2/3] Running API integration tests..."

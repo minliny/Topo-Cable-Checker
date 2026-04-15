@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError
-from src.domain.rule_engine.compiled_rule import RuleValidationError
+from src.domain.compiled_rule_schema import RuleValidationError
 
 @dataclass
 class RuleDraftGovernanceError:

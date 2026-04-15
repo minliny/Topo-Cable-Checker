@@ -1,6 +1,6 @@
 import pytest
 from src.domain.rule_compiler import RuleCompiler, RuleCompileError
-from src.domain.rule_engine.compiled_rule import CompiledRule, RuleValidationError
+from src.domain.compiled_rule_schema import CompiledRule, RuleValidationError, RuleTarget, RuleMessage
 from src.domain.rule_engine.parameter_schema_registry import ParameterSchemaRegistry
 from src.domain.rule_engine.rule_meta_registry import RuleMetaRegistry, RuleMeta
 from src.domain.rule_engine.rule_capability_registry import RuleCapabilityRegistry, RuleCapability
@@ -13,41 +13,41 @@ def test_compiled_rule_validation():
     rule = CompiledRule(
         rule_id="r1",
         rule_type="dsl",
-        executor={"type": "single_fact"},
-        target={"type": "devices", "filter": {"device_type": "Switch"}},
-        message={"template": "Error occurred"}
+        executor="single_fact",
+        target=RuleTarget(type="devices", filter={"device_type": "Switch"}),
+        message=RuleMessage(template="Error occurred", severity="medium")
     )
     rule.validate()  # Should not raise
     
     # 2. Missing rule_id
     with pytest.raises(RuleValidationError, match="rule_id is required"):
         rule_invalid = CompiledRule(
-            rule_id="", rule_type="dsl", executor={"type": "single_fact"},
-            target={"type": "devices"}, message={"template": "Error"}
+            rule_id="", rule_type="dsl", executor="single_fact",
+            target=RuleTarget(type="devices"), message=RuleMessage(template="Error", severity="medium")
         )
         rule_invalid.validate()
         
     # 3. Invalid executor type
-    with pytest.raises(RuleValidationError, match="Invalid executor.type: unknown"):
+    with pytest.raises(RuleValidationError, match="Invalid executor: unknown"):
         rule_invalid = CompiledRule(
-            rule_id="r1", rule_type="dsl", executor={"type": "unknown"},
-            target={"type": "devices"}, message={"template": "Error"}
+            rule_id="r1", rule_type="dsl", executor="unknown",
+            target=RuleTarget(type="devices"), message=RuleMessage(template="Error", severity="medium")
         )
         rule_invalid.validate()
 
     # 4. Invalid target type
-    with pytest.raises(RuleValidationError, match="Invalid target.type: people"):
+    with pytest.raises(RuleValidationError, match="Invalid target type: people"):
         rule_invalid = CompiledRule(
-            rule_id="r1", rule_type="dsl", executor={"type": "single_fact"},
-            target={"type": "people"}, message={"template": "Error"}
+            rule_id="r1", rule_type="dsl", executor="single_fact",
+            target=RuleTarget(type="people"), message=RuleMessage(template="Error", severity="medium")
         )
         rule_invalid.validate()
         
-    # 5. Invalid target.filter (function)
-    with pytest.raises(RuleValidationError, match="target.filter cannot be a function"):
+    # 5. Invalid target.filter (not dict)
+    with pytest.raises(RuleValidationError, match="target.filter must be a dict"):
         rule_invalid = CompiledRule(
-            rule_id="r1", rule_type="dsl", executor={"type": "single_fact"},
-            target={"type": "devices", "filter": lambda x: x}, message={"template": "Error"}
+            rule_id="r1", rule_type="dsl", executor="single_fact",
+            target=RuleTarget(type="devices", filter=lambda x: x), message=RuleMessage(template="Error", severity="medium")
         )
         rule_invalid.validate()
 

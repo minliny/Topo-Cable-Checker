@@ -52,6 +52,10 @@ export const rulesApi = {
     return normalizeBaselineTreeResponse(raw);
   },
 
+  bootstrapDefaultBaseline: async (): Promise<void> => {
+    await apiClient.post('/baselines/bootstrap-default');
+  },
+
   // Get version meta (Not fully used in mock UI yet, but prepped for real API)
   getVersionMeta: async (baselineId: string, versionId: string): Promise<VersionMetaDTO> => {
     const raw = await apiClient.get(`/baselines/${baselineId}/versions/${versionId}`);
