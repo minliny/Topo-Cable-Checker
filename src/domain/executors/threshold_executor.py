@@ -6,18 +6,30 @@ from src.crosscutting.ids.generator import generate_id
 import dataclasses
 
 class ThresholdExecutor(RuleExecutor):
-    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, *args) -> List[IssueItem]:
+        if len(args) == 3:
+            compiled_rule, dataset, context = args
+        elif len(args) == 4:
+            _, compiled_rule, dataset, context = args
+        else:
+            raise TypeError("execute() expects (compiled_rule, dataset, context) or (rule_id, compiled_rule, dataset, context)")
         issues = []
         
         rule_id = compiled_rule.rule_id
-        target_type = compiled_rule.target.type
-        metric_type = compiled_rule.params.get("metric_type", "count") # count, distinct_count
-        metric_field = compiled_rule.params.get("metric_field")
+        target = compiled_rule.target
+        target_type = target.type if hasattr(target, "type") else target.get("type")
+
+        params = compiled_rule.params or {}
+        metric_type = params.get("metric_type", "count")
+        metric_field = params.get("metric_field")
         
-        threshold_profile = context.get("threshold_profile", {})
+        if hasattr(context, "threshold_profile"):
+            threshold_profile = context.threshold_profile or {}
+        else:
+            threshold_profile = context.get("threshold_profile", {})
         
         # Read threshold definitions
-        thresh_key = compiled_rule.params.get("threshold_key")
+        thresh_key = params.get("threshold_key")
         if thresh_key and thresh_key in threshold_profile:
             t_def = threshold_profile[thresh_key]
             compare_operator = t_def.get("operator", "eq")
@@ -25,12 +37,14 @@ class ThresholdExecutor(RuleExecutor):
             min_val = t_def.get("min_value")
             max_val = t_def.get("max_value")
         else:
-            compare_operator = compiled_rule.params.get("operator", "eq")
-            expected_val = compiled_rule.params.get("expected_value", compiled_rule.params.get("expected"))
-            min_val = compiled_rule.params.get("min_value")
-            max_val = compiled_rule.params.get("max_value")
+            compare_operator = params.get("operator", "eq")
+            expected_val = params.get("expected_value", params.get("expected"))
+            min_val = params.get("min_value")
+            max_val = params.get("max_value")
             
-        severity = compiled_rule.message.severity
+        msg = compiled_rule.message
+        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
+        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
         target_list = dataset.get(target_type, [])
         
         # 1. Calculate metric
@@ -76,13 +90,14 @@ class ThresholdExecutor(RuleExecutor):
             
         # 3. Report
         if is_failed:
+            scope = target.filter if hasattr(target, "filter") else target.get("filter")
             evidence = {
                 "rule_id": rule_id,
                 "metric_key": f"{target_type}.{metric_type}",
                 "metric_field": metric_field,
                 "actual_value": actual_value,
                 "compare_operator": compare_operator,
-                "scope": compiled_rule.target.filter,
+                "scope": scope,
                 "threshold_source": "threshold_profile" if thresh_key else "inline"
             }
             if compare_operator in ("between", "outside"):
@@ -90,7 +105,11 @@ class ThresholdExecutor(RuleExecutor):
             else:
                 evidence["expected_value"] = expected_repr
 
-            final_message = compiled_rule.message.template or f"Rule {rule_id} (threshold) failed: Metric '{metric_type}' on '{target_type}' is {actual_value}. {message}."
+            if hasattr(msg, "template"):
+                final_message = msg_template
+            else:
+                prefix = (msg_template + " ") if msg_template else ""
+                final_message = f"{prefix}Rule {rule_id} (threshold) failed: Metric '{metric_type}' on '{target_type}' is {actual_value}. {message}."
 
             issues.append(IssueItem(
                 issue_id=generate_id(),

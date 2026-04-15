@@ -34,13 +34,19 @@ class TemplateRegistry:
         "threshold": {
             "target_executor": "threshold",
             "supported_params": ["metric_type", "metric_field", "threshold_key", "operator", "expected_value", "expected", "min_value", "max_value"],
-            "validation_rules": []
+            "validation_rules": [
+                lambda p: None if "metric_type" in p else "invalid_parameter_schema: metric_type is required",
+                lambda p: None if (p.get("metric_type") in ["count", "distinct_count"]) else "unknown_rule_capability: metric_type must be one of [count, distinct_count]",
+                lambda p: None if (p.get("metric_type") != "distinct_count" or p.get("metric_field")) else "invalid_parameter_schema: metric_field is required for distinct_count"
+            ]
         },
         "threshold_check": {
             "target_executor": "threshold",
             "supported_params": ["metric_type", "metric_field", "threshold_key"],
             "validation_rules": [
-                lambda p: None if "metric_type" in p else "missing_required_param: metric_type is required"
+                lambda p: None if "metric_type" in p else "missing_required_param: metric_type is required",
+                lambda p: None if (p.get("metric_type") in ["count", "distinct_count"]) else "unknown_rule_capability: metric_type must be one of [count, distinct_count]",
+                lambda p: None if (p.get("metric_type") != "distinct_count" or p.get("metric_field")) else "missing_required_param: metric_field is required for distinct_count"
             ]
         },
         "single_fact": {
@@ -203,10 +209,16 @@ class RuleCompiler:
                 raise RuleCompileError(rule_id, "unknown_template", f"Template '{template_name}' not found in registry")
             elif validation_error.startswith("missing_required_param"):
                 raise RuleCompileError(rule_id, "missing_required_param", validation_error)
+            elif validation_error.startswith("invalid_parameter_schema"):
+                raise RuleCompileError(rule_id, "invalid_parameter_schema", validation_error)
+            elif validation_error.startswith("unknown_rule_capability"):
+                raise RuleCompileError(rule_id, "unknown_rule_capability", validation_error)
             else:
                 raise RuleCompileError(rule_id, "invalid_dsl_expression", validation_error)
                 
         template_info = TemplateRegistry.get_template(template_name)
+        if template_info["target_executor"] not in ["single_fact", "group_consistency", "topology", "threshold"]:
+            raise RuleCompileError(rule_id, "unknown_rule_meta", f"Unknown target executor: {template_info['target_executor']}")
         
         scope_selector = rule_def.get("scope_selector", {"target_type": rule_def.get("target_type", "devices")})
         target_type = scope_selector.pop("target_type", "devices")
@@ -218,10 +230,14 @@ class RuleCompiler:
                 compiled_params[p] = params[p]
                 
         msg_template = rule_def.get("message_template") or rule_def.get("error_message") or ""
-                
+
+        compiled_rule_type = template_name
+        if template_name == "single_fact":
+            compiled_rule_type = compiled_params.get("type", "field_equals")
+
         return CompiledRule(
             rule_id=rule_id,
-            rule_type=template_name,
+            rule_type=compiled_rule_type,
             target=target,
             executor=template_info["target_executor"],
             params=compiled_params,

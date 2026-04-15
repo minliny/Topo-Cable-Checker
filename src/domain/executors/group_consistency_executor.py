@@ -6,24 +6,34 @@ from src.crosscutting.ids.generator import generate_id
 import dataclasses
 
 class GroupConsistencyExecutor(RuleExecutor):
-    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, *args) -> List[IssueItem]:
+        if len(args) == 3:
+            compiled_rule, dataset, context = args
+        elif len(args) == 4:
+            _, compiled_rule, dataset, context = args
+        else:
+            raise TypeError("execute() expects (compiled_rule, dataset, context) or (rule_id, compiled_rule, dataset, context)")
         issues = []
         
         rule_id = compiled_rule.rule_id
-        target_type = compiled_rule.target.type
+        target = compiled_rule.target
+        target_type = target.type if hasattr(target, "type") else target.get("type")
 
         # Resolve parameters either from rule_def or parameter_profile
-        param_key = compiled_rule.params.get("parameter_key")
+        params = compiled_rule.params or {}
+        param_key = params.get("parameter_key")
         parameter_profile = context.get("parameter_profile", {})
         
         if param_key and param_key in parameter_profile:
             group_key_field = parameter_profile[param_key].get("group_key")
             comparison_field = parameter_profile[param_key].get("comparison_field")
         else:
-            group_key_field = compiled_rule.params.get("group_key")
-            comparison_field = compiled_rule.params.get("comparison_field")
+            group_key_field = params.get("group_key")
+            comparison_field = params.get("comparison_field")
             
-        severity = compiled_rule.message.severity
+        msg = compiled_rule.message
+        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
+        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
 
         if not group_key_field or not comparison_field:
             msg = f"Rule {rule_id} (group_consistency) execution_error: missing required config (group_key/comparison_field)."
@@ -79,7 +89,7 @@ class GroupConsistencyExecutor(RuleExecutor):
             for i, item in items:
                 actual_val = getattr(item, comparison_field, None)
                 if actual_val != dominant_val:
-                    msg = compiled_rule.message.template or f"Rule {rule_id} (group_consistency) failed: Group '{g_key}' has inconsistent '{comparison_field}'. Expected '{dominant_val}', got '{actual_val}'."
+                    msg = msg_template or f"Rule {rule_id} (group_consistency) failed: Group '{g_key}' has inconsistent '{comparison_field}'. Expected '{dominant_val}', got '{actual_val}'."
                     issues.append(IssueItem(
                         issue_id=generate_id(),
                         message=msg,

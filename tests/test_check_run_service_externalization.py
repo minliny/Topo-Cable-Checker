@@ -50,8 +50,7 @@ def setup_task_and_data():
     task_svc = TaskService()
     rec_svc = RecognitionService()
     
-    baselines = baseline_svc.list_baselines()
-    baseline_id = baselines[0].baseline_id
+    baseline_id = baseline_svc.bootstrap_default_baseline().baseline_id
     task_id = task_svc.create_task(baseline_id, filepath)
     
     rec_svc.recognize_data(task_id)

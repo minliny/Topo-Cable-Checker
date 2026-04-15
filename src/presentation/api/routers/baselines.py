@@ -8,6 +8,19 @@ from src.application.rule_editor_services.rule_baseline_history_service import R
 
 router = APIRouter()
 
+@router.post("/bootstrap-default", response_model=BaselineNodeDTO)
+def bootstrap_default_baseline(
+    svc: BaselineService = Depends(get_baseline_service),
+):
+    profile = svc.bootstrap_default_baseline()
+    return BaselineNodeDTO(
+        id=profile.baseline_id,
+        type="baseline_root",
+        name=f"Baseline {profile.baseline_id}",
+        baseline_id=profile.baseline_id,
+        version_id="root"
+    )
+
 @router.get("", response_model=List[BaselineNodeDTO])
 def get_baselines(
     svc: BaselineService = Depends(get_baseline_service),

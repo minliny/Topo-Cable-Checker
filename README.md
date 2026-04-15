@@ -83,7 +83,7 @@ docs/            文档（架构 / 验收 / 路线图）
 后端：
 
 ```bash
-pip install fastapi uvicorn pydantic pytest httpx
+pip install -r requirements.txt
 uvicorn src.presentation.api.main:app --reload
 ```
 
@@ -92,7 +92,14 @@ uvicorn src.presentation.api.main:app --reload
 ```bash
 cd frontend
 npm install
+npm run check
 VITE_USE_MOCK_API=false VITE_API_BASE_URL=http://localhost:8000/api npm run dev
+```
+
+初始化默认 Baseline（仅在空数据目录时需要）：
+
+```bash
+python -m src.presentation.cli.main baseline bootstrap-default
 ```
 
 ---
@@ -117,6 +124,13 @@ VITE_USE_MOCK_API=false VITE_API_BASE_URL=http://localhost:8000/api npm run dev
 
 ```bash
 pytest -v
+```
+
+前端检查：
+
+```bash
+cd frontend
+npm run check
 ```
 
 手工验收：

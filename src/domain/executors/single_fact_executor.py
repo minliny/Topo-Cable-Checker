@@ -7,15 +7,27 @@ import dataclasses
 import re
 
 class SingleFactExecutor(RuleExecutor):
-    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, *args) -> List[IssueItem]:
+        if len(args) == 3:
+            compiled_rule, dataset, context = args
+        elif len(args) == 4:
+            _, compiled_rule, dataset, context = args
+        else:
+            raise TypeError("execute() expects (compiled_rule, dataset, context) or (rule_id, compiled_rule, dataset, context)")
         issues = []
         
         rule_id = compiled_rule.rule_id
-        target_type = compiled_rule.target.type
-        target_field = compiled_rule.params.get("field")
-        rule_subtype = compiled_rule.rule_type
-        expected_val = compiled_rule.params.get("expected")
-        severity = compiled_rule.message.severity
+        target = compiled_rule.target
+        target_type = target.type if hasattr(target, "type") else target.get("type")
+
+        params = compiled_rule.params or {}
+        target_field = params.get("field")
+        rule_subtype = params.get("type") or compiled_rule.rule_type
+        expected_val = params.get("expected")
+
+        msg = compiled_rule.message
+        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
+        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
         
         target_list = dataset.get(target_type, [])
             
@@ -23,23 +35,24 @@ class SingleFactExecutor(RuleExecutor):
             actual_val = getattr(item, target_field, None)
             is_failed = False
             message = ""
+            base = msg_template or f"Rule {rule_id} ({rule_subtype}) failed"
             
             if rule_subtype == "field_equals":
                 if actual_val != expected_val:
                     is_failed = True
-                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected '{expected_val}', got '{actual_val}'"
+                    message = msg_template if (msg_template and not msg_template.startswith("Rule ")) else f"{base} on {target_field}: Expected '{expected_val}', got '{actual_val}'"
             elif rule_subtype == "field_not_equals":
                 if actual_val == expected_val:
                     is_failed = True
-                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: Expected anything but '{expected_val}', got '{actual_val}'"
+                    message = msg_template if (msg_template and not msg_template.startswith("Rule ")) else f"{base} on {target_field}: Expected anything but '{expected_val}', got '{actual_val}'"
             elif rule_subtype == "regex_match":
                 if not actual_val or not re.match(str(expected_val), str(actual_val)):
                     is_failed = True
-                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed on {target_field}: '{actual_val}' does not match regex '{expected_val}'"
+                    message = msg_template if (msg_template and not msg_template.startswith("Rule ")) else f"{base} on {target_field}: '{actual_val}' does not match regex '{expected_val}'"
             elif rule_subtype == "missing_value":
                 if actual_val is None or str(actual_val).strip() == "":
                     is_failed = True
-                    message = compiled_rule.message.template or f"Rule {rule_id} ({rule_subtype}) failed: Required field '{target_field}' is missing or empty"
+                    message = msg_template if (msg_template and not msg_template.startswith("Rule ")) else f"{base}: Required field '{target_field}' is missing or empty"
             
             if is_failed:
                 issues.append(IssueItem(

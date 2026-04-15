@@ -35,9 +35,9 @@ def main():
     parser = argparse.ArgumentParser(prog="checktool", description="CheckTool CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # baseline list
+    # baseline list / bootstrap-default
     baseline_parser = subparsers.add_parser("baseline", help="Baseline management")
-    baseline_parser.add_argument("action", choices=["list"], help="Action to perform")
+    baseline_parser.add_argument("action", choices=["list", "bootstrap-default"], help="Action to perform")
 
     # task create
     task_parser = subparsers.add_parser("task", help="Task management")
@@ -104,10 +104,14 @@ def main():
         
         if args.command == "baseline":
             svc = services["baseline_service"]
-            res = svc.list_baselines()
-            print("Baselines:")
-            for b in res:
-                print(f" - {b.baseline_id} (version: {b.baseline_version})")
+            if args.action == "list":
+                res = svc.list_baselines()
+                print("Baselines:")
+                for b in res:
+                    print(f" - {b.baseline_id} (version: {b.baseline_version})")
+            elif args.action == "bootstrap-default":
+                b = svc.bootstrap_default_baseline()
+                print(f"Bootstrapped baseline: {b.baseline_id} (version: {b.baseline_version})")
 
         elif args.command == "task":
             svc = services["task_service"]

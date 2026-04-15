@@ -9,10 +9,22 @@ import dataclasses
 logger = get_logger(__name__)
 
 class TopologyExecutor(RuleExecutor):
-    def execute(self, compiled_rule: CompiledRule, dataset: Dict[str, List[Any]], context: Dict[str, Any]) -> List[IssueItem]:
+    def execute(self, *args) -> List[IssueItem]:
+        if len(args) == 3:
+            compiled_rule, dataset, context = args
+        elif len(args) == 4:
+            _, compiled_rule, dataset, context = args
+        else:
+            raise TypeError("execute() expects (compiled_rule, dataset, context) or (rule_id, compiled_rule, dataset, context)")
         rule_id = compiled_rule.rule_id
-        rule_subtype = compiled_rule.params.get("type") or compiled_rule.rule_type
-        severity = compiled_rule.message.severity
+        params = compiled_rule.params or {}
+        extra_type = compiled_rule.get("type") if hasattr(compiled_rule, "get") else None
+        rule_subtype = params.get("type") or extra_type or getattr(compiled_rule, "type", None) or compiled_rule.rule_type
+
+        msg = compiled_rule.message
+        severity = msg.severity if hasattr(msg, "severity") else (getattr(compiled_rule, "severity", None) or msg.get("severity", "medium"))
+        msg_template = msg.template if hasattr(msg, "template") else msg.get("template", "")
+        use_template_verbatim = hasattr(msg, "template") and bool(msg_template)
         issues = []
         
         links = dataset.get("links", [])
@@ -23,7 +35,11 @@ class TopologyExecutor(RuleExecutor):
             for i, link in enumerate(links):
                 key = f"{link.src_device}:{link.src_port}->{link.dst_device}:{link.dst_port}"
                 if key in seen_links:
-                    msg = compiled_rule.message.template or f"Rule {rule_id} (duplicate_link) failed: Link {key} already exists."
+                    if use_template_verbatim:
+                        msg = msg_template
+                    else:
+                        prefix = (msg_template + " ") if msg_template else ""
+                        msg = f"{prefix}Rule {rule_id} (duplicate_link) failed: Link {key} already exists."
                     issues.append(IssueItem(
                         issue_id=generate_id(),
                         message=msg,
@@ -50,7 +66,11 @@ class TopologyExecutor(RuleExecutor):
                 missing_dst = link.dst_device not in devices_map
                 
                 if missing_src or missing_dst:
-                    msg = compiled_rule.message.template or f"Rule {rule_id} (missing_peer) failed: Missing peer device in link {link.src_device}->{link.dst_device}."
+                    if use_template_verbatim:
+                        msg = msg_template
+                    else:
+                        prefix = (msg_template + " ") if msg_template else ""
+                        msg = f"{prefix}Rule {rule_id} (missing_peer) failed: Missing peer device in link {link.src_device}->{link.dst_device}."
                     issues.append(IssueItem(
                         issue_id=generate_id(),
                         message=msg,
@@ -69,12 +89,17 @@ class TopologyExecutor(RuleExecutor):
                     ))
                     
         elif rule_subtype == "topology_assertion":
-            assertion_type = compiled_rule.params.get("assertion_type")
+            extra_assertion_type = compiled_rule.get("assertion_type") if hasattr(compiled_rule, "get") else None
+            assertion_type = params.get("assertion_type") or extra_assertion_type or getattr(compiled_rule, "assertion_type", "")
             
             if assertion_type == "self_loop":
                 for i, link in enumerate(links):
                     if link.src_device == link.dst_device:
-                        msg = compiled_rule.message.template or f"Rule {rule_id} (topology_assertion) failed: Self-loop detected on {link.src_device}."
+                        if use_template_verbatim:
+                            msg = msg_template
+                        else:
+                            prefix = (msg_template + " ") if msg_template else ""
+                            msg = f"{prefix}Rule {rule_id} (topology_assertion) failed: Self-loop detected on {link.src_device}."
                         issues.append(IssueItem(
                             issue_id=generate_id(),
                             message=msg,
@@ -100,7 +125,11 @@ class TopologyExecutor(RuleExecutor):
                     
                 for i, dev in enumerate(devices):
                     if dev.device_name and dev.device_name not in linked_devices:
-                        msg = compiled_rule.message.template or f"Rule {rule_id} (topology_assertion) failed: Device {dev.device_name} is isolated."
+                        if use_template_verbatim:
+                            msg = msg_template
+                        else:
+                            prefix = (msg_template + " ") if msg_template else ""
+                            msg = f"{prefix}Rule {rule_id} (topology_assertion) failed: Device {dev.device_name} is isolated."
                         issues.append(IssueItem(
                             issue_id=generate_id(),
                             message=msg,
