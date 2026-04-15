@@ -15,6 +15,7 @@ class BaselineNodeDTO(BaseModel):
     restored_from_version_id: Optional[str] = None
     restored_from_version_label: Optional[str] = None
     status: Optional[str] = None
+    revision: Optional[int] = None
 
 class VersionMetaDTO(BaseModel):
     version_id: str
@@ -114,6 +115,7 @@ class RestoreDraftRequestDTO(BaseModel):
 class SaveDraftRequestDTO(BaseModel):
     """A1-4: Request body for saving a working draft."""
     baseline_id: str
+    expected_revision: int
     rule_id: str = ""
     rule_type: str
     target_type: str = "devices"
@@ -125,9 +127,11 @@ class SaveDraftResultDTO(BaseModel):
     success: bool
     saved_at: Optional[str] = None
     message: Optional[str] = None
+    new_revision: Optional[int] = None
 
 class LoadDraftResultDTO(BaseModel):
     """A1-4: Response for load draft operation."""
     has_draft: bool
-    draft_data: Optional[Any] = None
+    draft_data: Optional[Dict[str, Any]] = None
     saved_at: Optional[str] = None
+    base_revision: Optional[int] = None

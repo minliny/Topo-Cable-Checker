@@ -24,6 +24,7 @@ class ErrorCode:
     PERSISTENCE_NOT_FOUND = "P1006"
     PERSISTENCE_SCHEMA_MIGRATION = "P1007"  # P1.1-3: Schema migration error
     PERSISTENCE_SCHEMA_INCOMPATIBLE = "P1008"  # P1.1-3: Unsupported schema version
+    CONCURRENCY_CONFLICT = "P1009"
 
     # Domain errors (D2xxx)
     DOMAIN_RULE_COMPILE = "D2001"
@@ -99,6 +100,12 @@ class PersistenceSchemaError(PersistenceError):
         )
         self.file_name = file_name
         self.data_schema_version = schema_version
+
+
+class ConcurrencyError(PersistenceError):
+    """Raised when an optimistic concurrency check fails."""
+    def __init__(self, message: str = "Concurrency conflict detected"):
+        super().__init__(message, error_code=ErrorCode.CONCURRENCY_CONFLICT)
 
 
 class DomainError(CheckToolBaseError):
