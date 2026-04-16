@@ -86,7 +86,7 @@ class RuleDraftSaveService:
 
         # Re-fetch or get the updated revision after save
         updated_baseline = self.repo.get_by_id(baseline_id)
-        new_rev = updated_baseline.revision if not isinstance(updated_baseline, dict) else updated_baseline.get("revision", 1)
+        new_rev = getattr(updated_baseline, "revision", 1)
 
         return SaveDraftResult(
             success=True,
@@ -108,14 +108,14 @@ class RuleDraftSaveService:
         if draft is None:
             return LoadDraftResult(
                 has_draft=False,
-                base_revision=baseline.get("revision", 1) if isinstance(baseline, dict) else getattr(baseline, "revision", 1)
+                base_revision=getattr(baseline, "revision", 1)
             )
 
         return LoadDraftResult(
             has_draft=True,
             draft_data=draft,
             saved_at=draft.get("saved_at"),
-            base_revision=baseline.get("revision", 1) if isinstance(baseline, dict) else getattr(baseline, "revision", 1)
+            base_revision=getattr(baseline, "revision", 1)
         )
 
     def clear_draft(self, baseline_id: str, expected_revision: int) -> Optional[int]:
@@ -124,7 +124,7 @@ class RuleDraftSaveService:
             logger.warning(f"Cannot clear draft: baseline {baseline_id} not found")
             return None
 
-        current_rev = baseline.get("revision", 1) if isinstance(baseline, dict) else getattr(baseline, "revision", 1)
+        current_rev = getattr(baseline, "revision", 1)
         if current_rev != expected_revision:
             raise ConcurrencyError(
                 f"Baseline {baseline_id} has been modified by another process. "
@@ -138,6 +138,6 @@ class RuleDraftSaveService:
         self.repo.save(baseline, expected_revision=expected_revision)
 
         updated = self.repo.get_by_id(baseline_id)
-        new_rev = updated.get("revision", 1) if isinstance(updated, dict) else getattr(updated, "revision", 1)
+        new_rev = getattr(updated, "revision", 1)
         logger.info(f"Draft cleared for baseline={baseline_id}")
         return new_rev

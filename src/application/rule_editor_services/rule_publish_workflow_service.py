@@ -67,15 +67,9 @@ class RulePublishWorkflowService:
                 errors=[RulePublishFailure("not_found", f"Baseline {baseline_id} not found")]
             )
 
-        # Handle object or dict access
-        if isinstance(baseline, dict):
-            current_version = baseline.get("baseline_version", "v1.0")
-            old_rule_set = baseline.get("rule_set", {})
-            snapshots = baseline.get("baseline_version_snapshot", {})
-        else:
-            current_version = getattr(baseline, "baseline_version", "v1.0")
-            old_rule_set = getattr(baseline, "rule_set", {})
-            snapshots = getattr(baseline, "baseline_version_snapshot", {})
+        current_version = getattr(baseline, "baseline_version", "v1.0")
+        old_rule_set = getattr(baseline, "rule_set", {})
+        snapshots = getattr(baseline, "baseline_version_snapshot", {})
 
         if not snapshots:
             snapshots = {}
@@ -101,23 +95,16 @@ class RulePublishWorkflowService:
         modified = 0 if is_new else 1
         
         # 6. Apply updates and save
-        if isinstance(baseline, dict):
-            baseline["rule_set"] = new_rule_set
-            baseline["baseline_version"] = new_version
-            baseline["baseline_version_snapshot"] = snapshots
-            # A1-7: Clear working_draft after successful publish
-            baseline["working_draft"] = None
-        else:
-            baseline.rule_set = new_rule_set
-            baseline.baseline_version = new_version
-            baseline.baseline_version_snapshot = snapshots
-            # A1-7: Clear working_draft after successful publish
-            baseline.working_draft = None
+        baseline.rule_set = new_rule_set
+        baseline.baseline_version = new_version
+        baseline.baseline_version_snapshot = snapshots
+        # A1-7: Clear working_draft after successful publish
+        baseline.working_draft = None
 
         self.repo.save(baseline, expected_revision=expected_revision)
 
         updated_baseline = self.repo.get_by_id(baseline_id)
-        new_rev = updated_baseline.revision if not isinstance(updated_baseline, dict) else updated_baseline.get("revision", 1)
+        new_rev = getattr(updated_baseline, "revision", 1)
 
         # 7. Build summary
         action_verb = "Added" if is_new else "Modified"

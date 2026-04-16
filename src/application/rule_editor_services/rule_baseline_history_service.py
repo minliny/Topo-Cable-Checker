@@ -139,16 +139,10 @@ class RuleBaselineHistoryService:
         self.repo = repo
 
     def _get_rule_set_for_version(self, baseline: Any, version: str) -> Optional[Dict[str, Any]]:
-        if isinstance(baseline, dict):
-            current_version = baseline.get("baseline_version", "v1.0")
-            snapshots = baseline.get("baseline_version_snapshot", {})
-            current_rule_set = baseline.get("rule_set", {})
-            working_draft = baseline.get("working_draft")
-        else:
-            current_version = getattr(baseline, "baseline_version", "v1.0")
-            snapshots = getattr(baseline, "baseline_version_snapshot", {})
-            current_rule_set = getattr(baseline, "rule_set", {})
-            working_draft = getattr(baseline, "working_draft", None)
+        current_version = getattr(baseline, "baseline_version", "v1.0")
+        snapshots = getattr(baseline, "baseline_version_snapshot", {})
+        current_rule_set = getattr(baseline, "rule_set", {})
+        working_draft = getattr(baseline, "working_draft", None)
 
         if version == "draft":
             draft_rule_set = copy.deepcopy(current_rule_set)
@@ -183,14 +177,9 @@ class RuleBaselineHistoryService:
         if not baseline:
             return []
 
-        if isinstance(baseline, dict):
-            current_version = baseline.get("baseline_version", "v1.0")
-            snapshots = baseline.get("baseline_version_snapshot", {})
-            current_rule_set = baseline.get("rule_set", {})
-        else:
-            current_version = getattr(baseline, "baseline_version", "v1.0")
-            snapshots = getattr(baseline, "baseline_version_snapshot", {})
-            current_rule_set = getattr(baseline, "rule_set", {})
+        current_version = getattr(baseline, "baseline_version", "v1.0")
+        snapshots = getattr(baseline, "baseline_version_snapshot", {})
+        current_rule_set = getattr(baseline, "rule_set", {})
 
         versions = []
         for ver, rule_set in snapshots.items():
@@ -287,14 +276,9 @@ class RuleBaselineHistoryService:
             return BaselineRollbackResult(False, target_version, "", [f"Version {target_version} not found in history."])
 
         # Prepare for version bump
-        if isinstance(baseline, dict):
-            current_version = baseline.get("baseline_version", "v1.0")
-            old_rule_set = baseline.get("rule_set", {})
-            snapshots = baseline.get("baseline_version_snapshot", {})
-        else:
-            current_version = getattr(baseline, "baseline_version", "v1.0")
-            old_rule_set = getattr(baseline, "rule_set", {})
-            snapshots = getattr(baseline, "baseline_version_snapshot", {})
+        current_version = getattr(baseline, "baseline_version", "v1.0")
+        old_rule_set = getattr(baseline, "rule_set", {})
+        snapshots = getattr(baseline, "baseline_version_snapshot", {})
 
         if not snapshots:
             snapshots = {}
@@ -310,14 +294,9 @@ class RuleBaselineHistoryService:
             new_version = f"{current_version}_rollback"
 
         # Apply target rule set to current
-        if isinstance(baseline, dict):
-            baseline["rule_set"] = copy.deepcopy(target_rule_set)
-            baseline["baseline_version"] = new_version
-            baseline["baseline_version_snapshot"] = snapshots
-        else:
-            baseline.rule_set = copy.deepcopy(target_rule_set)
-            baseline.baseline_version = new_version
-            baseline.baseline_version_snapshot = snapshots
+        baseline.rule_set = copy.deepcopy(target_rule_set)
+        baseline.baseline_version = new_version
+        baseline.baseline_version_snapshot = snapshots
 
         self.repo.save(baseline)
 
