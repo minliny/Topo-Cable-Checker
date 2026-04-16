@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional
 import datetime
 
 from src.domain.interfaces import IBaselineRepository
-from src.domain.baseline_model import BaselineProfile
+from src.domain.baseline_model import BaselineProfile, WorkingDraftPayload
 from src.crosscutting.errors.exceptions import DomainError, ErrorCode, ConcurrencyError
 from src.crosscutting.logging.logger import get_logger
 
@@ -32,16 +32,11 @@ class SaveDraftResult:
 @dataclass
 class LoadDraftResult:
     has_draft: bool
-    draft_data: Optional[Dict[str, Any]] = None
+    draft_data: Optional[WorkingDraftPayload] = None
     saved_at: Optional[str] = None
     base_revision: Optional[int] = None
 
 
-class RuleDraftSaveService:
-    """
-    Application service for managing working drafts on baselines.
-    Drafts are persisted as the working_draft field on BaselineProfile.
-    """
 class RuleDraftSaveService:
     def __init__(self, repo: IBaselineRepository):
         self.repo = repo

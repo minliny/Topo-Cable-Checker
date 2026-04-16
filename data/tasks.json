@@ -1448,5 +1448,77 @@
     "created_at": "2026-04-16 06:41:50.005063",
     "latest_run_id": "85c83f35-661c-46f0-8bb9-ec2336c7d50f",
     "parent_task_id": null
+  },
+  "d3865d11-cb15-4f4b-a619-41f488382e2a": {
+    "task_id": "d3865d11-cb15-4f4b-a619-41f488382e2a",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.13",
+    "task_status": "check_completed",
+    "created_at": "2026-04-16 08:26:57.837949",
+    "latest_run_id": "0b0acaeb-39c5-41c6-9b83-6918d4e2060d",
+    "parent_task_id": null
+  },
+  "98707fc4-2d2d-4c24-8c89-febdb421b6c4": {
+    "task_id": "98707fc4-2d2d-4c24-8c89-febdb421b6c4",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.13",
+    "task_status": "check_completed",
+    "created_at": "2026-04-16 08:26:57.898674",
+    "latest_run_id": "fb7f9fbc-ab40-456c-b6b4-8450fe6d1fff",
+    "parent_task_id": null
+  },
+  "74ce43f8-8d19-4cc1-8584-8434a1be6c3d": {
+    "task_id": "74ce43f8-8d19-4cc1-8584-8434a1be6c3d",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.13",
+    "task_status": "ready_to_check",
+    "created_at": "2026-04-16 08:26:57.965507",
+    "latest_run_id": null,
+    "parent_task_id": null
+  },
+  "02a27a2a-4cd1-4f1c-85e0-37f70204cec3": {
+    "task_id": "02a27a2a-4cd1-4f1c-85e0-37f70204cec3",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.13",
+    "task_status": "check_completed",
+    "created_at": "2026-04-16 08:26:58.007849",
+    "latest_run_id": "6f0a686c-204f-4bd6-8a12-1164cc7037c6",
+    "parent_task_id": null
+  },
+  "4e917cfa-f601-45ba-9aa6-039df5056d45": {
+    "task_id": "4e917cfa-f601-45ba-9aa6-039df5056d45",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.13",
+    "task_status": "ready_to_check",
+    "created_at": "2026-04-16 08:26:58.077557",
+    "latest_run_id": null,
+    "parent_task_id": null
+  },
+  "d309eb74-d328-459c-9f02-47f273af53fc": {
+    "task_id": "d309eb74-d328-459c-9f02-47f273af53fc",
+    "task_name": "Task_/tmp/mock_data.xlsx",
+    "source_file_ref": "/tmp/mock_data.xlsx",
+    "source_file_version": "1.0",
+    "baseline_id": "B001",
+    "baseline_version": "v1.13",
+    "task_status": "check_completed",
+    "created_at": "2026-04-16 08:26:59.150778",
+    "latest_run_id": "b5946e31-a71c-4fb4-bf55-de575ddcea50",
+    "parent_task_id": null
   }
 }

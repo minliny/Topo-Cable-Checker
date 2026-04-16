@@ -1,7 +1,7 @@
 {
   "B001": {
     "baseline_id": "B001",
-    "baseline_version": "v1.12",
+    "baseline_version": "v1.13",
     "recognition_profile": {
       "strategy": "excel_basic"
     },
@@ -570,16 +570,65 @@
             "threshold_key": "T1"
           }
         }
+      },
+      "v1.12": {
+        "R1_scoped": {
+          "rule_type": "template",
+          "template": "group_consistency",
+          "scope_selector": {
+            "target_type": "devices",
+            "device_type": "Switch"
+          },
+          "params": {
+            "parameter_key": "P1"
+          },
+          "severity": "warning"
+        },
+        "R2_threshold_count": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          },
+          "severity": "critical"
+        },
+        "R3_threshold_distinct": {
+          "rule_type": "template",
+          "template": "threshold_check",
+          "scope_selector": {
+            "target_type": "devices"
+          },
+          "params": {
+            "metric_type": "distinct_count",
+            "metric_field": "device_type",
+            "threshold_key": "T2"
+          },
+          "severity": "error"
+        },
+        "test_threshold_rule": {
+          "rule_type": "template",
+          "template": "threshold",
+          "target_type": "devices",
+          "severity": "error",
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          }
+        }
       }
     },
     "version_history_meta": {},
     "working_draft": null,
-    "revision": 6
+    "revision": 7
   },
   "__schema_version__": "1.2",
   "TEST_DRAFT_B001": {
     "baseline_id": "TEST_DRAFT_B001",
-    "baseline_version": "v1.6",
+    "baseline_version": "v1.7",
     "recognition_profile": {},
     "naming_profile": {},
     "parameter_profile": {
@@ -738,10 +787,32 @@
             "threshold_key": "T1"
           }
         }
+      },
+      "v1.6": {
+        "rule_threshold_1": {
+          "rule_type": "template",
+          "template": "threshold",
+          "target_type": "devices",
+          "severity": "warning",
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          }
+        },
+        "publish_test_rule": {
+          "rule_type": "template",
+          "template": "threshold",
+          "target_type": "devices",
+          "severity": "error",
+          "params": {
+            "metric_type": "count",
+            "threshold_key": "T1"
+          }
+        }
       }
     },
     "version_history_meta": {},
     "working_draft": null,
-    "revision": 219
+    "revision": 263
   }
 }

@@ -4,6 +4,7 @@ import copy
 import datetime
 from src.domain.interfaces import IBaselineRepository
 from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView
+from src.domain.baseline_model import RuleSetPayload
 
 
 # ==========================================
@@ -138,7 +139,7 @@ class RuleBaselineHistoryService:
     def __init__(self, repo: IBaselineRepository):
         self.repo = repo
 
-    def _get_rule_set_for_version(self, baseline: Any, version: str) -> Optional[Dict[str, Any]]:
+    def _get_rule_set_for_version(self, baseline: Any, version: str) -> Optional[RuleSetPayload]:
         current_version = getattr(baseline, "baseline_version", "v1.0")
         snapshots = getattr(baseline, "baseline_version_snapshot", {})
         current_rule_set = getattr(baseline, "rule_set", {})
@@ -200,7 +201,7 @@ class RuleBaselineHistoryService:
         # Sort versions simply by version string assuming v1.x format
         return sorted(versions, key=lambda x: x.version, reverse=True)
 
-    def get_baseline_version(self, baseline_id: str, version: str) -> Optional[Dict[str, Any]]:
+    def get_baseline_version(self, baseline_id: str, version: str) -> Optional[RuleSetPayload]:
         baseline = self.repo.get_by_id(baseline_id)
         if not baseline:
             return None

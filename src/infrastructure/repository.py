@@ -459,6 +459,16 @@ class FileStorage:
         return file_path
 
 class BaselineRepository:
+    def _decode_baseline_record(self, record: dict) -> BaselineProfile:
+        if "version_history_meta" not in record:
+            record["version_history_meta"] = {}
+        if "working_draft" not in record:
+            record["working_draft"] = None
+        return BaselineProfile(**record)
+
+    def _encode_baseline_profile(self, profile: BaselineProfile) -> dict:
+        return dataclasses.asdict(profile)
+
     def get_all(self) -> List[BaselineProfile]:
         data = _read_json("baselines.json")
         # P1.1-3: Apply schema migration
@@ -473,12 +483,7 @@ class BaselineRepository:
                 continue
             if not isinstance(v, dict):
                 continue
-            if "version_history_meta" not in v:
-                v["version_history_meta"] = {}
-            # A1-1: Ensure working_draft field exists (strict: None means no draft)
-            if "working_draft" not in v:
-                v["working_draft"] = None
-            profiles.append(BaselineProfile(**v))
+            profiles.append(self._decode_baseline_record(v))
         return profiles
         
     def get_by_id(self, baseline_id: str) -> BaselineProfile:
@@ -492,16 +497,14 @@ class BaselineRepository:
             v = data[baseline_id]
             if not isinstance(v, dict):
                 return None
-            if "version_history_meta" not in v:
-                v["version_history_meta"] = {}
-            # A1-1: Ensure working_draft field exists (strict: None means no draft)
-            if "working_draft" not in v:
-                v["working_draft"] = None
-            return BaselineProfile(**v)
+            return self._decode_baseline_record(v)
         return None
 
     def save(self, profile: BaselineProfile, expected_revision: Optional[int] = None):
-        baseline_id = profile.get("baseline_id") if isinstance(profile, dict) else profile.baseline_id
+        if isinstance(profile, dict):
+            raise TypeError("BaselineRepository.save expects BaselineProfile")
+
+        baseline_id = profile.baseline_id
 
         try:
             lock_file, waited_ms = _acquire_baselines_lock(BASELINES_LOCK_TIMEOUT_S)
@@ -540,12 +543,8 @@ class BaselineRepository:
 
             new_revision = current_db_revision + 1
 
-            if isinstance(profile, dict):
-                profile["revision"] = new_revision
-                data[baseline_id] = profile
-            else:
-                profile.revision = new_revision
-                data[baseline_id] = dataclasses.asdict(profile)
+            profile.revision = new_revision
+            data[baseline_id] = self._encode_baseline_profile(profile)
 
             # P1.1-3: Stamp schema version on write
             data["__schema_version__"] = BASELINES_SCHEMA_VERSION
