@@ -3,12 +3,8 @@ from src.domain.baseline_model import BaselineProfile
 from typing import List
 
 class BaselineService:
-    def __init__(self, repo: IBaselineRepository = None):
-        if repo is None:
-            from src.infrastructure.repository import BaselineRepository
-            self.repo = repo or BaselineRepository()
-        else:
-            self.repo = repo
+    def __init__(self, repo: IBaselineRepository):
+        self.repo = repo
         
     def list_baselines(self) -> List[BaselineProfile]:
         return self.repo.get_all()

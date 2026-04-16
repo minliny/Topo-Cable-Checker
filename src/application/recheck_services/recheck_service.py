@@ -4,12 +4,8 @@ from typing import Dict, Any, Tuple
 import dataclasses
 
 class RecheckService:
-    def __init__(self, result_repo: IResultRepository = None):
-        if result_repo is None:
-            from src.infrastructure.repository import ResultRepository
-            self.result_repo = result_repo or ResultRepository()
-        else:
-            self.result_repo = result_repo
+    def __init__(self, result_repo: IResultRepository):
+        self.result_repo = result_repo
         
     def _generate_match_key(self, issue: IssueItem) -> str:
         """

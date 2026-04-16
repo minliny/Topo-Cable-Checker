@@ -3,7 +3,6 @@ from typing import Dict, Any, List, Optional, Tuple
 import copy
 import datetime
 from src.domain.interfaces import IBaselineRepository
-from src.infrastructure.repository import BaselineRepository
 from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView
 
 
@@ -136,8 +135,8 @@ class BaselineRollbackResult:
     errors: List[str]
 
 class RuleBaselineHistoryService:
-    def __init__(self, repo: Optional[IBaselineRepository] = None):
-        self.repo = repo or BaselineRepository()
+    def __init__(self, repo: IBaselineRepository):
+        self.repo = repo
 
     def _get_rule_set_for_version(self, baseline: Any, version: str) -> Optional[Dict[str, Any]]:
         if isinstance(baseline, dict):

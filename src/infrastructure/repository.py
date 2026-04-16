@@ -445,6 +445,19 @@ def _write_json(file_name: str, data: Dict):
         )
 
 
+class FileStorage:
+    """Infrastructure implementation for writing raw artifacts outside of the JSON repository schema."""
+    def __init__(self, data_dir: str = None):
+        self.data_dir = data_dir or os.path.join(settings.BASE_DIR, "data")
+        os.makedirs(self.data_dir, exist_ok=True)
+        
+    def write_artifact(self, file_name: str, content: bytes) -> str:
+        """Writes binary content to an artifact file and returns its path."""
+        file_path = os.path.join(self.data_dir, file_name)
+        with open(file_path, "wb") as f:
+            f.write(content)
+        return file_path
+
 class BaselineRepository:
     def get_all(self) -> List[BaselineProfile]:
         data = _read_json("baselines.json")

@@ -6,7 +6,8 @@ from src.application.check_run_services.check_run_service import CheckRunService
 from src.application.task_services.task_service import TaskService
 from src.application.baseline_services.baseline_service import BaselineService
 from src.application.recognition_services.recognition_service import RecognitionService
-from src.infrastructure.repository import ResultRepository
+from src.infrastructure.repository import BaselineRepository, TaskRepository, ResultRepository
+from src.infrastructure.excel_reader import ExcelReader
 from src.crosscutting.errors.exceptions import TaskError
 
 def create_mock_excel(data, filename="mock_data.xlsx"):
@@ -46,9 +47,14 @@ def setup_task_and_data():
     
     filepath = create_mock_excel(data)
     
-    baseline_svc = BaselineService()
-    task_svc = TaskService()
-    rec_svc = RecognitionService()
+    baseline_repo = BaselineRepository()
+    task_repo = TaskRepository()
+    result_repo = ResultRepository()
+    excel_reader = ExcelReader()
+    
+    baseline_svc = BaselineService(baseline_repo)
+    task_svc = TaskService(task_repo, baseline_repo)
+    rec_svc = RecognitionService(task_repo, result_repo, excel_reader)
     
     baseline_id = baseline_svc.bootstrap_default_baseline().baseline_id
     task_id = task_svc.create_task(baseline_id, filepath)
@@ -81,8 +87,11 @@ def test_check_run_service_executes_external_rule(setup_task_and_data):
     rule_path = _create_temp_json(rule_data)
     
     try:
-        run_svc = CheckRunService()
+        baseline_repo = BaselineRepository()
+        task_repo = TaskRepository()
         result_repo = ResultRepository()
+        
+        run_svc = CheckRunService(task_repo, baseline_repo, result_repo)
         
         # 2. Run checks WITH external rule path
         run_id = run_svc.run_checks(task_id, external_rule_file_path=rule_path)
@@ -101,8 +110,11 @@ def test_check_run_service_executes_external_rule(setup_task_and_data):
 
 def test_check_run_service_preserves_old_behavior(setup_task_and_data):
     task_id = setup_task_and_data
-    run_svc = CheckRunService()
+    baseline_repo = BaselineRepository()
+    task_repo = TaskRepository()
     result_repo = ResultRepository()
+    
+    run_svc = CheckRunService(task_repo, baseline_repo, result_repo)
     
     # Run checks WITHOUT external rule path
     run_id = run_svc.run_checks(task_id)
@@ -116,7 +128,11 @@ def test_check_run_service_preserves_old_behavior(setup_task_and_data):
 
 def test_check_run_service_fails_fast_on_invalid_external_rules(setup_task_and_data):
     task_id = setup_task_and_data
-    run_svc = CheckRunService()
+    baseline_repo = BaselineRepository()
+    task_repo = TaskRepository()
+    result_repo = ResultRepository()
+    
+    run_svc = CheckRunService(task_repo, baseline_repo, result_repo)
     
     # Create invalid rule file (missing parameters)
     rule_data = [
@@ -163,8 +179,11 @@ def test_check_run_service_executes_external_threshold_rule(setup_task_and_data)
     rule_path = _create_temp_json(rule_data)
     
     try:
-        run_svc = CheckRunService()
+        baseline_repo = BaselineRepository()
+        task_repo = TaskRepository()
         result_repo = ResultRepository()
+        
+        run_svc = CheckRunService(task_repo, baseline_repo, result_repo)
         
         # 2. Run checks WITH external rule path
         run_id = run_svc.run_checks(task_id, external_rule_file_path=rule_path)
@@ -182,7 +201,11 @@ def test_check_run_service_executes_external_threshold_rule(setup_task_and_data)
 
 def test_check_run_service_fails_fast_on_unsupported_scope(setup_task_and_data):
     task_id = setup_task_and_data
-    run_svc = CheckRunService()
+    baseline_repo = BaselineRepository()
+    task_repo = TaskRepository()
+    result_repo = ResultRepository()
+    
+    run_svc = CheckRunService(task_repo, baseline_repo, result_repo)
     
     rule_data = [
         {

@@ -44,12 +44,20 @@ class PublishResultDTO(BaseModel):
     blocked_issues: Optional[List[ValidationIssueDTO]] = None
     new_revision: Optional[int] = None
 
+class RuleDefinitionDTO(BaseModel):
+    """Represents a structured rule definition exposed to the API."""
+    rule_id: str
+    rule_type: str
+    target_type: str
+    severity: str
+    params: Dict[str, Any]
+
 class RestoreDraftResultDTO(BaseModel):
     baseline_id: str
     restored_from_version_id: str
     restored_from_version_label: str
-    draft_data: Any
-    rule_set: Optional[Dict[str, Any]] = None
+    draft_data: RuleDefinitionDTO
+    rule_set: Optional[Dict[str, RuleDefinitionDTO]] = None
 
 class DiffFieldChangeDTO(BaseModel):
     """P1.1-2: Single field-level before/after change for human readability."""
@@ -87,7 +95,7 @@ class RollbackEffectDiffDTO(BaseModel):
 class BaselineVersionRuleSetDTO(BaseModel):
     baseline_id: str
     version_id: str
-    rule_set: Dict[str, Any]
+    rule_set: Dict[str, RuleDefinitionDTO]
 
 # ==========================================
 # Requests DTOs (Inbound from UI)
@@ -134,6 +142,6 @@ class SaveDraftResultDTO(BaseModel):
 class LoadDraftResultDTO(BaseModel):
     """A1-4: Response for load draft operation."""
     has_draft: bool
-    draft_data: Optional[Dict[str, Any]] = None
+    draft_data: Optional[RuleDefinitionDTO] = None
     saved_at: Optional[str] = None
     base_revision: Optional[int] = None

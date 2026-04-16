@@ -10,16 +10,10 @@ from src.crosscutting.ids.generator import generate_id
 from src.crosscutting.errors.exceptions import TaskError
 
 class CheckRunService:
-    def __init__(self, task_repo: ITaskRepository = None, baseline_repo: IBaselineRepository = None, result_repo: IResultRepository = None):
-        if task_repo is None or baseline_repo is None or result_repo is None:
-            from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository
-            self.task_repo = task_repo or TaskRepository()
-            self.baseline_repo = baseline_repo or BaselineRepository()
-            self.result_repo = result_repo or ResultRepository()
-        else:
-            self.task_repo = task_repo
-            self.baseline_repo = baseline_repo
-            self.result_repo = result_repo
+    def __init__(self, task_repo: ITaskRepository, baseline_repo: IBaselineRepository, result_repo: IResultRepository):
+        self.task_repo = task_repo
+        self.baseline_repo = baseline_repo
+        self.result_repo = result_repo
         self.normalization_service = NormalizationService()
         
     def run_checks(self, task_id: str, external_rule_file_path: str = None) -> str:

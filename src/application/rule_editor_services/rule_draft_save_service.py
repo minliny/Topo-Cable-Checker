@@ -14,7 +14,6 @@ from typing import Dict, Any, Optional
 import datetime
 
 from src.domain.interfaces import IBaselineRepository
-from src.infrastructure.repository import BaselineRepository
 from src.domain.baseline_model import BaselineProfile
 from src.crosscutting.errors.exceptions import DomainError, ErrorCode, ConcurrencyError
 from src.crosscutting.logging.logger import get_logger
@@ -43,9 +42,9 @@ class RuleDraftSaveService:
     Application service for managing working drafts on baselines.
     Drafts are persisted as the working_draft field on BaselineProfile.
     """
-
-    def __init__(self, repo: Optional[IBaselineRepository] = None):
-        self.repo = repo or BaselineRepository()
+class RuleDraftSaveService:
+    def __init__(self, repo: IBaselineRepository):
+        self.repo = repo
 
     def save_draft(
         self,

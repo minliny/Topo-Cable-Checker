@@ -1,9 +1,9 @@
 {
-  "9961a1fc-3bcc-4c0b-bd52-a8ba2d796c03": {
-    "run_id": "9961a1fc-3bcc-4c0b-bd52-a8ba2d796c03",
+  "85c83f35-661c-46f0-8bb9-ec2336c7d50f": {
+    "run_id": "85c83f35-661c-46f0-8bb9-ec2336c7d50f",
     "issues": [
       {
-        "issue_id": "558be5af-5bd7-49c0-aa99-f445a4f07249",
+        "issue_id": "b422d8a9-fa7d-4171-96e4-6c74100e2295",
         "message": "Multiple sheets mapped to the same type 'device': ['device', 'device_dup']",
         "evidence": {
           "sheet_type": "device",
@@ -26,7 +26,7 @@
         "stage": "recognition"
       },
       {
-        "issue_id": "c222fd91-58d5-4b4c-af07-c8e1a03e8d09",
+        "issue_id": "fb733278-0655-4c1a-8ad8-5f48f57aa88a",
         "message": "Unmapped headers found in sheet 'ports': ['Extra Column']",
         "evidence": {
           "sheet": "ports",
@@ -47,7 +47,7 @@
         "stage": "recognition"
       },
       {
-        "issue_id": "523970ea-edda-40ff-adea-6c30fbcd8549",
+        "issue_id": "cab1e494-9a22-46f4-8660-430b8251b95b",
         "message": "Missing required sheet type 'link'.",
         "evidence": {
           "missing_sheet": "link"
@@ -61,7 +61,7 @@
         "stage": "recognition"
       },
       {
-        "issue_id": "c750eb8b-3d33-4035-a8ad-c6ffacad6d16",
+        "issue_id": "fad743a0-8547-4d18-842c-04688406323a",
         "message": "",
         "evidence": {
           "rule_id": "R2_threshold_count",
@@ -84,7 +84,7 @@
         "stage": "engine"
       },
       {
-        "issue_id": "2d4e7437-1bff-4cd5-9828-e33792e6285b",
+        "issue_id": "04fe9646-ca2f-4896-a62d-ef8313caa894",
         "message": "",
         "evidence": {
           "rule_id": "R3_threshold_distinct",
@@ -107,7 +107,7 @@
         "stage": "engine"
       },
       {
-        "issue_id": "15288875-65d5-4656-9379-2d169fca9085",
+        "issue_id": "e09ca453-dfdb-4699-b3a0-f82de0cfe6e2",
         "message": "",
         "evidence": {
           "rule_id": "test_threshold_rule",

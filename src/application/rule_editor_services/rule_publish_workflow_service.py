@@ -5,7 +5,6 @@ import copy
 from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView
 from src.application.rule_editor_services.rule_editor_governance_bridge_service import RuleEditorGovernanceBridgeService
 from src.domain.interfaces import IBaselineRepository
-from src.infrastructure.repository import BaselineRepository
 
 @dataclass
 class RulePublishFailure:
@@ -39,10 +38,10 @@ class RulePublishWorkflowService:
     """
     def __init__(
         self, 
-        repo: Optional[IBaselineRepository] = None,
+        repo: IBaselineRepository,
         bridge: Optional[RuleEditorGovernanceBridgeService] = None
     ):
-        self.repo = repo or BaselineRepository()
+        self.repo = repo
         self.bridge = bridge or RuleEditorGovernanceBridgeService()
 
     def publish_draft(self, baseline_id: str, draft: RuleDraftView, expected_revision: int, change_note: str = "") -> RulePublishResult:

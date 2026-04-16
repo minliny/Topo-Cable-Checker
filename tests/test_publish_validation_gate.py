@@ -316,7 +316,7 @@ def test_validation_endpoint_and_publish_endpoint_consistent():
         "params": valid_params
     })
     validate_data2 = validate_resp2.json()
-    assert validate_data2["valid"] is True
+    print(validate_data2); assert validate_data2["valid"] is True
 
     publish_resp2 = client.post("/api/rules/publish/B001", json={
         "rule_id": "consistency_test_valid",

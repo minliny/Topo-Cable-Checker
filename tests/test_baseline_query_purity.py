@@ -2,6 +2,7 @@ import os
 import pytest
 
 from src.application.baseline_services.baseline_service import BaselineService
+from src.infrastructure.repository import BaselineRepository
 import src.infrastructure.repository as repository
 from src.crosscutting.config.settings import settings as settings_instance
 
@@ -20,7 +21,8 @@ def isolated_data_dir(tmp_path, monkeypatch):
 
 
 def test_list_baselines_is_read_only_when_empty(isolated_data_dir):
-    svc = BaselineService()
+    repo = BaselineRepository()
+    svc = BaselineService(repo)
     baselines = svc.list_baselines()
 
     assert baselines == []
@@ -28,7 +30,8 @@ def test_list_baselines_is_read_only_when_empty(isolated_data_dir):
 
 
 def test_bootstrap_default_is_explicit_and_idempotent(isolated_data_dir):
-    svc = BaselineService()
+    repo = BaselineRepository()
+    svc = BaselineService(repo)
 
     b1 = svc.bootstrap_default_baseline()
     b2 = svc.bootstrap_default_baseline()

@@ -11,7 +11,7 @@ from src.application.review_services.review_service import ReviewService
 from src.application.recheck_services.recheck_service import RecheckService
 from src.application.export_services.export_service import ExportService
 from src.crosscutting.errors.exceptions import CheckToolBaseError
-from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository
+from src.infrastructure.repository import TaskRepository, BaselineRepository, ResultRepository, FileStorage
 from src.infrastructure.excel_reader import ExcelReader
 
 def get_services():
@@ -19,6 +19,7 @@ def get_services():
     baseline_repo = BaselineRepository()
     result_repo = ResultRepository()
     excel_reader = ExcelReader()
+    file_storage = FileStorage()
     
     return {
         "baseline_service": BaselineService(baseline_repo),
@@ -28,7 +29,7 @@ def get_services():
         "result_query_service": ResultQueryService(result_repo),
         "review_service": ReviewService(result_repo, task_repo),
         "recheck_service": RecheckService(result_repo),
-        "export_service": ExportService(result_repo),
+        "export_service": ExportService(result_repo, file_storage),
     }
 
 def main():

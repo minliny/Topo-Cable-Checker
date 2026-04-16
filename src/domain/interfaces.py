@@ -36,3 +36,6 @@ class IResultRepository(Protocol):
 
 class IExcelReader(Protocol):
     def read(self, file_path: str) -> Dict[str, Any]: ...
+
+class IFileStorage(Protocol):
+    def write_artifact(self, file_name: str, content: bytes) -> str: ...

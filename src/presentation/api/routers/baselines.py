@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List
 import json
-from src.presentation.api.dto_models import BaselineNodeDTO, VersionMetaDTO, DiffSourceTargetDTO, RollbackEffectDiffDTO, BaselineVersionRuleSetDTO
+from src.presentation.api.dto_models import BaselineNodeDTO, VersionMetaDTO, DiffSourceTargetDTO, RollbackEffectDiffDTO, BaselineVersionRuleSetDTO, RuleDefinitionDTO
 from src.presentation.api.dependencies import get_baseline_service, get_history_service
 from src.application.baseline_services.baseline_service import BaselineService
 from src.application.rule_editor_services.rule_baseline_history_service import RuleBaselineHistoryService
@@ -117,11 +117,21 @@ def get_version_rule_set(
     if rule_set is None:
         raise HTTPException(status_code=404, detail="Version not found")
 
-    return {
-        "baseline_id": baseline_id,
-        "version_id": version_id,
-        "rule_set": rule_set
-    }
+    rule_set_dto = {}
+    for k, v in rule_set.items():
+        rule_set_dto[k] = RuleDefinitionDTO(
+            rule_id=v.get("rule_id", k),
+            rule_type=v.get("rule_type", "template"),
+            target_type=v.get("target_type", "devices"),
+            severity=v.get("severity", "warning"),
+            params=v.get("params", {})
+        )
+        
+    return BaselineVersionRuleSetDTO(
+        baseline_id=baseline_id,
+        version_id=version_id,
+        rule_set=rule_set_dto
+    )
 
 
 @router.get("/{baseline_id}/diff", response_model=DiffSourceTargetDTO)
@@ -168,18 +178,33 @@ def get_baseline_diff(
     
     for r in diff_view.added_rules:
         rule_type = r.after.get("rule_type", r.after.get("template", "rule")) if r.after else "rule"
+        new_val_dto = RuleDefinitionDTO(
+            rule_id=r.after.get("rule_id", "unknown"),
+            rule_type=r.after.get("rule_type", "template"),
+            target_type=r.after.get("target_type", "devices"),
+            severity=r.after.get("severity", "warning"),
+            params=r.after.get("params", {})
+        ) if r.after else None
+        
         rules.append({
             "rule_id": r.rule_id, "change_type": "added",
             "changed_fields": [], "field_changes": [],
-            "old_value": None, "new_value": r.after,
+            "old_value": None, "new_value": new_val_dto,
             "human_summary": f"New {rule_type} rule added"
         })
     for r in diff_view.removed_rules:
         rule_type = r.before.get("rule_type", r.before.get("template", "rule")) if r.before else "rule"
+        old_val_dto = RuleDefinitionDTO(
+            rule_id=r.before.get("rule_id", "unknown"),
+            rule_type=r.before.get("rule_type", "template"),
+            target_type=r.before.get("target_type", "devices"),
+            severity=r.before.get("severity", "warning"),
+            params=r.before.get("params", {})
+        ) if r.before else None
         rules.append({
             "rule_id": r.rule_id, "change_type": "removed",
             "changed_fields": [], "field_changes": [],
-            "old_value": r.before, "new_value": None,
+            "old_value": old_val_dto, "new_value": None,
             "human_summary": f"{rule_type} rule removed"
         })
     for r in diff_view.modified_rules:
@@ -209,11 +234,28 @@ def get_baseline_diff(
                     human_parts.append(f"{f}: {json.dumps(old_v, default=str)} → {json.dumps(new_v, default=str)}")
         
         human_summary = "; ".join(human_parts) if human_parts else f"{len(r.changed_fields)} field(s) changed"
+        
+        old_val_dto = RuleDefinitionDTO(
+            rule_id=r.before.get("rule_id", "unknown"),
+            rule_type=r.before.get("rule_type", "template"),
+            target_type=r.before.get("target_type", "devices"),
+            severity=r.before.get("severity", "warning"),
+            params=r.before.get("params", {})
+        ) if r.before else None
+        
+        new_val_dto = RuleDefinitionDTO(
+            rule_id=r.after.get("rule_id", "unknown"),
+            rule_type=r.after.get("rule_type", "template"),
+            target_type=r.after.get("target_type", "devices"),
+            severity=r.after.get("severity", "warning"),
+            params=r.after.get("params", {})
+        ) if r.after else None
+
         rules.append({
             "rule_id": r.rule_id, "change_type": "modified",
             "changed_fields": r.changed_fields,
             "field_changes": field_changes,
-            "old_value": r.before, "new_value": r.after,
+            "old_value": old_val_dto, "new_value": new_val_dto,
             "human_summary": human_summary
         })
 
@@ -282,10 +324,18 @@ def get_restore_draft_effect_diff(
         })
     for r in diff_view.removed_rules:
         rule_type = r.before.get("rule_type", r.before.get("template", "rule")) if r.before else "rule"
+        old_val_dto = RuleDefinitionDTO(
+            rule_id=r.before.get("rule_id", "unknown"),
+            rule_type=r.before.get("rule_type", "template"),
+            target_type=r.before.get("target_type", "devices"),
+            severity=r.before.get("severity", "warning"),
+            params=r.before.get("params", {})
+        ) if r.before else None
+        
         rules.append({
             "rule_id": r.rule_id, "change_type": "removed",
             "changed_fields": [], "field_changes": [],
-            "old_value": r.before, "new_value": None,
+            "old_value": old_val_dto, "new_value": None,
             "human_summary": f"{rule_type} rule removed"
         })
     for r in diff_view.modified_rules:
@@ -312,11 +362,28 @@ def get_restore_draft_effect_diff(
                     human_parts.append(f"{f}: {json.dumps(old_v, default=str)} → {json.dumps(new_v, default=str)}")
 
         human_summary = "; ".join(human_parts) if human_parts else f"{len(r.changed_fields)} field(s) changed"
+        
+        old_val_dto = RuleDefinitionDTO(
+            rule_id=r.before.get("rule_id", "unknown"),
+            rule_type=r.before.get("rule_type", "template"),
+            target_type=r.before.get("target_type", "devices"),
+            severity=r.before.get("severity", "warning"),
+            params=r.before.get("params", {})
+        ) if r.before else None
+        
+        new_val_dto = RuleDefinitionDTO(
+            rule_id=r.after.get("rule_id", "unknown"),
+            rule_type=r.after.get("rule_type", "template"),
+            target_type=r.after.get("target_type", "devices"),
+            severity=r.after.get("severity", "warning"),
+            params=r.after.get("params", {})
+        ) if r.after else None
+
         rules.append({
             "rule_id": r.rule_id, "change_type": "modified",
             "changed_fields": r.changed_fields,
             "field_changes": field_changes,
-            "old_value": r.before, "new_value": r.after,
+            "old_value": old_val_dto, "new_value": new_val_dto,
             "human_summary": human_summary
         })
 

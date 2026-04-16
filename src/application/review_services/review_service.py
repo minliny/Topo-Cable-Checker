@@ -5,14 +5,9 @@ from src.crosscutting.errors.exceptions import TaskError
 import dataclasses
 
 class ReviewService:
-    def __init__(self, result_repo: IResultRepository = None, task_repo: ITaskRepository = None):
-        if result_repo is None or task_repo is None:
-            from src.infrastructure.repository import ResultRepository, TaskRepository
-            self.result_repo = result_repo or ResultRepository()
-            self.task_repo = task_repo or TaskRepository()
-        else:
-            self.result_repo = result_repo
-            self.task_repo = task_repo
+    def __init__(self, result_repo: IResultRepository, task_repo: ITaskRepository):
+        self.result_repo = result_repo
+        self.task_repo = task_repo
         self.normalization_service = NormalizationService()
         
     def review_issues(self, run_id: str, device_name: str) -> DeviceReviewContext:

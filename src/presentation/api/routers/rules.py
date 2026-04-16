@@ -10,11 +10,12 @@ Key fixes:
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import Dict, Any
 from src.presentation.api.dto_models import (
+    RuleDefinitionDTO,
     ValidateRequestDTO, ValidationResultDTO, ValidationIssueDTO,
     PublishRequestDTO, PublishResultDTO, RestoreDraftRequestDTO, RestoreDraftResultDTO,
     SaveDraftRequestDTO, SaveDraftResultDTO, LoadDraftResultDTO
 )
-from src.presentation.api.dependencies import get_baseline_service, get_history_service, get_draft_save_service
+from src.presentation.api.dependencies import get_baseline_service, get_baseline_repository, get_history_service, get_draft_save_service
 from src.application.baseline_services.baseline_service import BaselineService
 from src.application.rule_editor_services.rule_baseline_history_service import RuleBaselineHistoryService
 from src.application.rule_editor_services.rule_draft_save_service import RuleDraftSaveService
@@ -22,7 +23,8 @@ from src.application.rule_editor_services.rule_publish_workflow_service import R
 from src.application.rule_editor_services.rule_editor_mvp_service import (
     RuleDraftView, RuleDraftValidationResult
 )
-from src.domain.rule_compiler import RuleCompiler, RuleCompileError
+from src.application.rule_editor_services.rule_editor_governance_bridge_service import RuleEditorGovernanceBridgeService
+from src.application.rule_editor_services.rule_editor_mvp_service import RuleDraftView
 from src.crosscutting.logging.logger import get_logger
 from src.crosscutting.errors.exceptions import DomainError, ErrorCode
 from src.crosscutting.observation.recorder import record_event
@@ -35,45 +37,47 @@ router = APIRouter()
 @router.post("/draft/validate", response_model=ValidationResultDTO)
 def validate_draft(req: ValidateRequestDTO):
     """
-    Validates a rule configuration by invoking the domain RuleCompiler.
-    Maps Domain `RuleCompileError` exceptions into strict UI `ValidationIssueDTO` objects.
+    Validates a rule configuration by invoking the domain RuleCompiler via BridgeService.
+    Maps application errors into strict UI `ValidationIssueDTO` objects.
     """
+    bridge = RuleEditorGovernanceBridgeService()
+    
+    # Wrap request as DraftView
+    draft_view = RuleDraftView(
+        rule_id="draft_rule",
+        rule_type=req.rule_type,
+        target_type="devices", # Dummy for validation
+        severity="warning",
+        params=req.params
+    )
+    
+    result = bridge.compile_draft_preview(draft_view)
+    
     issues = []
-    is_valid = True
-
-    try:
-        # Wrap parameters as rule definition to reuse Domain compiler
-        # UI uses 'rule_type' to mean 'template'
-        rule_def = {"rule_type": "template", "template": req.rule_type, "params": req.params}
-        # Compile it using a dummy ID to trigger validation
-        compiled_rule = RuleCompiler.compile("draft_rule", rule_def)
-    except RuleCompileError as e:
-        is_valid = False
-        # Extract the field_path if available in the error type or message
-        field_path = "params"  # Fallback if specific param is unknown
-        if "metric_type" in e.message:
-            field_path = "params.metric_type"
-        elif "threshold_key" in e.message:
-            field_path = "params.threshold_key"
-        elif "group_key" in e.message:
-            field_path = "params.group_key"
-
-        issues.append(ValidationIssueDTO(
-            field_path=field_path,
-            issue_type="error",
-            message=e.message,
-            suggestion="Check the rule documentation for required parameters."
-        ))
-    except Exception as e:
-        is_valid = False
-        issues.append(ValidationIssueDTO(
-            field_path="unknown",
-            issue_type="error",
-            message=str(e)
-        ))
-
+    if not result.compile_success:
+        for error in result.validation_errors:
+            # Fallback path if field_name is not extracted by bridge
+            field_path = error.field_name
+            if not field_path:
+                field_path = "params"
+                if "metric_type" in error.message:
+                    field_path = "params.metric_type"
+                elif "threshold_key" in error.message:
+                    field_path = "params.threshold_key"
+                elif "group_key" in error.message:
+                    field_path = "params.group_key"
+            else:
+                field_path = f"params.{field_path}"
+                
+            issues.append(ValidationIssueDTO(
+                field_path=field_path,
+                issue_type="error",
+                message=error.message,
+                suggestion="Check the rule documentation for required parameters."
+            ))
+            
     return ValidationResultDTO(
-        valid=is_valid,
+        valid=result.compile_success,
         issues=issues
     )
 
@@ -83,6 +87,7 @@ def publish_baseline(
     baseline_id: str,
     req: PublishRequestDTO,
     request: Request,
+    baseline_repo=Depends(get_baseline_repository),
     svc: BaselineService = Depends(get_baseline_service),
     hist_svc: RuleBaselineHistoryService = Depends(get_history_service)
 ):
@@ -108,9 +113,7 @@ def publish_baseline(
     )
 
     # Delegate to the application service which compiles+validates before persisting
-    publish_svc = RulePublishWorkflowService(
-        repo=svc.repo,
-    )
+    publish_svc = RulePublishWorkflowService(repo=svc.repo)
     result = publish_svc.publish_draft(baseline_id, draft, expected_revision=req.expected_revision)
 
     if not result.publish_success:
@@ -173,12 +176,31 @@ def restore_historical_version_to_draft(
 
     first_rule = list(rule_set.values())[0] if rule_set else {"rule_type": "threshold", "params": {}}
 
+    draft_dto = RuleDefinitionDTO(
+        rule_id=first_rule.get("rule_id", "unknown"),
+        rule_type=first_rule.get("rule_type", "template"),
+        target_type=first_rule.get("target_type", "devices"),
+        severity=first_rule.get("severity", "warning"),
+        params=first_rule.get("params", {})
+    )
+    
+    rule_set_dto = {}
+    if rule_set:
+        for k, v in rule_set.items():
+            rule_set_dto[k] = RuleDefinitionDTO(
+                rule_id=v.get("rule_id", k),
+                rule_type=v.get("rule_type", "template"),
+                target_type=v.get("target_type", "devices"),
+                severity=v.get("severity", "warning"),
+                params=v.get("params", {})
+            )
+
     return RestoreDraftResultDTO(
         baseline_id=req.baseline_id,
         restored_from_version_id=req.version_id,
         restored_from_version_label=f"{req.version_id} (History)",
-        draft_data=first_rule,
-        rule_set=rule_set
+        draft_data=draft_dto,
+        rule_set=rule_set_dto
     )
 
 
@@ -257,9 +279,21 @@ def load_draft(
     """
     result = svc.load_draft(baseline_id)
     
+    # Map the internal working draft to the typed DTO
+    draft_dto = None
+    if result.draft_data:
+        draft_dto = RuleDefinitionDTO(
+            rule_id=result.draft_data.get("rule_id", "unknown"),
+            rule_type=result.draft_data.get("rule_type", "template"),
+            target_type=result.draft_data.get("target_type", "devices"),
+            severity=result.draft_data.get("severity", "warning"),
+            params=result.draft_data.get("params", {})
+        )
+
+
     return LoadDraftResultDTO(
         has_draft=result.has_draft,
-        draft_data=result.draft_data,
+        draft_data=draft_dto,
         saved_at=result.saved_at,
         base_revision=result.base_revision,
     )
