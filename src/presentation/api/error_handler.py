@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from src.crosscutting.errors.exceptions import (
     CheckToolBaseError, PersistenceError, PersistenceCorruptionError,
     PersistenceRecoveryError, DomainError, ConfigurationError,
-    ValidationError, ErrorCode, ConcurrencyError
+    ValidationError, ErrorCode, ConcurrencyError, SingleWriterLockError
 )
 from src.crosscutting.logging.logger import get_logger
 from src.crosscutting.observation.recorder import record_event
@@ -73,10 +73,19 @@ def register_error_handlers(app: FastAPI):
             status_code = 409
             record_event(
                 event_type="occ_conflict",
-                baseline_id=_try_extract_baseline_id(request.url.path),
+                baseline_id=exc.details.get("baseline_id") or _try_extract_baseline_id(request.url.path),
                 request_id=request_id,
                 actor=actor,
                 context={"path": request.url.path, "method": request.method},
+            )
+        elif isinstance(exc, SingleWriterLockError):
+            status_code = 423
+            record_event(
+                event_type="single_writer_lock_timeout",
+                baseline_id=exc.details.get("baseline_id") or _try_extract_baseline_id(request.url.path),
+                request_id=request_id,
+                actor=actor,
+                context={"path": request.url.path, "method": request.method, **(exc.details or {})},
             )
         elif isinstance(exc, PersistenceCorruptionError):
             status_code = 503  # Service unavailable - data corrupted

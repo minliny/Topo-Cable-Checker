@@ -16,6 +16,7 @@ import os
 import tempfile
 import shutil
 import dataclasses
+import time
 from typing import Any, Dict, List, Optional
 from src.domain.task_model import CheckTask, TaskStatus
 from src.domain.baseline_model import BaselineProfile
@@ -26,9 +27,10 @@ from src.domain.result_model import (
 from src.crosscutting.config.settings import settings
 from src.crosscutting.errors.exceptions import (
     PersistenceCorruptionError, PersistenceRecoveryError, PersistenceError,
-    PersistenceSchemaError, ErrorCode, ConcurrencyError
+    PersistenceSchemaError, ErrorCode, ConcurrencyError, SingleWriterLockError
 )
 from src.crosscutting.logging.logger import get_logger
+from src.crosscutting.observation.recorder import record_event
 import datetime
 
 logger = get_logger(__name__)
@@ -36,6 +38,59 @@ logger = get_logger(__name__)
 DATA_DIR = os.path.join(settings.BASE_DIR, "data")
 BACKUP_DIR = os.path.join(DATA_DIR, "backups")
 MAX_BACKUPS = 5  # Keep last N backup copies per file
+BASELINES_LOCK_TIMEOUT_S = 2.0
+BASELINES_LOCK_POLL_S = 0.02
+
+
+def _baselines_lock_path() -> str:
+    return os.path.join(DATA_DIR, "baselines.json.lock")
+
+
+def _acquire_baselines_lock(timeout_s: float) -> tuple[Any, int]:
+    try:
+        import fcntl
+    except Exception as e:
+        raise SingleWriterLockError("Single-writer lock not supported on this platform", details={"reason": str(e)})
+
+    os.makedirs(DATA_DIR, exist_ok=True)
+    lock_file = open(_baselines_lock_path(), "a+")
+    start = time.monotonic()
+    waited_ms = 0
+    while True:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            waited_ms = int((time.monotonic() - start) * 1000)
+            return lock_file, waited_ms
+        except BlockingIOError:
+            if time.monotonic() - start >= timeout_s:
+                waited_ms = int((time.monotonic() - start) * 1000)
+                try:
+                    lock_file.close()
+                except Exception:
+                    pass
+                raise SingleWriterLockError(
+                    "Single-writer lock timeout: another writer is active",
+                    details={"timeout_ms": int(timeout_s * 1000), "waited_ms": waited_ms},
+                )
+            time.sleep(BASELINES_LOCK_POLL_S)
+        except Exception as e:
+            try:
+                lock_file.close()
+            except Exception:
+                pass
+            raise SingleWriterLockError("Single-writer lock acquisition failed", details={"reason": str(e)})
+
+
+def _release_baselines_lock(lock_file: Any):
+    try:
+        import fcntl
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+    except Exception:
+        pass
+    try:
+        lock_file.close()
+    except Exception:
+        pass
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(BACKUP_DIR, exist_ok=True)
@@ -433,39 +488,57 @@ class BaselineRepository:
         return None
 
     def save(self, profile: BaselineProfile, expected_revision: Optional[int] = None):
-        data = _read_json("baselines.json")
-        # P1.1-3: Apply schema migration before adding new data
-        data = _apply_schema_migration(
-            "baselines.json", data, BASELINES_SCHEMA_VERSION,
-            BASELINES_MIGRATIONS, "__schema_version__"
-        )
-
         baseline_id = profile.get("baseline_id") if isinstance(profile, dict) else profile.baseline_id
-        db_record = data.get(baseline_id) if isinstance(data.get(baseline_id), dict) else None
-        if db_record is None:
-            current_db_revision = 0
-        else:
-            current_db_revision = db_record.get("revision", 1)
 
-        if expected_revision is not None:
-            if current_db_revision != expected_revision:
-                raise ConcurrencyError(
-                    f"Baseline {baseline_id} has been modified by another process. "
-                    f"Expected revision: {expected_revision}, got: {current_db_revision}"
+        try:
+            lock_file, waited_ms = _acquire_baselines_lock(BASELINES_LOCK_TIMEOUT_S)
+        except SingleWriterLockError as e:
+            e.details["baseline_id"] = baseline_id
+            raise
+        try:
+            if waited_ms > 0:
+                record_event(
+                    event_type="single_writer_lock_wait",
+                    baseline_id=baseline_id,
+                    request_id=None,
+                    actor=None,
+                    context={"waited_ms": waited_ms},
                 )
 
-        new_revision = current_db_revision + 1
+            data = _read_json("baselines.json")
+            # P1.1-3: Apply schema migration before adding new data
+            data = _apply_schema_migration(
+                "baselines.json", data, BASELINES_SCHEMA_VERSION,
+                BASELINES_MIGRATIONS, "__schema_version__"
+            )
 
-        if isinstance(profile, dict):
-            profile["revision"] = new_revision
-            data[baseline_id] = profile
-        else:
-            profile.revision = new_revision
-            data[baseline_id] = dataclasses.asdict(profile)
-            
-        # P1.1-3: Stamp schema version on write
-        data["__schema_version__"] = BASELINES_SCHEMA_VERSION
-        _write_json("baselines.json", data)
+            db_record = data.get(baseline_id) if isinstance(data.get(baseline_id), dict) else None
+            if db_record is None:
+                current_db_revision = 0
+            else:
+                current_db_revision = db_record.get("revision", 1)
+
+            if expected_revision is not None:
+                if current_db_revision != expected_revision:
+                    raise ConcurrencyError(
+                        f"Baseline {baseline_id} has been modified by another process. "
+                        f"Expected revision: {expected_revision}, got: {current_db_revision}"
+                    )
+
+            new_revision = current_db_revision + 1
+
+            if isinstance(profile, dict):
+                profile["revision"] = new_revision
+                data[baseline_id] = profile
+            else:
+                profile.revision = new_revision
+                data[baseline_id] = dataclasses.asdict(profile)
+
+            # P1.1-3: Stamp schema version on write
+            data["__schema_version__"] = BASELINES_SCHEMA_VERSION
+            _write_json("baselines.json", data)
+        finally:
+            _release_baselines_lock(lock_file)
 
 class TaskRepository:
     def get_by_id(self, task_id: str) -> CheckTask:

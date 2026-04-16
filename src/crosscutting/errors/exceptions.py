@@ -25,6 +25,7 @@ class ErrorCode:
     PERSISTENCE_SCHEMA_MIGRATION = "P1007"  # P1.1-3: Schema migration error
     PERSISTENCE_SCHEMA_INCOMPATIBLE = "P1008"  # P1.1-3: Unsupported schema version
     CONCURRENCY_CONFLICT = "P1009"
+    SINGLE_WRITER_LOCK = "P1010"
 
     # Domain errors (D2xxx)
     DOMAIN_RULE_COMPILE = "D2001"
@@ -106,6 +107,11 @@ class ConcurrencyError(PersistenceError):
     """Raised when an optimistic concurrency check fails."""
     def __init__(self, message: str = "Concurrency conflict detected"):
         super().__init__(message, error_code=ErrorCode.CONCURRENCY_CONFLICT)
+
+
+class SingleWriterLockError(PersistenceError):
+    def __init__(self, message: str = "Single-writer lock acquisition failed", details: Optional[Dict[str, Any]] = None):
+        super().__init__(message, error_code=ErrorCode.SINGLE_WRITER_LOCK, details=details)
 
 
 class DomainError(CheckToolBaseError):

@@ -72,6 +72,13 @@ docs/            文档（架构 / 验收 / 路线图）
 ./start_api.sh
 ```
 
+运行拓扑约束（Single-writer）：
+
+- 当前 persistence 为 `data/*.json` 文件写回模式，仅支持单实例/单 writer 运行
+- 禁止启动多 worker / 多副本同时指向同一 `data/` 目录写入（否则可能出现静默覆盖，OCC 语义失真）
+- 禁止 API 运行期间并行执行会写 `data/` 的 CLI 命令（尤其是 baseline publish/save/clear）
+- 详细说明见：docs/SINGLE_WRITER_POLICY.md
+
 ### 启动前端
 
 ```bash

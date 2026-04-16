@@ -15,4 +15,6 @@ pytest tests/test_api_integration.py -v
 
 # 3. Start the server
 echo "[3/3] Starting FastAPI server on port 8000..."
-python3 -m uvicorn src.presentation.api.main:app --host 0.0.0.0 --port 8000 --reload
+echo "NOTE: Single-writer mode. Do NOT run multiple API processes/workers pointing at the same data/ directory."
+echo "NOTE: Do NOT run CLI commands that write data/ while the API is serving the same data/ directory."
+python3 -m uvicorn src.presentation.api.main:app --host 0.0.0.0 --port 8000 --reload --workers 1
