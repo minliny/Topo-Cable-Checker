@@ -1,0 +1,82 @@
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+server.log
+*.pid
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pypy/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# HTML exports (generated)
+# Keep: TopoChecker 完整前台.html (prototype baseline)
+# Ignore other generated HTML
+/*.html
+!TopoChecker*.html
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Nested repos
+Topo-Cable-Checker/
+Topo-Cable-Checker-integration/
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/dev_server.log
+backend/dev_server.pid
+backend/server.log
+
+# Test caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# pip cache
+.pip/
+
+# Legacy/temporary scripts (from old workspace diff generation)
+add_tags.py
+gen_report.py
+generate_md.py
+generate_report.py
+generate_report_script.py
+parse_files.py
+
+# Legacy/temporary data files
+diff_output.txt
+report.md
+result.md
+test.xlsx
+user_input.json
+
+# Legacy startup scripts (replaced by scripts/dev_start_backend.sh etc.)
+start_api.sh
+start_frontend.sh

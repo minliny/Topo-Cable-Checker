@@ -1,0 +1,1 @@
+{"rules":[{"id":"rule-001","name":"Duplicate Device Name Check","enabled":true,"category":"duplicate","severity":"high","condition":{"expression":"entity.device_name == other.device_name","description":null},"parameters":[],"description":"Checks for duplicate device names"}]}

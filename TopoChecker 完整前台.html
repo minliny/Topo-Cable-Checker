@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TopoChecker — 完整工作台</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:oklch(0.12 0.012 240);--bg1:oklch(0.16 0.012 240);--bg2:oklch(0.20 0.012 240);--bg3:oklch(0.25 0.014 240);
+  --border:oklch(0.28 0.012 240);--border-hi:oklch(0.36 0.014 240);
+  --text0:oklch(0.93 0.008 240);--text1:oklch(0.72 0.010 240);--text2:oklch(0.48 0.010 240);
+  --accent:oklch(0.65 0.18 240);
+  --crit:oklch(0.64 0.22 25);--warn:oklch(0.76 0.18 72);--info:oklch(0.70 0.16 220);--ok:oklch(0.68 0.18 150);
+  --crit-bg:oklch(0.18 0.04 25);--warn-bg:oklch(0.18 0.04 72);--info-bg:oklch(0.18 0.04 220);
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg0);color:var(--text0);font-family:var(--sans);font-size:13px;overflow:hidden}
+.shell{display:grid;grid-template-rows:40px 1fr;grid-template-columns:180px 1fr;height:100vh}
+.topbar{grid-column:1/-1;background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px}
+.topbar-logo{font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.04em}
+.topbar-sep{width:1px;height:16px;background:var(--border)}
+.topbar-breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.topbar-breadcrumb .bc-cur{color:var(--text0)}
+.topbar-spacer{flex:1}
+.topbar-badge{font-family:var(--mono);font-size:11px;color:var(--text2);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:2px 8px}
+.leftnav{background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;padding:8px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-left:2px solid transparent;transition:background .1s}
+.nav-item:hover{background:var(--bg2)}.nav-item.active{border-left-color:var(--accent);background:var(--bg2)}
+.nav-item .ni-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-item .ni-label{font-size:12px;font-weight:500}
+.nav-sub{display:flex;align-items:center;padding:6px 14px 6px 42px;cursor:pointer;color:var(--text2);font-size:11px;border-left:2px solid transparent;transition:background .1s}
+.nav-sub:hover{background:var(--bg2);color:var(--text1)}.nav-sub.active{color:var(--text0);border-left-color:var(--border-hi)}
+.content{display:flex;flex-direction:column;overflow:hidden}
+.page{flex:1;overflow-y:auto;padding:20px 24px}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.page-title{font-size:16px;font-weight:600}.page-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.page-actions{display:flex;gap:8px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--sans);transition:opacity .1s;white-space:nowrap}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:oklch(0.10 0.01 240)}
+.btn-secondary{background:var(--bg2);color:var(--text0);border:1px solid var(--border)}
+.btn-danger{background:var(--crit-bg);color:var(--crit);border:1px solid var(--crit-bg)}
+.btn-sm{padding:3px 8px;font-size:11px}
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:12px}
+.card h3{font-size:13px;font-weight:600;margin-bottom:8px}
+.table{width:100%;border-collapse:collapse}
+.table th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:6px 10px;border-bottom:1px solid var(--border);text-align:left}
+.table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
+.table tr:last-child td{border-bottom:none}.table tr.clickable{cursor:pointer}.table tr.clickable:hover td{background:var(--bg2)}
+.badge{font-size:10px;font-family:var(--mono);padding:1px 7px;border-radius:3px;display:inline-block}
+.badge-published{background:oklch(0.16 0.04 150);color:var(--ok)}.badge-draft{background:var(--bg3);color:var(--text1)}.badge-deprecated{background:var(--bg2);color:var(--text2)}
+.kv-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 16px}
+.kv-grid .kk{font-size:11px;color:var(--text2);white-space:nowrap;padding:3px 0}
+.kv-grid .vv{font-size:11px;color:var(--text0);font-family:var(--mono);padding:3px 0}
+.toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.toggle-track{width:28px;height:15px;border-radius:8px;background:var(--bg3);position:relative;transition:background .15s;flex-shrink:0}
+.toggle-track.on{background:var(--accent)}.toggle-thumb{width:11px;height:11px;border-radius:50%;background:var(--text2);position:absolute;top:2px;left:2px;transition:left .15s,background .15s}
+.toggle-track.on .toggle-thumb{left:15px;background:oklch(0.10 0.01 240)}
+.rule-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);transition:background .1s}
+.rule-row:hover{background:var(--bg2)}.rule-row.disabled{opacity:.5}
+.rule-row .rr-name{flex:1;font-size:12px;font-weight:500}.rule-row .rr-cat{font-size:11px;color:var(--text2);width:60px}
+.rule-row .rr-cond{font-family:var(--mono);font-size:10px;color:var(--text2);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rule-row .rr-param{font-family:var(--mono);font-size:11px;color:var(--accent);width:80px;text-align:right}
+.param-input{background:var(--bg2);border:1px solid var(--border-hi);border-radius:3px;padding:2px 6px;color:var(--text0);font-family:var(--mono);font-size:11px;width:70px;outline:none}
+.ver-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.ver-row:hover{background:var(--bg2)}.ver-num{font-family:var(--mono);font-size:12px;font-weight:600;width:64px;flex-shrink:0}
+.ver-changes{font-size:12px;color:var(--text1);flex:1}.ver-date{font-family:var(--mono);font-size:11px;color:var(--text2);width:90px;text-align:right}
+.exec-section{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:12px}
+.exec-section h4{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:10px}
+.exec-select{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text0);font-family:var(--sans);font-size:12px;outline:none;width:100%}
+.exec-select:focus{border-color:var(--border-hi)}
+.ribbon{background:var(--bg1);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.score-block{display:flex;flex-direction:column;align-items:center;min-width:52px}
+.score-num{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1}
+.score-num.good{color:var(--ok)}.score-num.warn{color:var(--warn)}.score-num.bad{color:var(--crit)}
+.score-label{font-size:10px;color:var(--text2);margin-top:2px}
+.sev-card{display:flex;flex-direction:column;align-items:center;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:border-color .15s,background .15s}
+.sev-card:hover{background:var(--bg2)}.sev-card.af{border-color:var(--border-hi);background:var(--bg2)}
+.sev-card .sc-n{font-family:var(--mono);font-size:20px;font-weight:600;line-height:1}
+.sev-card .sc-l{font-size:10px;color:var(--text2);margin-top:2px}
+.sev-card.crit .sc-n{color:var(--crit)}.sev-card.warn .sc-n{color:var(--warn)}.sev-card.info .sc-n{color:var(--info)}
+.ribbon-sep{width:1px;height:36px;background:var(--border)}
+.work-area{display:flex;flex:1;overflow:hidden}
+.issue-pane{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;transition:width .2s}
+.issue-pane.wide{width:100%}.issue-pane.split{width:40%;min-width:280px}
+.toolbar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg1)}
+.toolbar input{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text0);font-family:var(--sans);font-size:12px;width:140px;outline:none}
+.toolbar input:focus{border-color:var(--border-hi)}
+.filter-btn{background:none;border:1px solid var(--border);border-radius:4px;padding:3px 7px;color:var(--text1);font-size:11px;cursor:pointer;font-family:var(--sans)}
+.filter-btn.active{background:var(--bg3);color:var(--text0)}.tc{margin-left:auto;font-size:11px;color:var(--text2);font-family:var(--mono)}
+.issue-scroll{overflow-y:auto;flex:1}
+.issue-row{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;border-left:2px solid transparent}
+.issue-row:hover{background:var(--bg2)}.issue-row.sel{background:var(--bg2);border-left-color:var(--accent)}
+.sev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.sev-dot.critical{background:var(--crit);box-shadow:0 0 4px var(--crit)}.sev-dot.warning{background:var(--warn)}.sev-dot.info{background:var(--info)}
+.issue-body{flex:1;min-width:0}.issue-ttl{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.issue-meta{font-size:11px;color:var(--text2);margin-top:2px;display:flex;gap:8px}.issue-meta .ri{font-family:var(--mono)}
+.sev-tag{font-size:10px;font-family:var(--mono);padding:1px 5px;border-radius:3px;flex-shrink:0}
+.sev-tag.critical{background:var(--crit-bg);color:var(--crit)}.sev-tag.warning{background:var(--warn-bg);color:var(--warn)}.sev-tag.info{background:var(--info-bg);color:var(--info)}
+.detail-pane{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg0)}
+.detail-hd{padding:12px 16px 0;flex-shrink:0}.detail-title{font-size:14px;font-weight:600;line-height:1.4;margin-top:6px}
+.detail-tabs{display:flex;border-bottom:1px solid var(--border);margin-top:10px;padding:0 16px;flex-shrink:0}
+.tab-btn{padding:5px 11px;font-size:12px;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--sans)}
+.tab-btn:hover{color:var(--text1)}.tab-btn.active{color:var(--text0);border-bottom-color:var(--accent)}
+.close-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:0 4px;margin-left:auto}
+.detail-body{flex:1;overflow-y:auto;padding:14px 16px}
+.d-block{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:11px 13px;margin-bottom:10px}
+.d-block h4{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:7px}
+.cat-tag{font-size:10px;padding:1px 6px;border-radius:3px;background:var(--bg3);color:var(--text2);font-family:var(--mono)}
+.mono-box{font-family:var(--mono);font-size:11px;color:var(--text0);background:var(--bg2);padding:6px 10px;border-radius:4px;margin-top:6px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+.plain-text{font-size:12px;color:var(--text1);line-height:1.6}
+.ev-compare{display:flex;align-items:center;margin-bottom:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.ev-cell{flex:1;padding:10px;background:var(--bg1);text-align:center}
+.ev-cell.mid{flex:0 0 44px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;color:var(--text2)}
+.ev-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.ev-val{font-family:var(--mono);font-size:16px;font-weight:600}
+.ev-cell.expected .ev-val{color:var(--ok)}.ev-cell.actual .ev-val{color:var(--crit)}
+.ctx-list{display:flex;flex-direction:column}
+.ctx-row{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--border)}
+.ctx-row:last-child{border-bottom:none}.ctx-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ctx-dot.up{background:var(--ok)}.ctx-dot.down{background:var(--crit)}.ctx-dot.unknown{background:var(--text2)}
+.ctx-name{font-family:var(--mono);font-size:11px;flex:1}.ctx-meta{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.diff-run-sel{display:flex;gap:12px;align-items:flex-end;margin-bottom:16px}
+.diff-run-sel label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px}
+.diff-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.diff-stat{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
+.diff-stat .dsv{font-family:var(--mono);font-size:20px;font-weight:600;line-height:1}.diff-stat .dsl{font-size:10px;color:var(--text2);margin-top:3px}
+.dsv.up{color:var(--crit)}.dsv.dn{color:var(--ok)}.dsv.eq{color:var(--text1)}
+.trend-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 10px;border-radius:4px;font-family:var(--mono);margin-bottom:12px}
+.trend-badge.degraded{background:var(--crit-bg);color:var(--crit)}.trend-badge.improved{background:oklch(0.16 0.04 150);color:var(--ok)}.trend-badge.stable{background:var(--bg3);color:var(--text1)}
+.diff-issue-table{width:100%;border-collapse:collapse}
+.diff-issue-table th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:6px 10px;border-bottom:1px solid var(--border);text-align:left}
+.diff-issue-table td{padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px}
+.diff-issue-table .new-row td{background:oklch(0.15 0.03 150)}.diff-issue-table .rem-row td{background:oklch(0.15 0.03 25)}.diff-issue-table .unch-row td{opacity:.6}.diff-issue-table .chg-row td{background:oklch(0.15 0.03 72)}.diff-issue-table .reg-row td{background:oklch(0.15 0.03 290)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;padding:32px;text-align:center}
+.empty .ei{font-size:28px;opacity:.2}.empty .et{font-size:13px;color:var(--text2);font-weight:500}.empty .es{font-size:11px;color:var(--text2);opacity:.7;line-height:1.6;margin-top:2px}
+.progress-bar{height:2px;background:var(--bg3);overflow:hidden;flex-shrink:0}.progress-fill{height:100%;background:var(--accent);transition:width .3s}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+@keyframes spin{to{transform:rotate(360deg)}}.spinner{display:inline-block;width:10px;height:10px;border:2px solid var(--bg3);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+</style>
+</head>
+<body>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+const SEV_LABEL = { critical:'严重', warning:'警告', info:'提示' };
+const STATUS_LABEL = { published:'已发布', draft:'草稿', deprecated:'已废弃' };
+const TREND_LABEL = { degraded:'↑ 恶化', improved:'↓ 改善', stable:'→ 稳定' };
+const STATUS_DOT = { up:'up', down:'down', degraded:'down' };
+
+const BASELINES = [
+  { id:'bl-001', name:'生产环境拓扑基线', version:'2.1.0', status:'published',
+    description:'覆盖 DC-A/DC-B 核心、汇聚、接入三层设备，共 24 条规则。',
+    created_at:'2026-01-10', published_at:'2026-03-15', rule_count:24, enabled_count:22,
+    identification_strategy:{ method:'device_id', id_fields:['hostname','mgmt_ip'] },
+    naming_template:'{site}-{role}-{seq:02d}',
+    parameters:{ max_util_threshold:'0.85', min_uplinks:'2', bgp_hold_timer:'180', ntp_drift_ms:'100' }
+  },
+  { id:'bl-002', name:'DR 站点基线（草稿）', version:'0.3.0', status:'draft',
+    description:'灾备站点轻量化检查基线，规则集为生产基线子集，阈值更宽松。',
+    created_at:'2026-04-01', published_at:null, rule_count:12, enabled_count:10,
+    identification_strategy:{ method:'device_id', id_fields:['hostname'] },
+    naming_template:'{site}-{role}-{seq:02d}',
+    parameters:{ max_util_threshold:'0.90', min_uplinks:'1', bgp_hold_timer:'90', ntp_drift_ms:'200' }
+  },
+  { id:'bl-003', name:'旧版拓扑基线 v1', version:'1.0.0', status:'deprecated',
+    description:'已废弃，由 bl-001 v2 替代。',
+    created_at:'2025-06-01', published_at:'2025-08-01', rule_count:18, enabled_count:0,
+    identification_strategy:{ method:'mac_address', id_fields:['mac'] },
+    naming_template:'{role}-{seq}',
+    parameters:{ max_util_threshold:'0.80', min_uplinks:'2', bgp_hold_timer:'180', ntp_drift_ms:'100' }
+  },
+];
+
+const RULES_MAP = {
+  'bl-001': [
+    { id:'R-001', name:'核心上行冗余', category:'冗余', severity:'critical', enabled:true, condition:'device.role=="core" AND count(active_uplinks)>=param.min_uplinks', threshold:'2', parameters:{ min_uplinks:'2' } },
+    { id:'R-002', name:'BGP 会话健康', category:'路由', severity:'critical', enabled:true, condition:'bgp.session.state=="Established" AND bgp.hold_timer<=param.bgp_hold_timer', threshold:'180s', parameters:{ bgp_hold_timer:'180' } },
+    { id:'R-003', name:'对称路由检查', category:'路由', severity:'warning', enabled:true, condition:'route.ingress_path==route.egress_path FOR EACH prefix', threshold:'—', parameters:{} },
+    { id:'R-004', name:'VLAN 一致性', category:'VLAN', severity:'warning', enabled:true, condition:'trunk.vlan_allowed CONTAINS global_vlan_db.active_vlans', threshold:'—', parameters:{} },
+    { id:'R-005', name:'接口利用率阈值', category:'容量', severity:'warning', enabled:true, condition:'interface.util_avg_30m < param.max_util_threshold', threshold:'85%', parameters:{ max_util_threshold:'0.85' } },
+    { id:'R-006', name:'NTP 同步偏差', category:'管理', severity:'info', enabled:true, condition:'ntp.drift_ms < param.ntp_drift_ms', threshold:'100ms', parameters:{ ntp_drift_ms:'100' } },
+    { id:'R-007', name:'固件版本一致性', category:'合规', severity:'info', enabled:true, condition:'ALL devices IN role_group HAVE SAME firmware_baseline', threshold:'—', parameters:{} },
+    { id:'R-008', name:'管理接口可达性', category:'管理', severity:'warning', enabled:false, condition:'mgmt.ping_latency < param.ping_timeout', threshold:'500ms', parameters:{ ping_timeout:'500' } },
+    { id:'R-009', name:'LACP 状态一致', category:'冗余', severity:'warning', enabled:true, condition:'lacp.partner_state=="IN_SYNC"', threshold:'—', parameters:{} },
+    { id:'R-010', name:'STP 根桥一致性', category:'二层', severity:'warning', enabled:false, condition:'stp.root_bridge==param.expected_root', threshold:'—', parameters:{ expected_root:'core-sw-01' } },
+  ],
+  'bl-002': [
+    { id:'R-001', name:'核心上行冗余', category:'冗余', severity:'critical', enabled:true, condition:'device.role=="core" AND count(active_uplinks)>=param.min_uplinks', threshold:'1', parameters:{ min_uplinks:'1' } },
+    { id:'R-002', name:'BGP 会话健康', category:'路由', severity:'critical', enabled:true, condition:'bgp.session.state=="Established"', threshold:'90s', parameters:{ bgp_hold_timer:'90' } },
+    { id:'R-005', name:'接口利用率阈值', category:'容量', severity:'warning', enabled:true, condition:'interface.util_avg_30m < param.max_util_threshold', threshold:'90%', parameters:{ max_util_threshold:'0.90' } },
+    { id:'R-006', name:'NTP 同步偏差', category:'管理', severity:'info', enabled:false, condition:'ntp.drift_ms < param.ntp_drift_ms', threshold:'200ms', parameters:{ ntp_drift_ms:'200' } },
+  ],
+  'bl-003': [],
+};
+
+const VERSIONS_MAP = {
+  'bl-001': [
+    { version:'2.1.0', status:'published', published_at:'2026-03-15', changes:'新增接口利用率规则（R-005），调整 NTP 阈值为 100ms', rule_count:24 },
+    { version:'2.0.0', status:'deprecated', published_at:'2026-01-20', changes:'重构规则分类体系，拆分路由/冗余/合规三类', rule_count:22 },
+    { version:'1.5.0', status:'deprecated', published_at:'2025-11-10', changes:'新增 VLAN 一致性规则（R-004），修复 BGP 条件定义', rule_count:18 },
+    { version:'1.0.0', status:'deprecated', published_at:'2025-08-01', changes:'初始发布版本', rule_count:12 },
+  ],
+  'bl-002': [
+    { version:'0.3.0', status:'draft', published_at:null, changes:'草稿：新增容量检查规则', rule_count:12 },
+    { version:'0.2.0', status:'deprecated', published_at:'2026-03-01', changes:'调整阈值参数', rule_count:10 },
+  ],
+  'bl-003': [
+    { version:'1.0.0', status:'deprecated', published_at:'2025-08-01', changes:'初始版本（已废弃）', rule_count:18 },
+  ],
+};
+
+const ALL_ISSUES = [
+  { id:'i1', ruleId:'TOPO-001', rule_id:'R-001', rule_name:'核心上行冗余', rule_category:'冗余', severity:'critical',
+    title:'单点故障：core-sw-03 无冗余上行链路', anchor_type:'device', anchor_id:'core-sw-03',
+    source_device:'core-sw-03', source_port:'uplink-A2', target_device:'agg-sw-02', target_port:'downlink-3',
+    description:'设备 core-sw-03 仅有一条活跃上行链路，链路故障将导致所有下游网段失去连通性。', remediation:'在汇聚层为 core-sw-03 添加第二条上行链路。',
+    evidence:{ expected_value:'2', actual_value:'1', comparison_operator:'>=', evidence_type:'threshold', field_name:'active_uplinks_count', related_values:{'uplink-A1':'up','uplink-A2':'down'}, raw_snapshot:{device_id:'core-sw-03',ts:'2026-04-20T14:32:00Z'} },
+    _review_context:{ related_devices:[{id:'core-sw-03',role:'核心交换机',vendor:'Cisco',model:'Nexus 9336C',firmware:'10.3.2',mgmt_ip:'10.0.1.3'}], related_ports:[{device:'core-sw-03',port:'uplink-A1',status:'up',speed:'10G',peer:'agg-sw-01'},{device:'core-sw-03',port:'uplink-A2',status:'down',speed:'10G',peer:'agg-sw-02'}], related_links:[{id:'l1',from:'core-sw-03',to:'agg-sw-01',status:'up',utilization:'78%'},{id:'l2',from:'core-sw-03',to:'agg-sw-02',status:'down',utilization:'—'}], topology_snapshot:{spof_nodes:['core-sw-03']} },
+    _diff_items:[{type:'changed',field:'uplink-A2.status',old:'up',new:'down'},{type:'changed',field:'uplink-A2.util',old:'34%',new:'—'}]
+  },
+  { id:'i2', ruleId:'TOPO-007', rule_id:'R-002', rule_name:'BGP 会话健康', rule_category:'路由', severity:'critical',
+    title:'edge-r-01 与 ISP-peer-A 之间 BGP 会话已断开', anchor_type:'bgp_session', anchor_id:'edge-r-01::ISP-peer-A',
+    source_device:'edge-r-01', source_port:'isp-link-A', target_device:'ISP-peer-A', target_port:'—',
+    description:'至上游 ISP-peer-A 的 BGP 会话已断开超过 15 分钟，备份路径利用率达 94%。', remediation:'检查物理连通性和 ISP 侧日志，验证 BGP 计时器配置。',
+    evidence:{ expected_value:'Established', actual_value:'Idle', comparison_operator:'==', evidence_type:'state_check', field_name:'bgp.session.state', related_values:{holdtimer_expired:'true'}, raw_snapshot:{peer:'ISP-peer-A',state:'Idle'} },
+    _review_context:{ related_devices:[{id:'edge-r-01',role:'边缘路由器',vendor:'Juniper',model:'MX204',firmware:'23.2R1',mgmt_ip:'10.0.0.1'}], related_ports:[{device:'edge-r-01',port:'isp-link-A',status:'down',speed:'10G',peer:'ISP-peer-A'},{device:'edge-r-01',port:'isp-link-B',status:'up',speed:'10G',peer:'ISP-peer-B'}], related_links:[{id:'l3',from:'edge-r-01',to:'ISP-peer-A',status:'down',utilization:'—'},{id:'l4',from:'edge-r-01',to:'ISP-peer-B',status:'up',utilization:'94%'}], topology_snapshot:{bgp_down:1} },
+    _diff_items:[{type:'changed',field:'isp-link-A.status',old:'up',new:'down'},{type:'added',field:'alert.failover_saturation',old:null,new:'true'}]
+  },
+  { id:'i3', ruleId:'TOPO-014', rule_id:'R-003', rule_name:'对称路由检查', rule_category:'路由', severity:'warning',
+    title:'前缀 192.168.100.0/24 存在不对称路由', anchor_type:'prefix', anchor_id:'192.168.100.0/24',
+    source_device:'core-sw-01', source_port:'peer-link-1', target_device:'core-sw-02', target_port:'peer-link-1',
+    description:'该前缀的入向与出向路径经过不同核心交换机，防火墙策略执行不一致。', remediation:'在 core-sw-02 上将此前缀路由度量值恢复为 100。',
+    evidence:{ expected_value:'对称', actual_value:'不对称', comparison_operator:'==', evidence_type:'routing_check', field_name:'route.path_symmetry', related_values:{'ingress':'core-sw-01','egress':'core-sw-02'}, raw_snapshot:{metric_diff:10} },
+    _review_context:{ related_devices:[{id:'core-sw-01',role:'核心交换机',vendor:'Arista',model:'7280R3',firmware:'4.29.2F',mgmt_ip:'10.0.1.1'}], related_ports:[], related_links:[{id:'l5',from:'core-sw-01',to:'core-sw-02',status:'up',utilization:'44%'}], topology_snapshot:{prefix:'192.168.100.0/24'} },
+    _diff_items:[{type:'changed',field:'core-sw-02.route.metric',old:'100',new:'110'}]
+  },
+  { id:'i4', ruleId:'TOPO-022', rule_id:'R-004', rule_name:'VLAN 一致性', rule_category:'VLAN', severity:'warning',
+    title:'access-sw-12 上行链路缺少 VLAN 200', anchor_type:'vlan', anchor_id:'vlan:200',
+    source_device:'access-sw-12', source_port:'Gi0/1', target_device:'agg-sw-03', target_port:'—',
+    description:'VLAN 200 已在全局数据库定义，但未出现在 access-sw-12 的 Trunk 允许列表中。', remediation:'在 access-sw-12 的 Gi0/1 端口 Trunk 允许列表中添加 VLAN 200。',
+    evidence:{ expected_value:'含 VLAN 200', actual_value:'不含', comparison_operator:'CONTAINS', evidence_type:'membership_check', field_name:'trunk.vlan_allowed', related_values:{missing:'200'}, raw_snapshot:{allowed:[100,201,300]} },
+    _review_context:{ related_devices:[{id:'access-sw-12',role:'接入交换机',vendor:'Cisco',model:'Catalyst 9300',firmware:'17.9.3',mgmt_ip:'10.0.2.12'}], related_ports:[{device:'access-sw-12',port:'Gi0/1',status:'up',speed:'1G',peer:'agg-sw-03'}], related_links:[], topology_snapshot:{vlan_id:200} },
+    _diff_items:[{type:'removed',field:'trunk.vlan_allowed',old:'200',new:null}]
+  },
+  { id:'i5', ruleId:'TOPO-031', rule_id:'R-005', rule_name:'接口利用率阈值', rule_category:'容量', severity:'warning',
+    title:'agg-sw-01 上行链路持续 30 分钟利用率超 85%', anchor_type:'interface', anchor_id:'agg-sw-01::uplink-B2',
+    source_device:'agg-sw-01', source_port:'uplink-B2', target_device:'core-sw-02', target_port:'downlink-2',
+    description:'uplink-B2 持续高利用率，超过阈值 85%，当前 30m 均值为 91.3%。', remediation:'考虑流量工程调整或扩容，检查是否存在微突发。',
+    evidence:{ expected_value:'< 85%', actual_value:'91.3%', comparison_operator:'<', evidence_type:'threshold', field_name:'interface.util_avg_30m', related_values:{peak:'97%',avg:'91.3%'}, raw_snapshot:{drops_count:142} },
+    _review_context:{ related_devices:[{id:'agg-sw-01',role:'汇聚交换机',vendor:'Arista',model:'7050CX3',firmware:'4.28.1F',mgmt_ip:'10.0.1.10'}], related_ports:[{device:'agg-sw-01',port:'uplink-B2',status:'up',speed:'10G',peer:'core-sw-02'}], related_links:[{id:'l6',from:'agg-sw-01',to:'core-sw-02',status:'up',utilization:'91%'}], topology_snapshot:{capacity_gbps:10} },
+    _diff_items:[{type:'changed',field:'uplink-B2.util_avg',old:'72%',new:'91%'}]
+  },
+  { id:'i6', ruleId:'TOPO-009', rule_id:'R-006', rule_name:'NTP 同步偏差', rule_category:'管理', severity:'info',
+    title:'3 台设备 NTP 同步偏差超过 100ms', anchor_type:'device_group', anchor_id:'ntp-drift-group',
+    source_device:'access-sw-05', source_port:'mgmt', target_device:'ntp-server-01', target_port:'—',
+    description:'时间偏差超过 100ms，影响日志关联分析和时序敏感协议。', remediation:'检查 NTP 服务器可达性及客户端轮询间隔配置。',
+    evidence:{ expected_value:'< 100ms', actual_value:'143ms', comparison_operator:'<', evidence_type:'threshold', field_name:'ntp.drift_ms', related_values:{'access-sw-05':'143ms','access-sw-08':'112ms'}, raw_snapshot:{drifted:3} },
+    _review_context:{ related_devices:[{id:'access-sw-05',role:'接入交换机',vendor:'Cisco',model:'Catalyst 9200',firmware:'17.9.2',mgmt_ip:'10.0.2.5'}], related_ports:[], related_links:[], topology_snapshot:{drifted_clients:3} },
+    _diff_items:[{type:'changed',field:'access-sw-05.ntp.drift_ms',old:'88ms',new:'143ms'}]
+  },
+];
+
+const SCENARIOS = [
+  { id:'s1', name:'全量拓扑检查' }, { id:'s2', name:'链路冗余检查' },
+  { id:'s3', name:'BGP 会话审计' }, { id:'s4', name:'VLAN 一致性检查' },
+];
+
+const INIT_RUNS = [
+  { id:'run-20260420-1432', baseline_id:'bl-001', baseline_version:'2.1.0', scenario_id:'s1', scenario:'全量拓扑检查', time:'今日 14:32', issues:ALL_ISSUES, score:54 },
+  { id:'run-20260420-0901', baseline_id:'bl-001', baseline_version:'2.1.0', scenario_id:'s1', scenario:'全量拓扑检查', time:'今日 09:01', issues:ALL_ISSUES.filter(i=>i.id!=='i2'), score:71 },
+  { id:'run-20260419-1800', baseline_id:'bl-001', baseline_version:'2.0.0', scenario_id:'s2', scenario:'链路冗余检查', time:'昨日 18:00', issues:ALL_ISSUES.filter(i=>['i1','i3','i5'].includes(i.id)), score:68 },
+];
+
+// ── DataSource 模型 Mock ───────────────────────────────────────────────────
+const DATA_SOURCES = [
+  { dataset_id:'ds-prod-20260420', name:'生产网络快照 2026-04-20', type:'offline_snapshot',
+    updated_at:'2026-04-20T06:00:00Z', sheet_count:4, device_count:24, link_count:38 },
+  { dataset_id:'ds-prod-20260419', name:'生产网络快照 2026-04-19', type:'offline_snapshot',
+    updated_at:'2026-04-19T06:00:00Z', sheet_count:4, device_count:24, link_count:38 },
+  { dataset_id:'ds-dr-20260418', name:'DR 站点快照 2026-04-18', type:'offline_snapshot',
+    updated_at:'2026-04-18T18:00:00Z', sheet_count:2, device_count:12, link_count:16 },
+];
+
+// ── ExecutionScope 模型 Mock ───────────────────────────────────────────────
+const EXECUTION_SCOPES = [
+  { scope_id:'scope-all', method:'role_filter', scope_fields:['role','site'],
+    included_groups:['core','aggregation','access'], excluded_groups:[] },
+  { scope_id:'scope-core-only', method:'role_filter', scope_fields:['role'],
+    included_groups:['core'], excluded_groups:[] },
+  { scope_id:'scope-dr', method:'site_filter', scope_fields:['site'],
+    included_groups:['DC-DR'], excluded_groups:[] },
+];
+
+// ── RecognitionResult Mock（按 dataset_id + scope_id 索引）────────────────
+// 模拟 recognize(baseline, data_source, scope) 返回的识别摘要
+const RECOGNITION_RESULTS = {
+  'ds-prod-20260420|scope-all':    { recognized_device_count:22, unmatched_device_count:2, out_of_scope_device_count:0, warnings:['core-sw-04 hostname 无法匹配，已跳过','access-sw-15 mgmt_ip 缺失'] },
+  'ds-prod-20260420|scope-core-only': { recognized_device_count:3, unmatched_device_count:0, out_of_scope_device_count:19, warnings:[] },
+  'ds-prod-20260419|scope-all':    { recognized_device_count:22, unmatched_device_count:2, out_of_scope_device_count:0, warnings:['core-sw-04 hostname 无法匹配，已跳过','access-sw-15 mgmt_ip 缺失'] },
+  'ds-dr-20260418|scope-dr':       { recognized_device_count:10, unmatched_device_count:2, out_of_scope_device_count:0, warnings:['dr-sw-03 firmware 字段缺失'] },
+};
+
+// ── RecheckDiffSnapshot 模型 Mock ──────────────────────────────────────────
+// 键：`${base_run_id}|${target_run_id}`，UI 禁止自算差异，只消费此表
+const DIFF_TYPE_LABEL = { new:'＋ 新增', resolved:'− 消除', remaining:'→ 持续', severity_changed:'~ 级别变化', regression:'↩ 回归' };
+const DIFF_TYPE_CLS   = { new:'new-row', resolved:'rem-row', remaining:'unch-row', severity_changed:'chg-row', regression:'reg-row' };
+const DIFF_TYPE_COLOR = { new:'var(--ok)', resolved:'var(--crit)', remaining:'var(--text2)', severity_changed:'var(--warn)', regression:'oklch(0.70 0.18 290)' };
+
+const RECHECK_DIFF_SNAPSHOTS = {
+  'run-20260420-0901|run-20260420-1432': {
+    diff_id:'diff-001', base_run_id:'run-20260420-0901', target_run_id:'run-20260420-1432',
+    summary:{ trend:'degraded', total_before:5, total_after:6, delta:+1, severity_diff:{critical:+1,warning:0,info:0} },
+    issue_changes:[
+      { issue_id:'i2', diff_type:'new', severity_before:null, severity_after:'critical', summary:'BGP 会话断开，备份路径饱和' },
+      { issue_id:'i1', diff_type:'severity_changed', severity_before:'warning', severity_after:'critical', summary:'uplink-A2 状态从 up 变为 down，SPOF 升级为严重' },
+      { issue_id:'i3', diff_type:'remaining', severity_before:'warning', severity_after:'warning', summary:'路由不对称持续存在' },
+      { issue_id:'i4', diff_type:'remaining', severity_before:'warning', severity_after:'warning', summary:'VLAN 200 缺失持续存在' },
+      { issue_id:'i5', diff_type:'remaining', severity_before:'warning', severity_after:'warning', summary:'利用率超阈值持续' },
+      { issue_id:'i6', diff_type:'remaining', severity_before:'info', severity_after:'info', summary:'NTP 偏差持续' },
+    ]
+  },
+  'run-20260419-1800|run-20260420-0901': {
+    diff_id:'diff-002', base_run_id:'run-20260419-1800', target_run_id:'run-20260420-0901',
+    summary:{ trend:'degraded', total_before:3, total_after:5, delta:+2, severity_diff:{critical:0,warning:+1,info:+1} },
+    issue_changes:[
+      { issue_id:'i4', diff_type:'new', severity_before:null, severity_after:'warning', summary:'VLAN 200 缺失为新增问题' },
+      { issue_id:'i6', diff_type:'new', severity_before:null, severity_after:'info', summary:'NTP 偏差为新增问题' },
+      { issue_id:'i1', diff_type:'remaining', severity_before:'critical', severity_after:'critical', summary:'SPOF 持续' },
+      { issue_id:'i3', diff_type:'remaining', severity_before:'warning', severity_after:'warning', summary:'路由不对称持续' },
+      { issue_id:'i5', diff_type:'regression', severity_before:null, severity_after:'warning', summary:'利用率超阈值曾消除后回归' },
+    ]
+  },
+  'run-20260419-1800|run-20260420-1432': {
+    diff_id:'diff-003', base_run_id:'run-20260419-1800', target_run_id:'run-20260420-1432',
+    summary:{ trend:'degraded', total_before:3, total_after:6, delta:+3, severity_diff:{critical:+1,warning:+1,info:+1} },
+    issue_changes:[
+      { issue_id:'i2', diff_type:'new', severity_before:null, severity_after:'critical', summary:'BGP 会话新断开' },
+      { issue_id:'i4', diff_type:'new', severity_before:null, severity_after:'warning', summary:'VLAN 200 缺失为新增' },
+      { issue_id:'i6', diff_type:'new', severity_before:null, severity_after:'info', summary:'NTP 偏差为新增' },
+      { issue_id:'i1', diff_type:'severity_changed', severity_before:'warning', severity_after:'critical', summary:'SPOF 严重度从 warning 升为 critical' },
+      { issue_id:'i3', diff_type:'remaining', severity_before:'warning', severity_after:'warning', summary:'路由不对称持续' },
+      { issue_id:'i5', diff_type:'regression', severity_before:null, severity_after:'warning', summary:'利用率超阈值回归' },
+    ]
+  },
+};
+
+// ── P1 模型 Mock ──────────────────────────────────────────────────────────
+const PARAMETER_PROFILES = [
+  { profile_id:'pp-001', name:'生产环境标准参数', description:'适用于 DC-A/DC-B 生产网络',
+    parameters:[
+      { key:'min_uplinks',         label:'最小上行链路数',  type:'number',  value:2,    unit:'条',  description:'核心设备要求的最少上行链路数量' },
+      { key:'bgp_hold_timer',      label:'BGP Hold Timer', type:'number',  value:180,  unit:'秒',  description:'BGP 会话保活超时时间' },
+      { key:'max_util_threshold',  label:'最大利用率阈值',  type:'number',  value:0.85, unit:'',   description:'接口 30m 均值利用率上限（0~1）' },
+      { key:'ntp_drift_ms',        label:'NTP 偏差上限',   type:'number',  value:100,  unit:'ms',  description:'允许的最大 NTP 时钟偏差' },
+    ]},
+  { profile_id:'pp-002', name:'DR 站点宽松参数', description:'灾备站点允许更宽松的参数配置',
+    parameters:[
+      { key:'min_uplinks',        label:'最小上行链路数',  type:'number', value:1,    unit:'条', description:'DR 站点允许单上行' },
+      { key:'bgp_hold_timer',     label:'BGP Hold Timer', type:'number', value:90,   unit:'秒', description:'DR 站点更短的保活超时' },
+      { key:'max_util_threshold', label:'最大利用率阈值',  type:'number', value:0.90, unit:'',  description:'DR 站点允许更高利用率' },
+      { key:'ntp_drift_ms',       label:'NTP 偏差上限',   type:'number', value:200,  unit:'ms', description:'DR 站点允许更大时钟偏差' },
+    ]},
+];
+
+const THRESHOLD_PROFILES = [
+  { profile_id:'tp-001', name:'生产网络阈值配置', description:'生产环境标准告警阈值',
+    thresholds:[
+      { key:'uplink_critical',  label:'上行链路严重阈值', operator:'<',  value:2,    severity:'critical', description:'低于此值触发严重告警' },
+      { key:'util_warning',     label:'利用率警告阈值',   operator:'>',  value:0.80, severity:'warning',  description:'超过此值触发警告' },
+      { key:'util_critical',    label:'利用率严重阈值',   operator:'>',  value:0.90, severity:'critical', description:'超过此值触发严重告警' },
+      { key:'ntp_info',         label:'NTP 偏差提示阈值', operator:'>',  value:100,  severity:'info',     description:'超过此值触发提示' },
+    ]},
+  { profile_id:'tp-002', name:'DR 站点阈值配置', description:'灾备站点宽松告警阈值',
+    thresholds:[
+      { key:'uplink_critical', label:'上行链路严重阈值', operator:'<', value:1,    severity:'critical', description:'DR 允许单上行' },
+      { key:'util_warning',    label:'利用率警告阈值',   operator:'>', value:0.88, severity:'warning',  description:'DR 宽松利用率警告' },
+    ]},
+];
+
+const SCOPE_SELECTORS = [
+  { scope_id:'sc-001', name:'生产全量范围', method:'role_filter', scope_fields:['role','site'], included_groups:['core','aggregation','access'], excluded_groups:[], description:'覆盖 DC-A/DC-B 所有角色设备' },
+  { scope_id:'sc-002', name:'核心层范围',   method:'role_filter', scope_fields:['role'],        included_groups:['core'],                         excluded_groups:[], description:'仅核心交换机' },
+  { scope_id:'sc-003', name:'DR 站点范围',  method:'site_filter', scope_fields:['site'],        included_groups:['DC-DR'],                        excluded_groups:[], description:'灾备站点设备' },
+];
+
+const RULE_SETS = [
+  { ruleset_id:'rs-001', name:'冗余检查集', description:'网络冗余性相关规则', priority:1, rule_ids:['R-001','R-009'] },
+  { ruleset_id:'rs-002', name:'路由检查集', description:'路由协议和路径相关规则', priority:2, rule_ids:['R-002','R-003'] },
+  { ruleset_id:'rs-003', name:'二层检查集', description:'VLAN、STP 等二层协议规则', priority:3, rule_ids:['R-004','R-010'] },
+  { ruleset_id:'rs-004', name:'容量与管理集', description:'容量、NTP、管理接口规则', priority:4, rule_ids:['R-005','R-006','R-007','R-008'] },
+];
+
+// baseline_id → profile 引用（补充关联，不修改 BASELINES 原始数组）
+const BASELINE_PROFILE_MAP = {
+  'bl-001': { parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001', ruleset_ids:['rs-001','rs-002','rs-003','rs-004'] },
+  'bl-002': { parameter_profile_id:'pp-002', threshold_profile_id:'tp-002', scope_selector_id:'sc-003', ruleset_ids:['rs-001','rs-002'] },
+  'bl-003': { parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001', ruleset_ids:[] },
+};
+
+// rule_id → profile 引用（补充关联，不修改 RULES_MAP 原始数组）
+const RULE_PROFILE_MAP = {
+  'R-001':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-002':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-003':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-004':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-005':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-006':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-007':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-008':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-009':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+  'R-010':{ parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001' },
+};
+
+// baseline_id → 版本快照（结构化，用于 A 页版本快照摘要）
+const BASELINE_VERSION_SNAPSHOTS = {
+  'bl-001':{ baseline_id:'bl-001', current_version:'2.1.0', previous_version:'2.0.0', rule_added_count:2, rule_removed_count:0, parameter_changed_count:1, threshold_changed_count:1 },
+  'bl-002':{ baseline_id:'bl-002', current_version:'0.3.0', previous_version:'0.2.0', rule_added_count:2, rule_removed_count:0, parameter_changed_count:2, threshold_changed_count:0 },
+  'bl-003':{ baseline_id:'bl-003', current_version:'1.0.0', previous_version:null,    rule_added_count:0, rule_removed_count:0, parameter_changed_count:0, threshold_changed_count:0 },
+};
+
+// ── P2 版本治理 Mock ───────────────────────────────────────────────────────
+// VERSION_CHANGE_SUMMARIES: version_id → 结构化变更摘要（替代 changes 自由文本）
+const VERSION_CHANGE_SUMMARIES = {
+  'bl-001|2.1.0':{ version_id:'bl-001|2.1.0', from_version:'2.0.0', to_version:'2.1.0',
+    rule_added_count:2, rule_removed_count:0, rule_modified_count:1,
+    parameter_changed_keys:['ntp_drift_ms'], threshold_changed_keys:['ntp_info'],
+    scope_changed_count:0, ruleset_changed_count:1,
+    change_items:[
+      { change_id:'ci-001', change_type:'rule_added',     target_type:'rule',      target_id:'R-005', target_name:'接口利用率阈值', before_summary:null,                    after_summary:'新增容量检查规则',    impact_level:'medium' },
+      { change_id:'ci-002', change_type:'rule_added',     target_type:'rule',      target_id:'R-009', target_name:'LACP 状态一致', before_summary:null,                    after_summary:'新增二层冗余检查',    impact_level:'low' },
+      { change_id:'ci-003', change_type:'param_changed',  target_type:'parameter', target_id:'ntp_drift_ms', target_name:'NTP 偏差上限', before_summary:'200ms', after_summary:'100ms', impact_level:'low' },
+      { change_id:'ci-004', change_type:'threshold_changed', target_type:'threshold', target_id:'ntp_info', target_name:'NTP 偏差提示阈值', before_summary:'200',  after_summary:'100', impact_level:'low' },
+      { change_id:'ci-005', change_type:'ruleset_changed', target_type:'ruleset',  target_id:'rs-004', target_name:'容量与管理集', before_summary:'2 条规则', after_summary:'4 条规则', impact_level:'medium' },
+    ]},
+  'bl-001|2.0.0':{ version_id:'bl-001|2.0.0', from_version:'1.5.0', to_version:'2.0.0',
+    rule_added_count:4, rule_removed_count:0, rule_modified_count:3,
+    parameter_changed_keys:['bgp_hold_timer','max_util_threshold'], threshold_changed_keys:['util_warning','util_critical'],
+    scope_changed_count:1, ruleset_changed_count:4,
+    change_items:[
+      { change_id:'ci-010', change_type:'rule_added',    target_type:'rule',     target_id:'R-007', target_name:'固件版本一致性', before_summary:null, after_summary:'新增合规检查', impact_level:'medium' },
+      { change_id:'ci-011', change_type:'rule_added',    target_type:'rule',     target_id:'R-008', target_name:'管理接口可达性', before_summary:null, after_summary:'新增管理检查（初始停用）', impact_level:'low' },
+      { change_id:'ci-012', change_type:'scope_changed', target_type:'scope',    target_id:'sc-001', target_name:'生产全量范围', before_summary:'仅 role_filter', after_summary:'role_filter + site_filter', impact_level:'high' },
+      { change_id:'ci-013', change_type:'ruleset_changed', target_type:'ruleset', target_id:'rs-002', target_name:'路由检查集', before_summary:'2 条规则', after_summary:'含 BGP+对称路由', impact_level:'high' },
+    ]},
+  'bl-001|1.5.0':{ version_id:'bl-001|1.5.0', from_version:'1.0.0', to_version:'1.5.0',
+    rule_added_count:1, rule_removed_count:0, rule_modified_count:1,
+    parameter_changed_keys:[], threshold_changed_keys:[],
+    scope_changed_count:0, ruleset_changed_count:1,
+    change_items:[
+      { change_id:'ci-020', change_type:'rule_added',    target_type:'rule',  target_id:'R-004', target_name:'VLAN 一致性', before_summary:null, after_summary:'新增二层 VLAN 检查', impact_level:'medium' },
+      { change_id:'ci-021', change_type:'rule_modified', target_type:'rule',  target_id:'R-002', target_name:'BGP 会话健康', before_summary:'条件简单检查', after_summary:'新增 hold_timer 参数条件', impact_level:'high' },
+    ]},
+  'bl-001|1.0.0':{ version_id:'bl-001|1.0.0', from_version:null, to_version:'1.0.0',
+    rule_added_count:6, rule_removed_count:0, rule_modified_count:0,
+    parameter_changed_keys:[], threshold_changed_keys:[],
+    scope_changed_count:0, ruleset_changed_count:2,
+    change_items:[
+      { change_id:'ci-030', change_type:'rule_added', target_type:'rule', target_id:'R-001', target_name:'核心上行冗余', before_summary:null, after_summary:'初始发布', impact_level:'high' },
+      { change_id:'ci-031', change_type:'rule_added', target_type:'rule', target_id:'R-002', target_name:'BGP 会话健康', before_summary:null, after_summary:'初始发布', impact_level:'high' },
+    ]},
+  'bl-002|0.3.0':{ version_id:'bl-002|0.3.0', from_version:'0.2.0', to_version:'0.3.0',
+    rule_added_count:2, rule_removed_count:0, rule_modified_count:0,
+    parameter_changed_keys:['max_util_threshold'], threshold_changed_keys:[],
+    scope_changed_count:0, ruleset_changed_count:1,
+    change_items:[
+      { change_id:'ci-040', change_type:'rule_added',   target_type:'rule', target_id:'R-005', target_name:'接口利用率阈值', before_summary:null, after_summary:'DR 站点容量检查', impact_level:'medium' },
+      { change_id:'ci-041', change_type:'param_changed', target_type:'parameter', target_id:'max_util_threshold', target_name:'最大利用率阈值', before_summary:'0.88', after_summary:'0.90', impact_level:'low' },
+    ]},
+};
+
+// VERSION_SNAPSHOTS: baseline_id|version → 完整版本快照
+const VERSION_SNAPSHOTS = {
+  'bl-001|2.1.0':{ snapshot_id:'vs-001', baseline_id:'bl-001', version:'2.1.0', status:'published',
+    description:'覆盖 DC-A/DC-B 核心、汇聚、接入三层设备，共 24 条规则。',
+    parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001',
+    ruleset_ids:['rs-001','rs-002','rs-003','rs-004'],
+    rule_count:24, enabled_count:22, created_at:'2026-01-10', published_at:'2026-03-15' },
+  'bl-001|2.0.0':{ snapshot_id:'vs-002', baseline_id:'bl-001', version:'2.0.0', status:'deprecated',
+    description:'重构规则分类体系，拆分路由/冗余/合规三类。',
+    parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001',
+    ruleset_ids:['rs-001','rs-002','rs-003'],
+    rule_count:22, enabled_count:20, created_at:'2025-12-01', published_at:'2026-01-20' },
+  'bl-001|1.5.0':{ snapshot_id:'vs-003', baseline_id:'bl-001', version:'1.5.0', status:'deprecated',
+    description:'新增 VLAN 一致性规则，修复 BGP 条件定义。',
+    parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001',
+    ruleset_ids:['rs-001','rs-002'],
+    rule_count:18, enabled_count:18, created_at:'2025-10-01', published_at:'2025-11-10' },
+  'bl-001|1.0.0':{ snapshot_id:'vs-004', baseline_id:'bl-001', version:'1.0.0', status:'deprecated',
+    description:'初始发布版本。',
+    parameter_profile_id:'pp-001', threshold_profile_id:'tp-001', scope_selector_id:'sc-001',
+    ruleset_ids:['rs-001','rs-002'],
+    rule_count:12, enabled_count:12, created_at:'2025-06-01', published_at:'2025-08-01' },
+  'bl-002|0.3.0':{ snapshot_id:'vs-005', baseline_id:'bl-002', version:'0.3.0', status:'draft',
+    description:'灾备站点轻量化检查基线，规则集为生产基线子集。',
+    parameter_profile_id:'pp-002', threshold_profile_id:'tp-002', scope_selector_id:'sc-003',
+    ruleset_ids:['rs-001','rs-002'],
+    rule_count:12, enabled_count:10, created_at:'2026-04-01', published_at:null },
+};
+
+// VERSION_DIFF_SNAPSHOTS: from_version|to_version → 版本间结构化 diff
+// 禁止 UI 现场用 rule_ids 集合差计算；diff 只能来自此表
+const VERSION_DIFF_SNAPSHOTS = {
+  'bl-001|2.0.0|2.1.0':{ diff_id:'vd-001', from_version:'2.0.0', to_version:'2.1.0',
+    summary:{ rule_added_count:2, rule_removed_count:0, rule_modified_count:1, parameter_changed_count:1, threshold_changed_count:1, scope_changed_count:0, ruleset_changed_count:1 },
+    rule_changes:[
+      { change_id:'vd-001-r1', change_type:'added',    target_id:'R-005', target_name:'接口利用率阈值',  impact_level:'medium', after_summary:'新增容量检查规则' },
+      { change_id:'vd-001-r2', change_type:'added',    target_id:'R-009', target_name:'LACP 状态一致',   impact_level:'low',    after_summary:'新增二层冗余检查' },
+      { change_id:'vd-001-r3', change_type:'modified', target_id:'R-006', target_name:'NTP 同步偏差',    impact_level:'low',    before_summary:'threshold 200ms', after_summary:'threshold 100ms' },
+    ],
+    parameter_changes:[{ change_id:'vd-001-p1', target_id:'ntp_drift_ms', target_name:'NTP 偏差上限', before_summary:'200',  after_summary:'100' }],
+    threshold_changes:[{ change_id:'vd-001-t1', target_id:'ntp_info',     target_name:'NTP 偏差提示阈值', before_summary:'200', after_summary:'100' }],
+    scope_changes:[], ruleset_changes:[{ change_id:'vd-001-rs1', target_id:'rs-004', target_name:'容量与管理集', before_summary:'2 条', after_summary:'4 条' }] },
+  'bl-001|1.5.0|2.0.0':{ diff_id:'vd-002', from_version:'1.5.0', to_version:'2.0.0',
+    summary:{ rule_added_count:4, rule_removed_count:0, rule_modified_count:3, parameter_changed_count:2, threshold_changed_count:2, scope_changed_count:1, ruleset_changed_count:4 },
+    rule_changes:[
+      { change_id:'vd-002-r1', change_type:'added',    target_id:'R-007', target_name:'固件版本一致性', impact_level:'medium', after_summary:'新增合规检查' },
+      { change_id:'vd-002-r2', change_type:'added',    target_id:'R-008', target_name:'管理接口可达性', impact_level:'low',    after_summary:'停用状态' },
+      { change_id:'vd-002-r3', change_type:'modified', target_id:'R-002', target_name:'BGP 会话健康',   impact_level:'high',   before_summary:'简单状态检查', after_summary:'含 hold_timer 参数' },
+    ],
+    parameter_changes:[
+      { change_id:'vd-002-p1', target_id:'bgp_hold_timer',      target_name:'BGP Hold Timer',  before_summary:'90',   after_summary:'180' },
+      { change_id:'vd-002-p2', target_id:'max_util_threshold',  target_name:'最大利用率阈值', before_summary:'0.80', after_summary:'0.85' },
+    ],
+    threshold_changes:[
+      { change_id:'vd-002-t1', target_id:'util_warning',  target_name:'利用率警告阈值', before_summary:'0.75', after_summary:'0.80' },
+      { change_id:'vd-002-t2', target_id:'util_critical', target_name:'利用率严重阈值', before_summary:'0.85', after_summary:'0.90' },
+    ],
+    scope_changes:[{ change_id:'vd-002-sc1', target_id:'sc-001', target_name:'生产全量范围', before_summary:'role_filter', after_summary:'role+site filter' }],
+    ruleset_changes:[{ change_id:'vd-002-rs1', target_id:'rs-003', target_name:'二层检查集', before_summary:'1 条', after_summary:'2 条' }] },
+  'bl-001|1.0.0|1.5.0':{ diff_id:'vd-003', from_version:'1.0.0', to_version:'1.5.0',
+    summary:{ rule_added_count:1, rule_removed_count:0, rule_modified_count:1, parameter_changed_count:0, threshold_changed_count:0, scope_changed_count:0, ruleset_changed_count:1 },
+    rule_changes:[
+      { change_id:'vd-003-r1', change_type:'added',    target_id:'R-004', target_name:'VLAN 一致性',  impact_level:'medium', after_summary:'新增二层 VLAN 检查' },
+      { change_id:'vd-003-r2', change_type:'modified', target_id:'R-002', target_name:'BGP 会话健康', impact_level:'high',   before_summary:'简单条件', after_summary:'新增 hold_timer 条件' },
+    ],
+    parameter_changes:[], threshold_changes:[], scope_changes:[],
+    ruleset_changes:[{ change_id:'vd-003-rs1', target_id:'rs-003', target_name:'二层检查集', before_summary:'0 条', after_summary:'1 条' }] },
+};
+
+function scoreColor(s){return s>=80?'good':s>=60?'warn':'bad'}
+
+// Shared
+function SevTag({sev}){return <span className={`sev-tag ${sev}`}>{SEV_LABEL[sev]||sev}</span>}
+function StatusBadge({status}){return <span className={`badge badge-${status}`}>{STATUS_LABEL[status]||status}</span>}
+function Toggle({on,onChange}){return <div className="toggle" onClick={()=>onChange(!on)}><div className={`toggle-track ${on?'on':''}`}><div className="toggle-thumb"/></div></div>}
+function Collapsible({title,children}){const [o,setO]=useState(false);return(<div><div style={{display:'flex',justifyContent:'space-between',cursor:'pointer',padding:'4px 0',userSelect:'none'}} onClick={()=>setO(x=>!x)}><span style={{fontSize:10,color:'var(--text2)'}}>{title}</span><span style={{fontSize:10,color:'var(--text2)',fontFamily:'var(--mono)'}}>{o?'▲':'▼'}</span></div>{o&&<div style={{marginTop:6}}>{children}</div>}</div>)}
+
+// Nav config
+const NAV = [
+  { id:'baseline', label:'规则基线', icon:'◉', subs:[{id:'list',label:'基线列表'},{id:'detail',label:'基线详情'},{id:'rules',label:'规则编辑'},{id:'versions',label:'版本管理'}]},
+  { id:'execution', label:'检查执行', icon:'▶', subs:[{id:'config',label:'执行配置'},{id:'history',label:'运行历史'}]},
+  { id:'analysis', label:'结果分析', icon:'◈', subs:[{id:'workbench',label:'分析工作台'}]},
+  { id:'diff', label:'复检差异', icon:'⊕', subs:[{id:'compare',label:'差异对比'}]},
+];
+
+// A. Baseline List
+function BaselineList({setNav}){
+  return(<div className="page">
+    <div className="page-header">
+      <div><div className="page-title">规则基线</div><div className="page-sub">管理检查基线及其版本</div></div>
+      <div className="page-actions"><button className="btn btn-primary">＋ 新建基线</button></div>
+    </div>
+    <table className="table"><thead><tr><th>名称</th><th>版本</th><th>状态</th><th>规则数</th><th>识别策略</th><th>最后发布</th><th>操作</th></tr></thead>
+    <tbody>{BASELINES.map(bl=>(
+      <tr key={bl.id} className="clickable" onClick={()=>setNav({section:'baseline',sub:'detail',ctx:{blId:bl.id}})}>
+        <td><div style={{fontWeight:500}}>{bl.name}</div><div style={{fontSize:11,color:'var(--text2)',marginTop:2}}>{bl.id}</div></td>
+        <td><span style={{fontFamily:'var(--mono)',fontSize:12}}>{bl.version}</span></td>
+        <td><StatusBadge status={bl.status}/></td>
+        <td style={{fontFamily:'var(--mono)'}}>{bl.enabled_count}/{bl.rule_count}</td>
+        <td style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)'}}>{bl.identification_strategy.method}</td>
+        <td style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)'}}>{bl.published_at||'—'}</td>
+        <td onClick={e=>e.stopPropagation()}><div style={{display:'flex',gap:5}}>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setNav({section:'execution',sub:'config',ctx:{blId:bl.id}})}>▶ 执行</button>
+          <button className="btn btn-secondary btn-sm">复制</button>
+          {bl.status==='deprecated'&&<button className="btn btn-danger btn-sm">删除</button>}
+        </div></td>
+      </tr>
+    ))}</tbody></table>
+  </div>);
+}
+
+// ── P1 修复：BaselineDetail ────────────────────────────────────────────────
+// 展示 ParameterProfile / ThresholdProfile / ScopeSelector / RuleSet / 版本快照
+function BaselineDetail({blId,setNav}){
+  const bl=BASELINES.find(b=>b.id===blId)||BASELINES[0];
+  const ref=BASELINE_PROFILE_MAP[bl.id]||{};
+  const pp=PARAMETER_PROFILES.find(p=>p.profile_id===ref.parameter_profile_id);
+  const tp=THRESHOLD_PROFILES.find(p=>p.profile_id===ref.threshold_profile_id);
+  const sc=SCOPE_SELECTORS.find(s=>s.scope_id===ref.scope_selector_id);
+  const rulesets=(ref.ruleset_ids||[]).map(id=>RULE_SETS.find(rs=>rs.ruleset_id===id)).filter(Boolean);
+  const vs=BASELINE_VERSION_SNAPSHOTS[bl.id];
+  const allRules=RULES_MAP[bl.id]||[];
+
+  const S=({label,val})=><React.Fragment><span className="kk">{label}</span><span className="vv">{val||'—'}</span></React.Fragment>;
+
+  return(<div className="page">
+    <div className="page-header">
+      <div>
+        <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}><StatusBadge status={bl.status}/><span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)'}}>{bl.version}</span></div>
+        <div className="page-title">{bl.name}</div><div className="page-sub">{bl.description}</div>
+      </div>
+      <div className="page-actions">
+        <button className="btn btn-secondary" onClick={()=>setNav({section:'baseline',sub:'rules',ctx:{blId:bl.id}})}>编辑规则</button>
+        <button className="btn btn-secondary" onClick={()=>setNav({section:'baseline',sub:'versions',ctx:{blId:bl.id}})}>版本历史</button>
+        {bl.status==='draft'&&<button className="btn btn-primary">发布此版本</button>}
+        <button className="btn btn-primary" onClick={()=>setNav({section:'execution',sub:'config',ctx:{blId:bl.id}})}>▶ 执行检查</button>
+      </div>
+    </div>
+
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+
+      {/* 基本信息 */}
+      <div className="card"><h3>基本信息</h3><div className="kv-grid">
+        <S label="baseline_id" val={bl.id}/>
+        <S label="version" val={bl.version}/>
+        <S label="status" val={STATUS_LABEL[bl.status]}/>
+        <S label="enabled_rules" val={`${bl.enabled_count} / ${bl.rule_count}`}/>
+        <S label="created_at" val={bl.created_at}/>
+        <S label="published_at" val={bl.published_at||'未发布'}/>
+      </div></div>
+
+      {/* 识别策略 */}
+      <div className="card"><h3>识别策略</h3><div className="kv-grid">
+        <S label="method" val={bl.identification_strategy.method}/>
+        <S label="id_fields" val={bl.identification_strategy.id_fields.join(', ')}/>
+        <S label="naming_template" val={bl.naming_template}/>
+      </div></div>
+
+      {/* ParameterProfile */}
+      <div className="card">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <h3>ParameterProfile</h3>
+          {pp&&<span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--accent)'}}>{pp.profile_id}</span>}
+        </div>
+        {pp?(<>
+          <div style={{fontSize:11,color:'var(--text2)',marginBottom:8}}>{pp.description}</div>
+          {pp.parameters.map(p=>(
+            <div key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,flex:1,color:'var(--text2)'}}>{p.key}</span>
+              <span style={{fontSize:10,color:'var(--text2)',width:44}}>{p.type}</span>
+              <span style={{fontFamily:'var(--mono)',fontSize:12,fontWeight:600,color:'var(--text0)',width:48,textAlign:'right'}}>{String(p.value)}{p.unit}</span>
+            </div>
+          ))}
+        </>):<span style={{fontSize:12,color:'var(--text2)'}}>未绑定 ParameterProfile</span>}
+      </div>
+
+      {/* ThresholdProfile */}
+      <div className="card">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <h3>ThresholdProfile</h3>
+          {tp&&<span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--accent)'}}>{tp.profile_id}</span>}
+        </div>
+        {tp?(<>
+          <div style={{fontSize:11,color:'var(--text2)',marginBottom:8}}>{tp.description}</div>
+          {tp.thresholds.map(t=>(
+            <div key={t.key} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,flex:1,color:'var(--text2)'}}>{t.key}</span>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)',width:24}}>{t.operator}</span>
+              <span style={{fontFamily:'var(--mono)',fontSize:12,fontWeight:600,color:'var(--text0)',width:40,textAlign:'right'}}>{String(t.value)}</span>
+              <SevTag sev={t.severity}/>
+            </div>
+          ))}
+        </>):<span style={{fontSize:12,color:'var(--text2)'}}>未绑定 ThresholdProfile</span>}
+      </div>
+
+      {/* ScopeSelector */}
+      <div className="card"><h3>ScopeSelector</h3>
+        {sc?(<div className="kv-grid">
+          <S label="scope_id" val={sc.scope_id}/>
+          <S label="name" val={sc.name}/>
+          <S label="method" val={sc.method}/>
+          <S label="scope_fields" val={sc.scope_fields.join(', ')}/>
+          <S label="included_groups" val={sc.included_groups.join(', ')||'—'}/>
+          <S label="excluded_groups" val={sc.excluded_groups.join(', ')||'—'}/>
+          <S label="description" val={sc.description}/>
+        </div>):<span style={{fontSize:12,color:'var(--text2)'}}>未绑定 ScopeSelector</span>}
+      </div>
+
+      {/* 版本快照摘要 */}
+      <div className="card"><h3>版本变更摘要</h3>
+        {vs?(<>
+          <div className="kv-grid" style={{marginBottom:10}}>
+            <S label="current_version" val={vs.current_version}/>
+            <S label="previous_version" val={vs.previous_version||'—（首版）'}/>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+            {[['rule_added_count','新增规则','var(--ok)'],['rule_removed_count','删除规则','var(--crit)'],['parameter_changed_count','参数变更','var(--warn)'],['threshold_changed_count','阈值变更','var(--warn)']].map(([k,l,c])=>(
+              <div key={k} style={{background:'var(--bg2)',borderRadius:5,padding:'6px 10px',textAlign:'center'}}>
+                <div style={{fontFamily:'var(--mono)',fontSize:16,fontWeight:600,color:vs[k]>0?c:'var(--text2)'}}>{vs[k]}</div>
+                <div style={{fontSize:10,color:'var(--text2)',marginTop:2}}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </>):<span style={{fontSize:12,color:'var(--text2)'}}>暂无版本快照</span>}
+      </div>
+
+      {/* RuleSet 分组摘要 */}
+      <div className="card" style={{gridColumn:'1/-1'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <h3>RuleSet 分组（{rulesets.length} 个集合 · {bl.enabled_count}/{bl.rule_count} 规则启用）</h3>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setNav({section:'baseline',sub:'rules',ctx:{blId:bl.id}})}>管理规则 →</button>
+        </div>
+        {rulesets.length===0&&<span style={{fontSize:12,color:'var(--text2)'}}>暂无 RuleSet 绑定</span>}
+        {rulesets.map(rs=>{
+          const rsRules=allRules.filter(r=>rs.rule_ids.includes(r.id));
+          return(<div key={rs.ruleset_id} style={{marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,padding:'5px 10px',background:'var(--bg2)',borderRadius:5,marginBottom:4}}>
+              <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--accent)',width:60}}>{rs.ruleset_id}</span>
+              <span style={{fontSize:12,fontWeight:600}}>{rs.name}</span>
+              <span style={{fontSize:11,color:'var(--text2)',flex:1}}>{rs.description}</span>
+              <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)'}}>priority {rs.priority} · {rsRules.length} 条</span>
+            </div>
+            {rsRules.map(r=>(
+              <div key={r.id} className="rule-row" style={{paddingLeft:24}}>
+                <div className="rr-name">{r.name}</div>
+                <div className="rr-cat">{r.category}</div>
+                <SevTag sev={r.severity}/>
+                <span style={{fontSize:11,color:r.enabled?'var(--ok)':'var(--text2)',fontFamily:'var(--mono)',marginLeft:8,width:32}}>{r.enabled?'启用':'停用'}</span>
+              </div>
+            ))}
+          </div>);
+        })}
+      </div>
+
+    </div>
+  </div>);
+}
+
+// ── P1 修复：RuleEditor ────────────────────────────────────────────────────
+// 规则按 RuleSet 分组；参数编辑进入 rule_overrides（不污染 ParameterProfile）
+// 条件字段仍只读；参数输入带类型区分（number / boolean / enum / string）
+function RuleEditor({blId}){
+  const bl=BASELINES.find(b=>b.id===blId)||BASELINES[0];
+  const ref=BASELINE_PROFILE_MAP[bl.id]||{};
+  const rulesets=(ref.ruleset_ids||[]).map(id=>RULE_SETS.find(rs=>rs.ruleset_id===id)).filter(Boolean);
+  const [enabled,setEnabled]=useState(()=>{
+    const m={};(RULES_MAP[bl.id]||[]).forEach(r=>{m[r.id]=r.enabled});return m;
+  });
+  // rule_overrides: {rule_id: {param_key: value}} — 不直接修改 ParameterProfile
+  const [overrides,setOverrides]=useState({});
+  const [expandedRule,setExpandedRule]=useState(null);
+  const allRules=RULES_MAP[bl.id]||[];
+
+  function setOverride(rId,key,val){setOverrides(o=>({...o,[rId]:{...(o[rId]||{}),[key]:val}}))}
+
+  function TypedInput({rId,param}){
+    const currentVal=overrides[rId]?.[param.key]??param.value;
+    const comm={style:{background:'var(--bg2)',border:'1px solid var(--border-hi)',borderRadius:3,padding:'2px 5px',color:'var(--text0)',fontFamily:'var(--mono)',fontSize:11,outline:'none',width:80},onChange:e=>setOverride(rId,param.key,param.type==='number'?Number(e.target.value):e.target.value)};
+    if(param.type==='boolean') return <select {...comm} value={String(currentVal)}><option value="true">true</option><option value="false">false</option></select>;
+    if(param.options) return <select {...comm} value={currentVal}>{param.options.map(o=><option key={o} value={o}>{o}</option>)}</select>;
+    if(param.type==='number') return <input type="number" {...comm} value={currentVal}/>;
+    return <input type="text" {...comm} value={currentVal}/>;
+  }
+
+  return(<div className="page">
+    <div className="page-header">
+      <div><div className="page-title">规则编辑 — {bl.name}</div>
+        <div className="page-sub">按 RuleSet 分组 · 条件只读 · 参数编辑进入 rule_overrides，不修改 Profile 默认值</div></div>
+      <div className="page-actions">
+        <button className="btn btn-secondary btn-sm" onClick={()=>setOverrides({})} style={{marginRight:4}}>重置覆写</button>
+        <button className="btn btn-primary">保存变更</button>
+      </div>
+    </div>
+
+    {rulesets.length===0&&<div style={{fontSize:12,color:'var(--text2)',padding:'12px 0'}}>当前基线未绑定 RuleSet</div>}
+    {rulesets.map(rs=>{
+      const rsRules=allRules.filter(r=>rs.rule_ids.includes(r.id));
+      return(<div key={rs.ruleset_id} style={{marginBottom:16}}>
+        {/* RuleSet header */}
+        <div style={{display:'flex',gap:10,alignItems:'center',padding:'7px 12px',background:'var(--bg2)',borderRadius:'6px 6px 0 0',border:'1px solid var(--border)',borderBottom:'none'}}>
+          <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--accent)'}}>{rs.ruleset_id}</span>
+          <span style={{fontSize:13,fontWeight:600}}>{rs.name}</span>
+          <span style={{fontSize:11,color:'var(--text2)',flex:1}}>{rs.description}</span>
+          <span style={{fontSize:10,color:'var(--text2)',fontFamily:'var(--mono)'}}>priority {rs.priority}</span>
+        </div>
+        <div style={{border:'1px solid var(--border)',borderRadius:'0 0 6px 6px',overflow:'hidden'}}>
+          {rsRules.map(r=>{
+            const rp=RULE_PROFILE_MAP[r.id]||{};
+            const pp=PARAMETER_PROFILES.find(p=>p.profile_id===rp.parameter_profile_id);
+            const tp=THRESHOLD_PROFILES.find(p=>p.profile_id===rp.threshold_profile_id);
+            const sc=SCOPE_SELECTORS.find(s=>s.scope_id===rp.scope_selector_id);
+            const hasOverride=overrides[r.id]&&Object.keys(overrides[r.id]).length>0;
+            const isExpanded=expandedRule===r.id;
+            return(<div key={r.id} style={{borderBottom:'1px solid var(--border)'}}>
+              {/* Rule row */}
+              <div className={`rule-row ${enabled[r.id]?'':'disabled'}`} style={{paddingLeft:12,cursor:'pointer'}} onClick={()=>setExpandedRule(isExpanded?null:r.id)}>
+                <Toggle on={!!enabled[r.id]} onChange={v=>{setEnabled(e=>({...e,[r.id]:v}));return false;}} />
+                <div className="rr-name">{r.name}</div>
+                <SevTag sev={r.severity}/>
+                <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)',flex:2,paddingLeft:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.condition}</span>
+                {hasOverride&&<span style={{fontSize:10,color:'var(--warn)',fontFamily:'var(--mono)',marginLeft:8}}>已覆写</span>}
+                <span style={{fontSize:10,color:'var(--text2)',marginLeft:8}}>{isExpanded?'▲':'▼'}</span>
+              </div>
+              {/* Expanded: Profile binding + typed overrides */}
+              {isExpanded&&<div style={{padding:'10px 20px',background:'var(--bg0)',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+                {/* ParameterProfile + overrides */}
+                <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:5,padding:'8px 10px'}}>
+                  <div style={{fontSize:10,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',color:'var(--text2)',marginBottom:6}}>
+                    ParameterProfile
+                    <span style={{fontFamily:'var(--mono)',color:'var(--accent)',marginLeft:6}}>{rp.parameter_profile_id||'—'}</span>
+                  </div>
+                  {pp?pp.parameters.map(p=>{
+                    const ov=overrides[r.id]?.[p.key];
+                    return(<div key={p.key} style={{display:'flex',alignItems:'center',gap:6,padding:'3px 0',borderBottom:'1px solid var(--border)'}}>
+                      <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)',flex:1}}>{p.key}</span>
+                      <span style={{fontSize:9,color:'var(--text2)',width:36}}>{p.type}</span>
+                      <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)',width:36,textDecoration:ov!=null?'line-through':'none'}}>{String(p.value)}</span>
+                      <TypedInput rId={r.id} param={p}/>
+                      {ov!=null&&<span style={{fontSize:9,color:'var(--warn)'}}>覆写</span>}
+                    </div>);
+                  }):<span style={{fontSize:11,color:'var(--text2)'}}>无绑定</span>}
+                </div>
+                {/* ThresholdProfile (只读) */}
+                <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:5,padding:'8px 10px'}}>
+                  <div style={{fontSize:10,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',color:'var(--text2)',marginBottom:6}}>
+                    ThresholdProfile
+                    <span style={{fontFamily:'var(--mono)',color:'var(--accent)',marginLeft:6}}>{rp.threshold_profile_id||'—'}</span>
+                  </div>
+                  {tp?tp.thresholds.map(t=>(
+                    <div key={t.key} style={{display:'flex',alignItems:'center',gap:6,padding:'3px 0',borderBottom:'1px solid var(--border)'}}>
+                      <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)',flex:1}}>{t.key}</span>
+                      <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)',width:16}}>{t.operator}</span>
+                      <span style={{fontFamily:'var(--mono)',fontSize:10,fontWeight:600,color:'var(--text0)',width:32}}>{String(t.value)}</span>
+                      <SevTag sev={t.severity}/>
+                    </div>
+                  )):<span style={{fontSize:11,color:'var(--text2)'}}>无绑定</span>}
+                  <div style={{fontSize:9,color:'var(--text2)',marginTop:6}}>本轮只读，不支持编辑</div>
+                </div>
+                {/* ScopeSelector (只读) */}
+                <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:5,padding:'8px 10px'}}>
+                  <div style={{fontSize:10,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',color:'var(--text2)',marginBottom:6}}>
+                    ScopeSelector
+                    <span style={{fontFamily:'var(--mono)',color:'var(--accent)',marginLeft:6}}>{rp.scope_selector_id||'—'}</span>
+                  </div>
+                  {sc?(<div className="kv-grid" style={{gap:'2px 10px'}}>
+                    <span className="kk">method</span><span className="vv">{sc.method}</span>
+                    <span className="kk">scope_fields</span><span className="vv">{sc.scope_fields.join(', ')}</span>
+                    <span className="kk">included</span><span className="vv">{sc.included_groups.join(', ')||'—'}</span>
+                    <span className="kk">excluded</span><span className="vv">{sc.excluded_groups.join(', ')||'—'}</span>
+                  </div>):<span style={{fontSize:11,color:'var(--text2)'}}>无绑定</span>}
+                  <div style={{fontSize:9,color:'var(--text2)',marginTop:6}}>本轮只读，不支持编辑</div>
+                </div>
+              </div>}
+            </div>);
+          })}
+        </div>
+      </div>);
+    })}
+  </div>);
+}
+
+// ── P2 修复：VersionMgmt ──────────────────────────────────────────────────
+// changes 已结构化 → VERSION_CHANGE_SUMMARIES
+// 新增：版本快照查看、版本间 diff 对比、回滚状态反馈
+// 版本 diff 只能来自 VERSION_DIFF_SNAPSHOTS，禁止 UI 集合差计算
+const CHANGE_TYPE_LABEL = { rule_added:'规则新增', rule_removed:'规则删除', rule_modified:'规则修改', param_changed:'参数变更', threshold_changed:'阈值变更', scope_changed:'范围变更', ruleset_changed:'规则集变更', added:'新增', removed:'删除', modified:'修改' };
+const IMPACT_COLOR = { high:'var(--crit)', medium:'var(--warn)', low:'var(--text2)' };
+
+function VersionMgmt({blId}){
+  const bl=BASELINES.find(b=>b.id===blId)||BASELINES[0];
+  const versions=VERSIONS_MAP[bl.id]||[];
+  const [snapshotVer,setSnapshotVer]=useState(null);
+  const [diffFrom,setDiffFrom]=useState('');
+  const [diffTo,setDiffTo]=useState('');
+  const [rollbackMsg,setRollbackMsg]=useState({});
+
+  const publishedVersions=versions.filter(v=>v.status!=='draft');
+
+  function handleRollback(ver){
+    setRollbackMsg(m=>({...m,[ver.version]:`将基于 v${ver.version} 创建新草稿，版本号将递增至 ${nextDraftVersion(ver.version)}`}));
+    setTimeout(()=>setRollbackMsg(m=>({...m,[ver.version]:'✓ 回滚草稿已创建（模拟）'})),1200);
+  }
+  function nextDraftVersion(v){ const p=v.split('.');return `${p[0]}.${parseInt(p[1])+1}.0-draft`; }
+
+  const snapshotData = snapshotVer ? VERSION_SNAPSHOTS[`${bl.id}|${snapshotVer}`] : null;
+  const diffKey = diffFrom&&diffTo ? `${bl.id}|${diffFrom}|${diffTo}` : null;
+  const diffData = diffKey ? VERSION_DIFF_SNAPSHOTS[diffKey] : null;
+
+  const S=({label,val})=><React.Fragment><span className="kk">{label}</span><span className="vv">{val||'—'}</span></React.Fragment>;
+
+  return(<div className="page">
+    <div className="page-header">
+      <div><div className="page-title">版本管理 — {bl.name}</div><div className="page-sub">结构化变更记录 · 版本快照 · 版本间 diff 对比</div></div>
+      {bl.status==='draft'&&<div className="page-actions"><button className="btn btn-primary">发布当前草稿 ({bl.version})</button></div>}
+    </div>
+
+    {/* ── 版本列表（结构化 change summary，不再展示 changes 自由文本）── */}
+    <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:6,overflow:'hidden',marginBottom:14}}>
+      <div style={{padding:'6px 12px',background:'var(--bg2)',borderBottom:'1px solid var(--border)',fontSize:10,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--text2)'}}>版本列表</div>
+      {versions.map((v,i)=>{
+        const cs=VERSION_CHANGE_SUMMARIES[`${bl.id}|${v.version}`];
+        const rb=rollbackMsg[v.version];
+        return(<div key={v.version}>
+          <div className="ver-row" style={{flexWrap:'wrap',gap:6,alignItems:'flex-start'}}>
+            <span className="ver-num">{v.version}</span>
+            <StatusBadge status={v.status}/>
+            {/* 结构化变更摘要卡片 */}
+            {cs?(
+              <div style={{display:'flex',gap:6,flexWrap:'wrap',flex:1}}>
+                {cs.rule_added_count>0&&<span style={{fontSize:10,padding:'1px 6px',borderRadius:3,background:'oklch(0.16 0.04 150)',color:'var(--ok)',fontFamily:'var(--mono)'}}>+{cs.rule_added_count} 规则</span>}
+                {cs.rule_removed_count>0&&<span style={{fontSize:10,padding:'1px 6px',borderRadius:3,background:'var(--crit-bg)',color:'var(--crit)',fontFamily:'var(--mono)'}}>−{cs.rule_removed_count} 规则</span>}
+                {cs.rule_modified_count>0&&<span style={{fontSize:10,padding:'1px 6px',borderRadius:3,background:'var(--warn-bg)',color:'var(--warn)',fontFamily:'var(--mono)'}}>~{cs.rule_modified_count} 规则修改</span>}
+                {cs.parameter_changed_keys.length>0&&<span style={{fontSize:10,padding:'1px 6px',borderRadius:3,background:'var(--bg3)',color:'var(--text1)',fontFamily:'var(--mono)'}}>{cs.parameter_changed_keys.length} 参数变更</span>}
+                {cs.threshold_changed_keys.length>0&&<span style={{fontSize:10,padding:'1px 6px',borderRadius:3,background:'var(--bg3)',color:'var(--text1)',fontFamily:'var(--mono)'}}>{cs.threshold_changed_keys.length} 阈值变更</span>}
+                {cs.scope_changed_count>0&&<span style={{fontSize:10,padding:'1px 6px',borderRadius:3,background:'var(--bg3)',color:'var(--text1)',fontFamily:'var(--mono)'}}>{cs.scope_changed_count} 范围变更</span>}
+              </div>
+            ):<span style={{fontSize:11,color:'var(--text2)',flex:1}}>—</span>}
+            <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)',whiteSpace:'nowrap'}}>{v.rule_count} 规则</span>
+            <span className="ver-date">{v.published_at||'未发布'}</span>
+            <div style={{display:'flex',gap:5}}>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setSnapshotVer(snapshotVer===v.version?null:v.version)}>
+                {snapshotVer===v.version?'收起快照':'查看快照'}
+              </button>
+              {v.status==='deprecated'&&i>0&&<button className="btn btn-secondary btn-sm" onClick={()=>handleRollback(v)}>回滚至此版本</button>}
+              {v.status==='published'&&<span style={{fontSize:11,color:'var(--ok)'}}>✓ 当前版本</span>}
+            </div>
+          </div>
+          {/* 回滚状态反馈 */}
+          {rb&&<div style={{padding:'6px 14px 6px 80px',fontSize:11,color:'var(--ok)',background:'oklch(0.15 0.03 150)',borderTop:'1px solid var(--border)'}}>{rb}</div>}
+          {/* 版本快照面板 */}
+          {snapshotVer===v.version&&(snapshotData?(
+            <div style={{padding:'12px 16px',background:'var(--bg0)',borderTop:'1px solid var(--border)'}}>
+              <div style={{fontSize:10,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--text2)',marginBottom:8}}>版本快照 — {snapshotData.version}</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:5,padding:'8px 12px'}}>
+                  <div style={{fontSize:10,color:'var(--text2)',marginBottom:5}}>基础信息</div>
+                  <div className="kv-grid"><S label="snapshot_id" val={snapshotData.snapshot_id}/><S label="baseline_id" val={snapshotData.baseline_id}/><S label="version" val={snapshotData.version}/><S label="status" val={snapshotData.status}/><S label="created_at" val={snapshotData.created_at}/><S label="published_at" val={snapshotData.published_at||'未发布'}/><S label="rule_count" val={`${snapshotData.enabled_count} / ${snapshotData.rule_count}`}/></div>
+                </div>
+                <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:5,padding:'8px 12px'}}>
+                  <div style={{fontSize:10,color:'var(--text2)',marginBottom:5}}>Profile 绑定</div>
+                  <div className="kv-grid"><S label="parameter_profile_id" val={snapshotData.parameter_profile_id}/><S label="threshold_profile_id" val={snapshotData.threshold_profile_id}/><S label="scope_selector_id" val={snapshotData.scope_selector_id}/><S label="ruleset_ids" val={snapshotData.ruleset_ids.join(', ')}/></div>
+                </div>
+              </div>
+              <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:5,padding:'8px 12px'}}>
+                <div style={{fontSize:10,color:'var(--text2)',marginBottom:5}}>描述</div>
+                <div style={{fontSize:12,color:'var(--text1)'}}>{snapshotData.description}</div>
+              </div>
+            </div>
+          ):(
+            <div style={{padding:'10px 16px',background:'var(--bg0)',borderTop:'1px solid var(--border)',fontSize:12,color:'var(--text2)'}}>暂无该版本的完整快照数据</div>
+          ))}
+          {/* 变更明细折叠 */}
+          {cs?.change_items?.length>0&&<div style={{borderTop:'1px solid var(--border)'}}>
+            <Collapsible title={`  变更明细（${cs.change_items.length} 项）`}>
+              <div style={{padding:'0 0 8px 14px'}}>
+                {cs.change_items.map(ci=>(
+                  <div key={ci.change_id} style={{display:'flex',gap:8,alignItems:'flex-start',padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
+                    <span style={{fontSize:10,padding:'1px 5px',borderRadius:3,background:'var(--bg3)',color:'var(--text2)',fontFamily:'var(--mono)',whiteSpace:'nowrap',flexShrink:0}}>{CHANGE_TYPE_LABEL[ci.change_type]||ci.change_type}</span>
+                    <span style={{fontSize:11,fontWeight:500,color:'var(--text0)',width:130,flexShrink:0}}>{ci.target_name}</span>
+                    <span style={{fontSize:10,color:'var(--text2)',fontFamily:'var(--mono)',width:60,flexShrink:0}}>{ci.target_id}</span>
+                    {ci.before_summary&&<><span style={{fontSize:10,color:'var(--crit)',textDecoration:'line-through'}}>{ci.before_summary}</span><span style={{fontSize:10,color:'var(--text2)'}}>→</span></>}
+                    {ci.after_summary&&<span style={{fontSize:10,color:'var(--ok)'}}>{ci.after_summary}</span>}
+                    <span style={{marginLeft:'auto',fontSize:9,color:IMPACT_COLOR[ci.impact_level]||'var(--text2)',fontFamily:'var(--mono)',flexShrink:0}}>{ci.impact_level}</span>
+                  </div>
+                ))}
+              </div>
+            </Collapsible>
+          </div>}
+        </div>);
+      })}
+    </div>
+
+    {/* ── 版本间 diff 对比（来自 VERSION_DIFF_SNAPSHOTS，禁止 UI 集合差计算）── */}
+    <div style={{background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:6,overflow:'hidden',marginBottom:14}}>
+      <div style={{padding:'6px 12px',background:'var(--bg2)',borderBottom:'1px solid var(--border)',fontSize:10,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--text2)'}}>版本间 RuleSet Diff</div>
+      <div style={{padding:'12px 14px'}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:12}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:11,color:'var(--text2)',marginBottom:3}}>起始版本</div>
+            <select className="exec-select" value={diffFrom} onChange={e=>{setDiffFrom(e.target.value);setDiffTo('');}}>
+              <option value="">— 选择版本 —</option>
+              {publishedVersions.map(v=><option key={v.version} value={v.version}>{v.version}</option>)}
+            </select>
+          </div>
+          <div style={{paddingBottom:4,fontSize:16,color:'var(--text2)',flexShrink:0}}>→</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:11,color:'var(--text2)',marginBottom:3}}>目标版本</div>
+            <select className="exec-select" value={diffTo} onChange={e=>setDiffTo(e.target.value)} disabled={!diffFrom}>
+              <option value="">— 选择版本 —</option>
+              {publishedVersions.filter(v=>v.version!==diffFrom).map(v=><option key={v.version} value={v.version}>{v.version}</option>)}
+            </select>
+          </div>
+        </div>
+        {!diffFrom||!diffTo?(
+          <div style={{fontSize:12,color:'var(--text2)'}}>请选择两个版本以查看结构化 diff。</div>
+        ):!diffData?(
+          <div style={{padding:'12px',background:'var(--bg2)',borderRadius:5,fontSize:12,color:'var(--text2)',textAlign:'center'}}>
+            暂无该版本对比快照 <span style={{fontFamily:'var(--mono)',fontSize:10}}>{diffFrom} → {diffTo}</span>
+          </div>
+        ):(
+          <div>
+            <div style={{fontSize:11,color:'var(--text2)',fontFamily:'var(--mono)',marginBottom:8}}>diff_id: {diffData.diff_id}</div>
+            {/* 摘要卡 */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:12}}>
+              {[['rule_added_count','新增规则','var(--ok)'],['rule_removed_count','删除规则','var(--crit)'],['rule_modified_count','修改规则','var(--warn)'],['parameter_changed_count','参数变更','var(--text1)']].map(([k,l,c])=>(
+                <div key={k} style={{background:'var(--bg2)',borderRadius:5,padding:'8px',textAlign:'center'}}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:16,fontWeight:600,color:diffData.summary[k]>0?c:'var(--text2)'}}>{diffData.summary[k]}</div>
+                  <div style={{fontSize:10,color:'var(--text2)',marginTop:2}}>{l}</div>
+                </div>
+              ))}
+            </div>
+            {/* 规则变更列表 */}
+            {diffData.rule_changes.length>0&&<div style={{marginBottom:10}}>
+              <div style={{fontSize:10,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',color:'var(--text2)',marginBottom:5}}>规则变更</div>
+              {diffData.rule_changes.map(rc=>(
+                <div key={rc.change_id} style={{display:'flex',gap:8,alignItems:'center',padding:'4px 8px',borderBottom:'1px solid var(--border)',fontSize:11}}>
+                  <span style={{fontFamily:'var(--mono)',fontSize:10,padding:'1px 5px',borderRadius:3,background:rc.change_type==='added'?'oklch(0.16 0.04 150)':rc.change_type==='removed'?'var(--crit-bg)':'var(--warn-bg)',color:rc.change_type==='added'?'var(--ok)':rc.change_type==='removed'?'var(--crit)':'var(--warn)',width:40,textAlign:'center'}}>{rc.change_type==='added'?'新增':rc.change_type==='removed'?'删除':'修改'}</span>
+                  <span style={{width:100,flexShrink:0,fontWeight:500}}>{rc.target_name}</span>
+                  <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)',width:60}}>{rc.target_id}</span>
+                  {rc.before_summary&&<><span style={{fontSize:10,color:'var(--crit)',textDecoration:'line-through'}}>{rc.before_summary}</span><span style={{fontSize:10,color:'var(--text2)'}}>→</span></>}
+                  {rc.after_summary&&<span style={{fontSize:10,color:'var(--ok)'}}>{rc.after_summary}</span>}
+                  <span style={{marginLeft:'auto',fontSize:9,color:IMPACT_COLOR[rc.impact_level],fontFamily:'var(--mono)'}}>{rc.impact_level}</span>
+                </div>
+              ))}
+            </div>}
+            {/* 参数/阈值变更 */}
+            {[['parameter_changes','参数变更'],['threshold_changes','阈值变更'],['scope_changes','范围变更'],['ruleset_changes','规则集变更']].map(([key,label])=>
+              diffData[key]?.length>0&&<div key={key} style={{marginBottom:8}}>
+                <div style={{fontSize:10,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',color:'var(--text2)',marginBottom:4}}>{label}</div>
+                {diffData[key].map(ch=>(
+                  <div key={ch.change_id} style={{display:'flex',gap:8,alignItems:'center',padding:'3px 8px',fontSize:11,borderBottom:'1px solid var(--border)'}}>
+                    <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--text2)',width:120}}>{ch.target_id}</span>
+                    <span style={{color:'var(--text1)',flex:1}}>{ch.target_name}</span>
+                    {ch.before_summary&&<><span style={{fontSize:10,color:'var(--crit)',textDecoration:'line-through'}}>{ch.before_summary}</span><span style={{fontSize:10,color:'var(--text2)'}}>→</span></>}
+                    {ch.after_summary&&<span style={{fontSize:10,color:'var(--ok)'}}>{ch.after_summary}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div style={{padding:'10px 14px',background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:6,fontSize:12,color:'var(--text2)'}}>
+      ⚠ 回滚操作将基于选定版本创建新草稿，版本号自动递增；需重新发布才能用于执行检查。版本间 diff 来自 VERSION_DIFF_SNAPSHOTS，不允许 UI 现场计算。
+    </div>
+  </div>);
+}
+
+// ── P0 修复：ExecutionConfig ───────────────────────────────────────────────
+// 流程：选择基线 → 数据来源 → 执行范围 → 执行识别 → 确认识别结果 → 开始检查
+// recognition_status: not_started | ready | confirmed | rejected
+// "开始检查"按钮仅在 recognition_status === 'confirmed' 时可点击
+function ExecutionConfig({blId,onRunComplete}){
+  const [selBlId,setSelBlId]=useState(blId||BASELINES[0].id);
+  const [selScenario,setSelScenario]=useState(SCENARIOS[0].id);
+  const [selDsId,setSelDsId]=useState(DATA_SOURCES[0].dataset_id);
+  const [selScopeId,setSelScopeId]=useState(EXECUTION_SCOPES[0].scope_id);
+  const [recognitionStatus,setRecognitionStatus]=useState('not_started');
+  const [recognitionResult,setRecognitionResult]=useState(null);
+  const [recognizing,setRecognizing]=useState(false);
+  const [running,setRunning]=useState(false);
+  const [progress,setProgress]=useState(0);
+
+  const bl=BASELINES.find(b=>b.id===selBlId);
+  const ds=DATA_SOURCES.find(d=>d.dataset_id===selDsId);
+  const scope=EXECUTION_SCOPES.find(s=>s.scope_id===selScopeId);
+
+  // 选择变更时重置识别状态
+  useEffect(()=>{setRecognitionStatus('not_started');setRecognitionResult(null);},[selBlId,selDsId,selScopeId]);
+
+  function handleRecognize(){
+    setRecognizing(true);setRecognitionResult(null);setRecognitionStatus('ready');
+    setTimeout(()=>{
+      const key=`${selDsId}|${selScopeId}`;
+      const result=RECOGNITION_RESULTS[key]||{ recognized_device_count:0, unmatched_device_count:0, out_of_scope_device_count:0, warnings:['当前配对暂无识别数据'] };
+      setRecognitionResult(result);setRecognizing(false);setRecognitionStatus('ready');
+    },600);
+  }
+
+  function handleConfirm(){setRecognitionStatus('confirmed')}
+  function handleReject(){setRecognitionStatus('rejected');setRecognitionResult(null)}
+
+  function handleRun(){
+    if(recognitionStatus!=='confirmed')return;
+    setRunning(true);setProgress(0);
+    let p=0;const iv=setInterval(()=>{
+      p+=Math.random()*15+8;
+      if(p>=100){p=100;clearInterval(iv);setRunning(false);setProgress(0);
+        onRunComplete({...INIT_RUNS[0],id:`run-${Date.now()}`,time:'刚刚',
+          baseline_id:selBlId,baseline_version:bl.version,
+          scenario_id:selScenario,scenario:SCENARIOS.find(s=>s.id===selScenario)?.name,
+          data_source:selDsId,execution_scope:selScopeId});
+      }else setProgress(p);
+    },200);
+  }
+
+  const canCheck=recognitionStatus==='confirmed'&&!running;
+  const STEP_COLORS={not_started:'var(--text2)',ready:'var(--warn)',confirmed:'var(--ok)',rejected:'var(--crit)'};
+  const STEP_LABELS={not_started:'待执行',ready:'待确认',confirmed:'已确认',rejected:'已拒绝'};
+
+  return(<div className="page">
+    <div className="page-header">
+      <div><div className="page-title">执行配置</div>
+        <div className="page-sub">完成识别确认后才可开始检查 · 识别状态：<span style={{fontFamily:'var(--mono)',color:STEP_COLORS[recognitionStatus]}}>{STEP_LABELS[recognitionStatus]}</span></div>
+      </div>
+    </div>
+    {running&&<div className="progress-bar" style={{height:3,marginBottom:12}}><div className="progress-fill" style={{width:`${progress}%`}}/></div>}
+    <div style={{maxWidth:600}}>
+
+      {/* Step 1: 基线 + 场景 */}
+      <div className="exec-section"><h4>① 检查基线</h4>
+        <select className="exec-select" value={selBlId} onChange={e=>setSelBlId(e.target.value)}>
+          {BASELINES.filter(b=>b.status!=='deprecated').map(b=>(
+            <option key={b.id} value={b.id}>{b.name} — v{b.version} ({STATUS_LABEL[b.status]})</option>
+          ))}
+        </select>
+        {bl&&<div style={{marginTop:10}}><div className="kv-grid">
+          <span className="kk">规则数</span><span className="vv">{bl.enabled_count} / {bl.rule_count} 启用</span>
+          <span className="kk">识别方式</span><span className="vv">{bl.identification_strategy.method}</span>
+          <span className="kk">识别字段</span><span className="vv">{bl.identification_strategy.id_fields.join(', ')}</span>
+        </div></div>}
+        {/* P1: Profile 快照摘要 — 绑定 BASELINE_PROFILE_MAP */}
+        {bl&&(()=>{
+          const ref=BASELINE_PROFILE_MAP[bl.id]||{};
+          const pp=PARAMETER_PROFILES.find(p=>p.profile_id===ref.parameter_profile_id);
+          const tp=THRESHOLD_PROFILES.find(p=>p.profile_id===ref.threshold_profile_id);
+          return(<div style={{marginTop:10,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <div style={{background:'var(--bg2)',borderRadius:5,padding:'7px 10px'}}>
+              <div style={{fontSize:10,color:'var(--text2)',marginBottom:3}}>ParameterProfile</div>
+              <div style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--accent)'}}>{ref.parameter_profile_id||'未绑定'}</div>
+              {pp&&<div style={{fontSize:11,color:'var(--text1)',marginTop:2}}>{pp.name} · {pp.parameters.length} 个参数</div>}
+            </div>
+            <div style={{background:'var(--bg2)',borderRadius:5,padding:'7px 10px'}}>
+              <div style={{fontSize:10,color:'var(--text2)',marginBottom:3}}>ThresholdProfile</div>
+              <div style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--accent)'}}>{ref.threshold_profile_id||'未绑定'}</div>
+              {tp&&<div style={{fontSize:11,color:'var(--text1)',marginTop:2}}>{tp.name} · {tp.thresholds.length} 个阈值</div>}
+            </div>
+          </div>);
+        })()}
+      </div>
+
+      <div className="exec-section"><h4>② 检查场景</h4>
+        <select className="exec-select" value={selScenario} onChange={e=>setSelScenario(e.target.value)}>
+          {SCENARIOS.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </div>
+
+      {/* Step 2: 数据来源（绑定 DataSource 模型）*/}
+      <div className="exec-section"><h4>③ 数据来源</h4>
+        <select className="exec-select" value={selDsId} onChange={e=>setSelDsId(e.target.value)}>
+          {DATA_SOURCES.map(d=><option key={d.dataset_id} value={d.dataset_id}>{d.name}</option>)}
+        </select>
+        {ds&&<div style={{marginTop:10}}><div className="kv-grid">
+          <span className="kk">dataset_id</span><span className="vv">{ds.dataset_id}</span>
+          <span className="kk">type</span><span className="vv">{ds.type}</span>
+          <span className="kk">updated_at</span><span className="vv">{ds.updated_at}</span>
+          <span className="kk">设备数</span><span className="vv">{ds.device_count}</span>
+          <span className="kk">链路数</span><span className="vv">{ds.link_count}</span>
+          <span className="kk">表单数</span><span className="vv">{ds.sheet_count}</span>
+        </div></div>}
+      </div>
+
+      {/* Step 3: 执行范围（绑定 ExecutionScope 模型）*/}
+      <div className="exec-section"><h4>④ 执行范围</h4>
+        <select className="exec-select" value={selScopeId} onChange={e=>setSelScopeId(e.target.value)}>
+          {EXECUTION_SCOPES.map(s=><option key={s.scope_id} value={s.scope_id}>{s.scope_id} — {s.method}</option>)}
+        </select>
+        {scope&&<div style={{marginTop:10}}><div className="kv-grid">
+          <span className="kk">method</span><span className="vv">{scope.method}</span>
+          <span className="kk">scope_fields</span><span className="vv">{scope.scope_fields.join(', ')}</span>
+          <span className="kk">included_groups</span><span className="vv">{scope.included_groups.join(', ')||'—'}</span>
+          <span className="kk">excluded_groups</span><span className="vv">{scope.excluded_groups.join(', ')||'—'}</span>
+        </div></div>}
+      </div>
+
+      {/* Step 4: 识别确认 */}
+      <div className="exec-section">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <h4>⑤ 识别确认</h4>
+          {recognitionStatus==='not_started'&&(
+            <button className="btn btn-secondary btn-sm" onClick={handleRecognize} disabled={recognizing}>
+              {recognizing?<><span className="spinner" style={{marginRight:4}}/>识别中…</>:'执行识别'}
+            </button>
+          )}
+          {recognitionStatus==='rejected'&&(
+            <button className="btn btn-secondary btn-sm" onClick={handleRecognize}>重新识别</button>
+          )}
+        </div>
+
+        {recognitionStatus==='not_started'&&!recognizing&&(
+          <div style={{fontSize:12,color:'var(--text2)'}}>点击「执行识别」查看识别结果，确认后方可开始检查。</div>
+        )}
+        {recognizing&&<div style={{display:'flex',gap:8,fontSize:12,color:'var(--text2)',alignItems:'center'}}><span className="spinner"/>识别中，请稍候…</div>}
+
+        {recognitionResult&&recognitionStatus!=='not_started'&&(
+          <div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
+              {[
+                ['recognized_device_count','已识别设备','var(--ok)'],
+                ['unmatched_device_count','未匹配设备','var(--warn)'],
+                ['out_of_scope_device_count','超出范围','var(--text2)'],
+              ].map(([k,lbl,color])=>(
+                <div key={k} style={{background:'var(--bg2)',borderRadius:5,padding:'8px 12px',textAlign:'center'}}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:20,fontWeight:600,color}}>{recognitionResult[k]}</div>
+                  <div style={{fontSize:10,color:'var(--text2)',marginTop:3}}>{lbl}</div>
+                </div>
+              ))}
+            </div>
+            {recognitionResult.warnings?.length>0&&(
+              <div style={{marginBottom:12}}>
+                {recognitionResult.warnings.map((w,i)=>(
+                  <div key={i} style={{fontSize:11,color:'var(--warn)',fontFamily:'var(--mono)',padding:'3px 0'}}>⚠ {w}</div>
+                ))}
+              </div>
+            )}
+            {recognitionStatus==='ready'&&(
+              <div style={{display:'flex',gap:8}}>
+                <button className="btn btn-primary" onClick={handleConfirm}>确认识别结果</button>
+                <button className="btn btn-danger btn-sm" onClick={handleReject}>拒绝并重新配置</button>
+              </div>
+            )}
+            {recognitionStatus==='confirmed'&&(
+              <div style={{fontSize:12,color:'var(--ok)',display:'flex',alignItems:'center',gap:6}}>
+                ✓ 识别结果已确认 — 可开始检查
+              </div>
+            )}
+            {recognitionStatus==='rejected'&&(
+              <div style={{fontSize:12,color:'var(--crit)'}}>✗ 已拒绝，请重新配置后执行识别。</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Step 5: 开始检查（仅 confirmed 才可点）*/}
+      <button className="btn btn-primary" style={{width:'100%',padding:'10px',fontSize:13,marginTop:4}}
+        onClick={handleRun} disabled={!canCheck}>
+        {running?<><span className="spinner" style={{marginRight:6}}/>检查中…</>:
+          canCheck?'▶  开始检查':'▶  开始检查（请先完成识别确认）'}
+      </button>
+    </div>
+  </div>);
+}
+
+// Run History
+function RunHistory({runs,setNav,setSelectedRun}){
+  return(<div className="page">
+    <div className="page-header"><div><div className="page-title">运行历史</div><div className="page-sub">历次检查结果，点击查看详情</div></div></div>
+    <table className="table"><thead><tr><th>运行 ID</th><th>基线</th><th>场景</th><th>时间</th><th>风险分数</th><th>严重</th><th>警告</th><th>提示</th><th>操作</th></tr></thead>
+    <tbody>{runs.map(r=>{
+      const c=r.issues.filter(i=>i.severity==='critical').length;
+      const w=r.issues.filter(i=>i.severity==='warning').length;
+      const n=r.issues.filter(i=>i.severity==='info').length;
+      return(<tr key={r.id} className="clickable" onClick={()=>{setSelectedRun(r);setNav({section:'analysis',sub:'workbench',ctx:{runId:r.id}})}}>
+        <td><span style={{fontFamily:'var(--mono)',fontSize:11}}>{r.id.replace('run-','')}</span></td>
+        <td style={{fontSize:12}}>{r.baseline_id} v{r.baseline_version}</td>
+        <td style={{fontSize:12}}>{r.scenario}</td>
+        <td style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)'}}>{r.time}</td>
+        <td><span style={{fontFamily:'var(--mono)',fontSize:13,fontWeight:600,color:scoreColor(r.score)==='good'?'var(--ok)':scoreColor(r.score)==='warn'?'var(--warn)':'var(--crit)'}}>{r.score}</span></td>
+        <td><span className="badge" style={{background:'var(--crit-bg)',color:'var(--crit)'}}>{c}</span></td>
+        <td><span className="badge" style={{background:'var(--warn-bg)',color:'var(--warn)'}}>{w}</span></td>
+        <td><span className="badge" style={{background:'var(--info-bg)',color:'var(--info)'}}>{n}</span></td>
+        <td onClick={e=>e.stopPropagation()}><div style={{display:'flex',gap:5}}>
+          <button className="btn btn-secondary btn-sm" onClick={()=>{setSelectedRun(r);setNav({section:'analysis',sub:'workbench',ctx:{runId:r.id}})}}>查看结果</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setNav({section:'diff',sub:'compare',ctx:{runId:r.id}})}>差异对比</button>
+        </div></td>
+      </tr>);
+    })}</tbody></table>
+  </div>);
+}
+
+// F. Analysis Workbench — 边界：只消费 CheckResultBundle，不修改基线
+// drilldown: 来自 DiffCompare 的结构化下钻上下文（可选）
+function AnalysisWorkbench({run,setNav,drilldown}){
+  const [sevFilter,setSevFilter]=useState('all');
+  const [search,setSearch]=useState('');
+  const [selIssue,setSelIssue]=useState(null);
+  const [reviewCtx,setReviewCtx]=useState(null);
+  const [isCtxLoading,setIsCtxLoading]=useState(false);
+  const [runDiffSummary,setRunDiffSummary]=useState(null);
+  const [issueDiffItems,setIssueDiffItems]=useState(null);
+
+  // 自动选中来自 drilldown 的 issue
+  useEffect(()=>{
+    if(!drilldown||!run)return;
+    const target=(run.issues||[]).find(i=>i.id===drilldown.issue_id);
+    if(target)setSelIssue(target);
+    // 若来自 diff，将 issue_diff_item 注入 issueDiffItems
+    if(drilldown.issue_diff_item){
+      setIssueDiffItems([drilldown.issue_diff_item].map(d=>({
+        type: d.diff_type==='new'?'added': d.diff_type==='resolved'?'removed':'changed',
+        field:'diff_type',old:d.severity_before,new:d.severity_after
+      })));
+    }
+  },[drilldown?.issue_id, run?.id]);
+  useEffect(()=>{
+    if(!selIssue){setReviewCtx(null);setRunDiffSummary(null);setIssueDiffItems(null);return;}
+    setIsCtxLoading(true);setReviewCtx(null);
+    const t=setTimeout(()=>{setReviewCtx(selIssue._review_context||null);setIsCtxLoading(false);},300);
+    setRunDiffSummary(run?.diff_summary||null);
+    setIssueDiffItems(selIssue._diff_items||null);
+    return()=>clearTimeout(t);
+  },[selIssue?.id]);
+  if(!run)return <div className="empty"><div className="ei">◎</div><div className="et">暂无分析结果</div><div className="es">请先执行检查</div></div>;
+  const issues=run.issues||[];
+
+  // diff_type → 展示策略说明
+  const DRILLDOWN_HINT={
+    new:    '此 issue 在 Run B 中首次出现（新增）',
+    resolved:'此 issue 在 Run B 中已消失（来自 Run A）',
+    remaining:'此 issue 在两次运行中持续存在',
+    severity_changed:'此 issue 严重度发生变化',
+    regression:'此 issue 曾消除后再次出现（回归）',
+  };
+  const filtered=issues.filter(i=>{
+    if(sevFilter!=='all'&&i.severity!==sevFilter)return false;
+    if(search&&!i.title.toLowerCase().includes(search.toLowerCase())&&!i.ruleId.toLowerCase().includes(search.toLowerCase()))return false;
+    return true;
+  }).sort((a,b)=>['critical','warning','info'].indexOf(a.severity)-['critical','warning','info'].indexOf(b.severity));
+  const cc=issues.filter(i=>i.severity==='critical').length;
+  const ww=issues.filter(i=>i.severity==='warning').length;
+  const ii=issues.filter(i=>i.severity==='info').length;
+  return(<>
+    {/* Drilldown context banner — 来自差异对比下钻时展示 */}
+    {drilldown&&<div style={{background:'oklch(0.17 0.03 240)',borderBottom:'1px solid var(--accent)',padding:'6px 16px',display:'flex',alignItems:'center',gap:12,flexShrink:0,fontSize:11}}>
+      <span style={{color:'var(--accent)',fontWeight:600}}>◈ 差异下钻</span>
+      <span style={{fontFamily:'var(--mono)',color:'var(--text2)'}}>{drilldown.diff_id}</span>
+      <span style={{color:'var(--text2)'}}>{drilldown.from_run_id.replace('run-','')} → {drilldown.to_run_id.replace('run-','')}</span>
+      <span style={{color:DIFF_TYPE_COLOR[drilldown.diff_type]||'var(--text2)',fontFamily:'var(--mono)'}}>{DIFF_TYPE_LABEL[drilldown.diff_type]||drilldown.diff_type}</span>
+      <span style={{color:'var(--text1)'}}>{DRILLDOWN_HINT[drilldown.diff_type]||''}</span>
+      <button style={{marginLeft:'auto',background:'none',border:'1px solid var(--border)',borderRadius:4,color:'var(--text2)',cursor:'pointer',fontSize:11,padding:'2px 8px'}}
+        onClick={()=>setNav({section:'diff',sub:'compare',ctx:{runId:drilldown.from_run_id}})}>← 返回差异对比</button>
+    </div>}
+    <div className="ribbon">
+      <div className="score-block"><span className={`score-num ${scoreColor(run.score)}`}>{run.score}</span><span className="score-label">风险分数</span></div>
+      <div className="ribbon-sep"/>
+      <div style={{display:'flex',gap:8}}>
+        {[['crit','critical','严重',cc],['warn','warning','警告',ww],['info','info','提示',ii]].map(([cls,sev,lbl,cnt])=>(
+          <div key={sev} className={`sev-card ${cls} ${sevFilter===sev?'af':''}`} onClick={()=>setSevFilter(sevFilter===sev?'all':sev)}>
+            <span className="sc-n">{cnt}</span><span className="sc-l">{lbl}</span>
+          </div>
+        ))}
+      </div>
+      <div className="ribbon-sep"/>
+      <div style={{marginLeft:'auto',textAlign:'right'}}>
+        <div style={{fontSize:12,fontWeight:500}}>{run.scenario}</div>
+        <div style={{fontSize:11,color:'var(--text2)',fontFamily:'var(--mono)',marginTop:2}}>{run.time} · v{run.baseline_version}</div>
+      </div>
+    </div>
+    <div className="work-area">
+      <div className={`issue-pane ${selIssue?'split':'wide'}`}>
+        <div className="toolbar">
+          <input placeholder="搜索问题…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          {[['all','全部'],['critical','严重'],['warning','警告'],['info','提示']].map(([s,l])=>(
+            <button key={s} className={`filter-btn ${sevFilter===s?'active':''}`} onClick={()=>setSevFilter(s)}>{l}</button>
+          ))}
+          <span className="tc">{filtered.length}/{issues.length}</span>
+        </div>
+        <div className="issue-scroll">
+          {filtered.map(iss=>(
+            <div key={iss.id} className={`issue-row ${selIssue?.id===iss.id?'sel':''}`} onClick={()=>setSelIssue(p=>p?.id===iss.id?null:iss)}>
+              <span className={`sev-dot ${iss.severity}`}/>
+              <div className="issue-body"><div className="issue-ttl">{iss.title}</div><div className="issue-meta"><span className="ri">{iss.ruleId}</span><span>{iss.anchor_id}</span></div></div>
+              <SevTag sev={iss.severity}/>
+            </div>
+          ))}
+        </div>
+      </div>
+      {selIssue?(
+        <IssueDetail issue={selIssue} reviewCtx={reviewCtx} isCtxLoading={isCtxLoading} runDiffSummary={runDiffSummary} issueDiffItems={issueDiffItems} onClose={()=>setSelIssue(null)}/>
+      ):(
+        <div className="detail-pane" style={{justifyContent:'center'}}>
+          {drilldown&&!selIssue?(
+            <div className="empty">
+              <div className="ei" style={{color:'var(--warn)',opacity:.6}}>⊕</div>
+              <div className="et">当前运行结果中未找到该 issue</div>
+              <div className="es">{`issue_id: ${drilldown.issue_id}`}<br/>可能属于已消失 / 范围变化 / 历史差异项</div>
+              {drilldown.issue_diff_item&&<div style={{marginTop:10,background:'var(--bg2)',borderRadius:5,padding:'8px 14px',textAlign:'left',maxWidth:320}}>
+                <div style={{fontSize:10,color:'var(--text2)',marginBottom:6}}>来自 RecheckIssueDiffItem</div>
+                <div className="kv-grid">
+                  <span className="kk">diff_type</span><span className="vv" style={{color:DIFF_TYPE_COLOR[drilldown.diff_type]}}>{drilldown.diff_type}</span>
+                  <span className="kk">severity_before</span><span className="vv">{drilldown.issue_diff_item.severity_before||'—'}</span>
+                  <span className="kk">severity_after</span><span className="vv">{drilldown.issue_diff_item.severity_after||'—'}</span>
+                  <span className="kk">summary</span><span className="vv">{drilldown.issue_diff_item.summary}</span>
+                </div>
+              </div>}
+            </div>
+          ):(
+            <div className="empty"><div className="ei">◈</div><div className="et">请选择左侧问题以查看详情</div><div className="es">问题详情 · 证据说明 · 上下文 · 差异对比</div></div>
+          )}
+        </div>
+      )}
+    </div>
+  </>);
+}
+
+function IssueDetail({issue,reviewCtx,isCtxLoading,runDiffSummary,issueDiffItems,onClose}){
+  const [tab,setTab]=useState('detail');
+  useEffect(()=>setTab('detail'),[issue.id]);
+  return(<div className="detail-pane">
+    <div className="detail-hd">
+      <div style={{display:'flex',gap:6,alignItems:'center'}}><SevTag sev={issue.severity}/><span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)'}}>{issue.ruleId}</span>{issue.rule_category&&<span className="cat-tag">{issue.rule_category}</span>}</div>
+      <div className="detail-title">{issue.title}</div>
+    </div>
+    <div className="detail-tabs">
+      {[['detail','问题详情'],['evidence','证据说明'],['context','上下文'],['diff','差异对比']].map(([id,lbl])=>(
+        <button key={id} className={`tab-btn ${tab===id?'active':''}`} onClick={()=>setTab(id)}>{lbl}</button>
+      ))}
+      <button className="close-btn" onClick={onClose}>×</button>
+    </div>
+    <div className="detail-body">
+      {tab==='detail'&&<TabDetail issue={issue}/>}
+      {tab==='evidence'&&<TabEvidence issue={issue}/>}
+      {tab==='context'&&<TabContext reviewCtx={reviewCtx} isLoading={isCtxLoading}/>}
+      {tab==='diff'&&<TabDiff runDiffSummary={runDiffSummary} issueDiffItems={issueDiffItems}/>}
+    </div>
+  </div>);
+}
+
+function TabDetail({issue}){return(<div>
+  <div className="d-block"><h4>基本信息</h4><div className="kv-grid">
+    <span className="kk">规则 ID</span><span className="vv">{issue.rule_id}</span>
+    <span className="kk">规则名称</span><span className="vv">{issue.rule_name}</span>
+    <span className="kk">类别</span><span className="vv">{issue.rule_category}</span>
+    <span className="kk">锚点类型</span><span className="vv">{issue.anchor_type}</span>
+    <span className="kk">锚点 ID</span><span className="vv">{issue.anchor_id}</span>
+  </div></div>
+  <div className="d-block"><h4>来源 / 目标</h4><div className="kv-grid">
+    <span className="kk">来源设备</span><span className="vv">{issue.source_device}</span>
+    <span className="kk">来源端口</span><span className="vv">{issue.source_port}</span>
+    <span className="kk">目标设备</span><span className="vv">{issue.target_device}</span>
+    <span className="kk">目标端口</span><span className="vv">{issue.target_port}</span>
+  </div></div>
+  <div className="d-block"><h4>问题说明</h4><p className="plain-text">{issue.description}</p></div>
+  <div className="d-block"><h4>修复建议</h4><p className="plain-text">{issue.remediation}</p></div>
+</div>)}
+
+function TabEvidence({issue}){
+  const ev=issue.evidence;
+  if(!ev)return<div className="empty"><div className="ei">○</div><div className="et">暂无证据数据</div></div>;
+  return(<div>
+    <div className="ev-compare">
+      <div className="ev-cell expected"><div className="ev-lbl">期望值</div><div className="ev-val">{ev.expected_value}</div></div>
+      <div className="ev-cell mid">{ev.comparison_operator}</div>
+      <div className="ev-cell actual"><div className="ev-lbl">实际值</div><div className="ev-val">{ev.actual_value}</div></div>
+    </div>
+    <div className="d-block"><h4>证据元数据</h4><div className="kv-grid">
+      <span className="kk">证据类型</span><span className="vv">{ev.evidence_type}</span>
+      <span className="kk">字段名</span><span className="vv">{ev.field_name}</span>
+    </div></div>
+    {ev.related_values&&Object.keys(ev.related_values).length>0&&<div className="d-block"><h4>相关值</h4><div className="kv-grid">{Object.entries(ev.related_values).map(([k,v])=><React.Fragment key={k}><span className="kk">{k}</span><span className="vv">{v}</span></React.Fragment>)}</div></div>}
+    {ev.raw_snapshot&&<div className="d-block"><Collapsible title="原始快照"><div className="mono-box">{JSON.stringify(ev.raw_snapshot,null,2)}</div></Collapsible></div>}
+  </div>);
+}
+
+function TabContext({reviewCtx,isLoading}){
+  if(isLoading)return<div style={{display:'flex',gap:8,padding:'12px 0',color:'var(--text2)',fontSize:12}}><span className="spinner"/><span>正在加载上下文…</span></div>;
+  if(!reviewCtx)return<div className="empty"><div className="ei">○</div><div className="et">暂无上下文信息</div></div>;
+  const {related_devices,related_ports,related_links}=reviewCtx;
+  return(<div>
+    {related_devices?.length>0&&<div className="d-block"><h4>关联设备 ({related_devices.length})</h4><div className="ctx-list">{related_devices.map(d=><div key={d.id} className="ctx-row"><span className="ctx-dot unknown"/><span className="ctx-name">{d.id}</span><span className="ctx-meta">{d.role}</span><span className="ctx-meta" style={{marginLeft:8}}>{d.firmware}</span></div>)}</div></div>}
+    {related_ports?.length>0&&<div className="d-block"><h4>关联端口 ({related_ports.length})</h4><div className="ctx-list">{related_ports.map((p,i)=><div key={i} className="ctx-row"><span className={`ctx-dot ${STATUS_DOT[p.status]||'unknown'}`}/><span className="ctx-name">{p.device} · {p.port}</span><span className="ctx-meta">{p.speed}</span><span className="ctx-meta" style={{marginLeft:8}}>{p.peer}</span></div>)}</div></div>}
+    {related_links?.length>0&&<div className="d-block"><h4>关联链路 ({related_links.length})</h4><div className="ctx-list">{related_links.map(l=><div key={l.id} className="ctx-row"><span className={`ctx-dot ${STATUS_DOT[l.status]||'unknown'}`}/><span className="ctx-name">{l.from} → {l.to}</span><span className="ctx-meta">{l.utilization}</span></div>)}</div></div>}
+    {reviewCtx.topology_snapshot&&<div className="d-block"><Collapsible title="拓扑快照"><div className="mono-box">{JSON.stringify(reviewCtx.topology_snapshot,null,2)}</div></Collapsible></div>}
+  </div>);
+}
+
+function TabDiff({runDiffSummary,issueDiffItems}){
+  const ds=runDiffSummary;const diffs=issueDiffItems||[];
+  return(<div>
+    {ds?<>
+      <span className={`trend-badge ${ds.trend}`}>{TREND_LABEL[ds.trend]||ds.trend}</span>
+      <div className="diff-stat-grid" style={{gridTemplateColumns:'repeat(3,1fr)',marginBottom:12}}>
+        <div className="diff-stat"><div className={`dsv ${ds.delta>0?'up':ds.delta<0?'dn':'eq'}`}>{ds.total_before}</div><div className="dsl">变更前</div></div>
+        <div className="diff-stat"><div className={`dsv ${ds.delta>0?'up':ds.delta<0?'dn':'eq'}`}>{ds.total_after}</div><div className="dsl">变更后</div></div>
+        <div className="diff-stat"><div className={`dsv ${ds.delta>0?'up':ds.delta<0?'dn':'eq'}`}>{ds.delta>0?'+':''}{ds.delta}</div><div className="dsl">变化量</div></div>
+      </div>
+    </>:<div style={{fontSize:12,color:'var(--text2)',marginBottom:12}}>当前无复检差异数据</div>}
+    <div className="d-block"><h4>字段级变化</h4>
+      <div style={{padding:'4px 8px',background:'var(--bg3)',borderRadius:4,fontSize:10,color:'var(--text2)',marginBottom:8}}>⚠ 基线切换功能 UI 占位 — 后端 getIssueDiff() 待实现</div>
+      {diffs.length===0?<div style={{fontSize:12,color:'var(--text2)'}}>无字段级变化</div>:diffs.map((d,i)=>(
+        <div key={i} style={{display:'flex',gap:8,padding:'5px 8px',borderRadius:4,marginBottom:3,fontSize:11,fontFamily:'var(--mono)',background:d.type==='added'?'oklch(0.16 0.04 150)':d.type==='removed'?'oklch(0.16 0.04 25)':'oklch(0.16 0.04 72)'}}>
+          <span style={{color:d.type==='added'?'var(--ok)':d.type==='removed'?'var(--crit)':'var(--warn)',fontWeight:700,width:12}}>{d.type==='added'?'+':d.type==='removed'?'−':'~'}</span>
+          <span style={{color:'var(--text2)'}}>{d.field}{'  '}</span>
+          {d.type==='changed'&&<><span style={{color:'var(--crit)',textDecoration:'line-through'}}>{d.old}</span><span> → </span><span style={{color:'var(--ok)'}}>{d.new}</span></>}
+          {d.type==='added'&&<span style={{color:'var(--ok)'}}>{d.new}</span>}
+          {d.type==='removed'&&<span style={{color:'var(--crit)',textDecoration:'line-through'}}>{d.old}</span>}
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+// ── P1 修复：DiffCompare ──────────────────────────────────────────────────
+// diff 仍来自 RecheckDiffSnapshot（P0 已修复）
+// 新增：issue 行可点击，展示 RecheckIssueDiffItem 详情面板
+// 详情数据来自 snapshot.issue_changes，不从 Run A/B issue 列表重新推导
+function DiffCompare({runs,initRunId,setNav}){
+  const [runA,setRunA]=useState(initRunId||runs[0]?.id);
+  const [runB,setRunB]=useState(runs[1]?.id||runs[0]?.id);
+  const [selChange,setSelChange]=useState(null);
+
+  const snapshotKey=`${runA}|${runB}`;
+  const snapshot=RECHECK_DIFF_SNAPSHOTS[snapshotKey]||null;
+  const ds=snapshot?.summary||null;
+  const changes=snapshot?.issue_changes||[];
+
+  // 切换 A/B 时清除选中
+  useEffect(()=>setSelChange(null),[runA,runB]);
+
+  // issue 标题索引（只用于展示，不参与 diff 计算）
+  const issueIndex=Object.fromEntries([...runs.flatMap(r=>r.issues||[])].map(i=>[i.id,i]));
+
+  return(<div className="page">
+    <div className="page-header">
+      <div>
+        <div className="page-title">差异对比</div>
+        <div className="page-sub">数据来源：RecheckDiffSnapshot · 禁止 UI 计算集合差</div>
+      </div>
+    </div>
+
+    <div className="diff-run-sel">
+      <div style={{flex:1}}><label>基准 Run（A）</label>
+        <select className="exec-select" value={runA} onChange={e=>setRunA(e.target.value)}>
+          {runs.map(r=><option key={r.id} value={r.id}>{r.id.replace('run-','')} — {r.time}</option>)}
+        </select>
+      </div>
+      <div style={{paddingBottom:4,fontSize:18,color:'var(--text2)',flexShrink:0}}>→</div>
+      <div style={{flex:1}}><label>对比 Run（B）</label>
+        <select className="exec-select" value={runB} onChange={e=>setRunB(e.target.value)}>
+          {runs.map(r=><option key={r.id} value={r.id}>{r.id.replace('run-','')} — {r.time}</option>)}
+        </select>
+      </div>
+    </div>
+
+    {!snapshot?(
+      <div style={{padding:'24px 16px',background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:6,textAlign:'center'}}>
+        <div style={{fontSize:13,color:'var(--text2)',fontWeight:500,marginBottom:4}}>当前 Run 配对暂无差异快照</div>
+        <div style={{fontSize:11,color:'var(--text2)',fontFamily:'var(--mono)'}}>{snapshotKey}</div>
+        <div style={{fontSize:11,color:'var(--text2)',marginTop:8}}>如需对比，请确保已为此配对生成 RecheckDiffSnapshot。</div>
+      </div>
+    ):(
+      <div style={{display:'flex',gap:12,overflow:'hidden'}}>
+        {/* Left: summary + table */}
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:11,color:'var(--text2)',fontFamily:'var(--mono)',marginBottom:8}}>
+            diff_id: {snapshot.diff_id} · {snapshot.base_run_id} → {snapshot.target_run_id}
+          </div>
+          <span className={`trend-badge ${ds.trend}`}>{TREND_LABEL[ds.trend]}</span>
+          <div className="diff-stat-grid">
+            <div className="diff-stat"><div className={`dsv ${ds.delta>0?'up':ds.delta<0?'dn':'eq'}`}>{ds.total_before}</div><div className="dsl">Run A 问题数</div></div>
+            <div className="diff-stat"><div className={`dsv ${ds.delta>0?'up':ds.delta<0?'dn':'eq'}`}>{ds.total_after}</div><div className="dsl">Run B 问题数</div></div>
+            <div className="diff-stat"><div className={`dsv ${ds.delta>0?'up':ds.delta<0?'dn':'eq'}`}>{ds.delta>0?'+':''}{ds.delta}</div><div className="dsl">变化量</div></div>
+            <div className="diff-stat">
+              <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'center'}}>
+                {Object.entries(ds.severity_diff||{}).map(([s,v])=>(
+                  <div key={s} style={{display:'flex',gap:6,alignItems:'center'}}>
+                    <span style={{fontSize:10,color:'var(--text2)'}}>{SEV_LABEL[s]}</span>
+                    <span style={{fontFamily:'var(--mono)',fontSize:12,fontWeight:600,color:v>0?'var(--crit)':v<0?'var(--ok)':'var(--text2)'}}>{v>0?'+':''}{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="dsl">严重度变化</div>
+            </div>
+          </div>
+          <div style={{marginBottom:8,fontSize:11,color:'var(--text2)',display:'flex',gap:16}}>
+            {Object.entries(changes.reduce((acc,c)=>{acc[c.diff_type]=(acc[c.diff_type]||0)+1;return acc;},{})).map(([dt,cnt])=>(
+              <span key={dt} style={{color:DIFF_TYPE_COLOR[dt]||'var(--text2)'}}>{DIFF_TYPE_LABEL[dt]||dt} {cnt}</span>
+            ))}
+          </div>
+          <table className="diff-issue-table">
+            <thead><tr><th>变化类型</th><th>Issue ID</th><th>问题标题</th><th>变化前</th><th>变化后</th><th>说明</th></tr></thead>
+            <tbody>
+              {changes.map(c=>{
+                const issue=issueIndex[c.issue_id];
+                const isSel=selChange?.issue_id===c.issue_id;
+                return(<tr key={c.issue_id} className={`${DIFF_TYPE_CLS[c.diff_type]||''} clickable`}
+                  style={{cursor:'pointer',outline:isSel?`2px solid var(--accent)`:undefined}}
+                  onClick={()=>setSelChange(isSel?null:c)}>
+                  <td><span style={{color:DIFF_TYPE_COLOR[c.diff_type]||'var(--text2)',fontFamily:'var(--mono)',fontSize:11}}>{DIFF_TYPE_LABEL[c.diff_type]||c.diff_type}</span></td>
+                  <td style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--text2)'}}>{c.issue_id}</td>
+                  <td style={{fontSize:12}}>{issue?.title||'—'}</td>
+                  <td>{c.severity_before?<SevTag sev={c.severity_before}/>:<span style={{color:'var(--text2)',fontSize:11}}>—</span>}</td>
+                  <td>{c.severity_after?<SevTag sev={c.severity_after}/>:<span style={{color:'var(--text2)',fontSize:11}}>—</span>}</td>
+                  <td style={{fontSize:11,color:'var(--text2)'}}>{c.summary}</td>
+                </tr>);
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Right: RecheckIssueDiffItem detail panel */}
+        {selChange&&(()=>{
+          const c=selChange;
+          const beforeIssue=issueIndex[c.issue_id];
+          return(<div style={{width:300,flexShrink:0,background:'var(--bg1)',border:'1px solid var(--border)',borderRadius:6,padding:'12px 14px',overflow:'auto',maxHeight:'70vh'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:600,color:'var(--text0)'}}>RecheckIssueDiffItem</div>
+              <button style={{background:'none',border:'none',color:'var(--text2)',cursor:'pointer',fontSize:16}} onClick={()=>setSelChange(null)}>×</button>
+            </div>
+            {setNav&&<button className="btn btn-secondary btn-sm" style={{width:'100%',marginBottom:10}} onClick={()=>{
+              setNav({section:'analysis',sub:'workbench',ctx:{
+                runId:snapshot.target_run_id,
+                drilldown:{
+                  source:'recheck_diff',
+                  diff_id:snapshot.diff_id,
+                  from_run_id:snapshot.base_run_id,
+                  to_run_id:snapshot.target_run_id,
+                  run_id:snapshot.target_run_id,
+                  issue_id:c.issue_id,
+                  diff_type:c.diff_type,
+                  issue_diff_item:c
+                }
+              }});
+            }}>◈ 查看 Workbench 详情</button>}
+            <div className="kv-grid" style={{marginBottom:10}}>
+              <span className="kk">issue_id</span><span className="vv">{c.issue_id}</span>
+              <span className="kk">diff_type</span><span className="vv" style={{color:DIFF_TYPE_COLOR[c.diff_type]}}>{c.diff_type}</span>
+              <span className="kk">severity_before</span><span className="vv">{c.severity_before||'—'}</span>
+              <span className="kk">severity_after</span><span className="vv">{c.severity_after||'—'}</span>
+            </div>
+            <div style={{fontSize:11,fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase',color:'var(--text2)',marginBottom:4}}>summary</div>
+            <div style={{fontSize:12,color:'var(--text1)',marginBottom:10}}>{c.summary}</div>
+            {beforeIssue&&<>
+              <div style={{fontSize:11,fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase',color:'var(--text2)',marginBottom:4}}>before_issue 摘要</div>
+              <div style={{background:'var(--bg2)',borderRadius:4,padding:'8px 10px',marginBottom:10}}>
+                <div style={{fontSize:12,fontWeight:500,color:'var(--text0)',marginBottom:4}}>{beforeIssue.title}</div>
+                <div className="kv-grid">
+                  <span className="kk">rule_id</span><span className="vv">{beforeIssue.rule_id}</span>
+                  <span className="kk">anchor_id</span><span className="vv">{beforeIssue.anchor_id}</span>
+                  <span className="kk">source_device</span><span className="vv">{beforeIssue.source_device}</span>
+                </div>
+              </div>
+              <div style={{fontSize:11,fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase',color:'var(--text2)',marginBottom:4}}>after_issue 摘要</div>
+              <div style={{background:'var(--bg2)',borderRadius:4,padding:'8px 10px'}}>
+                {c.diff_type==='resolved'?
+                  <div style={{fontSize:12,color:'var(--ok)'}}>本次运行未检出 · 来源 run 不含此 issue</div>:
+                  <div style={{fontSize:12,color:'var(--text1)'}}>{c.diff_type==='new'?'首次出现':'仍然存在 · 见 Run B 结果'}</div>
+                }
+              </div>
+            </>}
+          </div>);
+        })()}
+      </div>
+    )}
+  </div>);
+}
+// App
+function App(){
+  const [nav,setNav]=useState(()=>{try{const s=localStorage.getItem('tc_nav_v2');return s?JSON.parse(s):{section:'baseline',sub:'list',ctx:{}}}catch{return{section:'baseline',sub:'list',ctx:{}}}});
+  const [runs,setRuns]=useState(INIT_RUNS);
+  const [selectedRun,setSelectedRun]=useState(INIT_RUNS[0]);
+  function navigate(n){setNav(n);localStorage.setItem('tc_nav_v2',JSON.stringify(n))}
+  function handleRunComplete(newRun){setRuns(rs=>[newRun,...rs]);setSelectedRun(newRun);navigate({section:'analysis',sub:'workbench',ctx:{runId:newRun.id}})}
+  function renderContent(){
+    const {section,sub,ctx}=nav;
+    if(section==='baseline'){
+      if(sub==='list')return<BaselineList setNav={navigate}/>;
+      if(sub==='detail')return<BaselineDetail blId={ctx.blId||BASELINES[0].id} setNav={navigate}/>;
+      if(sub==='rules')return<RuleEditor blId={ctx.blId||BASELINES[0].id}/>;
+      if(sub==='versions')return<VersionMgmt blId={ctx.blId||BASELINES[0].id}/>;
+    }
+    if(section==='execution'){
+      if(sub==='config')return<ExecutionConfig blId={ctx.blId} onRunComplete={handleRunComplete}/>;
+      if(sub==='history')return<RunHistory runs={runs} setNav={navigate} setSelectedRun={setSelectedRun}/>;
+    }
+    if(section==='analysis'){
+      const run=ctx.runId?runs.find(r=>r.id===ctx.runId)||selectedRun:selectedRun;
+      return<AnalysisWorkbench run={run} setNav={navigate} drilldown={ctx.drilldown||null}/>;
+    }
+    if(section==='diff')return<DiffCompare runs={runs} initRunId={ctx.runId} setNav={navigate}/>;
+    return<div className="empty"><div className="et">未知页面</div></div>;
+  }
+  const curSection=NAV.find(n=>n.id===nav.section);
+  const curSub=curSection?.subs?.find(s=>s.id===nav.sub);
+  return(<div className="shell">
+    <div className="topbar">
+      <span className="topbar-logo">TopoChecker</span>
+      <div className="topbar-sep"/>
+      <div className="topbar-breadcrumb">
+        <span>{curSection?.label}</span>
+        {curSub&&<><span style={{color:'var(--border-hi)'}}>/</span><span className="bc-cur">{curSub.label}</span></>}
+      </div>
+      <div className="topbar-spacer"/>
+      <span className="topbar-badge">{runs.length} 次运行</span>
+    </div>
+    <div className="leftnav">
+      {NAV.map(sec=>(
+        <React.Fragment key={sec.id}>
+          <div className={`nav-item ${nav.section===sec.id?'active':''}`} onClick={()=>navigate({section:sec.id,sub:sec.subs[0].id,ctx:{}})}>
+            <span className="ni-icon">{sec.icon}</span><span className="ni-label">{sec.label}</span>
+          </div>
+          {nav.section===sec.id&&sec.subs.map(sub=>(
+            <div key={sub.id} className={`nav-sub ${nav.sub===sub.id?'active':''}`} onClick={()=>navigate({section:sec.id,sub:sub.id,ctx:nav.ctx})}>{sub.label}</div>
+          ))}
+        </React.Fragment>
+      ))}
+    </div>
+    <div className="content">{renderContent()}</div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<template id="__bundler_thumbnail" data-bg-color="#1a1d26">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="80" fill="#1a1d26"/>
+    <rect x="0" y="0" width="28" height="80" fill="#1e2235"/>
+    <rect x="2" y="8" width="24" height="7" rx="2" fill="#3a4060"/>
+    <rect x="2" y="20" width="24" height="6" rx="1" fill="#2a2f45"/>
+    <rect x="2" y="28" width="24" height="6" rx="1" fill="#2a2f45"/>
+    <rect x="2" y="36" width="24" height="6" rx="1" fill="#2a2f45"/>
+    <rect x="30" y="0" width="90" height="10" fill="#1e2235"/>
+    <rect x="30" y="12" width="88" height="64" fill="#141726"/>
+    <rect x="34" y="16" width="36" height="6" rx="1" fill="#2a2f45"/>
+    <rect x="34" y="24" width="80" height="5" rx="1" fill="#22263a"/>
+    <rect x="34" y="31" width="80" height="5" rx="1" fill="#22263a"/>
+    <rect x="34" y="38" width="80" height="5" rx="1" fill="#22263a"/>
+    <circle cx="36" cy="26.5" r="2" fill="#e04030"/>
+    <circle cx="36" cy="33.5" r="2" fill="#e04030"/>
+    <circle cx="36" cy="40.5" r="2" fill="#d4a020"/>
+  </svg>
+</template>
+</body>
+</html>

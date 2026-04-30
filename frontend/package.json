@@ -1,0 +1,19 @@
+{
+  "name": "topochecker-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "check:componentization": "bash ../scripts/check_frontend_componentization_phase1.sh",
+    "check:typecheck-baseline": "bash ../scripts/check_frontend_typecheck_baseline.sh"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0"
+  }
+}

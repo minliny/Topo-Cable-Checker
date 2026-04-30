@@ -1,0 +1,1 @@
+{"scopes":[{"scope_id":"scope-full","method":"full_topology","description":"Full topology check"},{"scope_id":"scope-diff","method":"diff_only","description":"Diff only check"}]}

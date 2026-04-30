@@ -1,0 +1,1 @@
+{"issue":{"issue_id":"issue-001","run_id":"run-001","rule_id":"rule-001","rule_name":"Duplicate Device Name","severity":"high","entity_type":"device","entity_id":"dev-001","entity_name":"Router-A","message":"Duplicate device name found","parameters":{},"detected_at":null}}
