@@ -100,13 +100,20 @@ jobs:
 
       - name: Start Backend
         run: |
-          cd backend
-          nohup python3 -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --app-dir . &
+          python3 -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 &
           echo "Waiting for backend to start..."
-          sleep 5
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "Backend is ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend failed to start within 30s"
+          exit 1
 
       - name: Verify Backend
-        run: curl -f http://127.0.0.1:8000/health
+        run: curl -sf http://127.0.0.1:8000/health | python3 -m json.tool
 
       - name: Smoke Test
         run: bash scripts/smoke_frontend_backend_local.sh
