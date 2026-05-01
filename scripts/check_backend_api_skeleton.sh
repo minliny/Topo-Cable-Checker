@@ -755,6 +755,62 @@ if [ -f "$PROJECT_ROOT/.github/workflows/frontend-backend-ci.yml" ]; then
   fi
 fi
 
+# ── Section 13: FileRepository Switch Readiness Audit 检查 ──────────
+echo ""
+echo "── Section 13：FileRepository Switch Readiness Audit 检查 ──"
+
+check_file "audit_repository_response_parity.sh" "$PROJECT_ROOT/scripts/audit_repository_response_parity.sh"
+check_file "FILE_REPOSITORY_SWITCH_READINESS.md" "$PROJECT_ROOT/docs/dev/FILE_REPOSITORY_SWITCH_READINESS.md"
+
+# Check audit script exists and is executable
+if [ -x "$PROJECT_ROOT/scripts/audit_repository_response_parity.sh" ]; then
+  pass "audit_repository_response_parity.sh 可执行"
+else
+  fail "audit_repository_response_parity.sh 不可执行"
+fi
+
+# Check audit script uses localhost only
+if grep -q "localhost\|127.0.0.1" "$PROJECT_ROOT/scripts/audit_repository_response_parity.sh" 2>/dev/null; then
+  pass "audit_repository_response_parity.sh 只使用 localhost"
+else
+  fail "audit_repository_response_parity.sh 未使用 localhost"
+fi
+
+# Check audit script does NOT switch default repository
+if grep -q "TOPOCHECKER_REPO.*default\|default.*file" "$PROJECT_ROOT/scripts/audit_repository_response_parity.sh" 2>/dev/null; then
+  fail "audit_repository_response_parity.sh 不应修改默认 repository"
+else
+  pass "audit_repository_response_parity.sh 不修改默认 repository"
+fi
+
+# Check audit script compares mock vs file
+if grep -q "mock\|file" "$PROJECT_ROOT/scripts/audit_repository_response_parity.sh" 2>/dev/null; then
+  pass "audit_repository_response_parity.sh 对比 mock 与 file"
+else
+  fail "audit_repository_response_parity.sh 未对比 mock 与 file"
+fi
+
+# Check FILE_REPOSITORY_SWITCH_READINESS.md says default is still mock
+if grep -qi "默认.*mock\|当前默认.*MockRepository\|Default.*MockRepository" "$PROJECT_ROOT/docs/dev/FILE_REPOSITORY_SWITCH_READINESS.md" 2>/dev/null; then
+  pass "FILE_REPOSITORY_SWITCH_READINESS.md 说明默认仍为 mock"
+else
+  fail "FILE_REPOSITORY_SWITCH_READINESS.md 未说明默认 repository"
+fi
+
+# Check FILE_REPOSITORY_SWITCH_READINESS.md says no database
+if grep -qi "no database\|不接数据库\|禁止.*数据库\|禁止.*sqlite\|禁止.*orm" "$PROJECT_ROOT/docs/dev/FILE_REPOSITORY_SWITCH_READINESS.md" 2>/dev/null; then
+  pass "FILE_REPOSITORY_SWITCH_READINESS.md 明确不使用数据库"
+else
+  fail "FILE_REPOSITORY_SWITCH_READINESS.md 未明确说明不使用数据库"
+fi
+
+# Check provider.py default is still mock
+if grep -q 'TOPOCHECKER_REPO.*mock\|default.*mock\|"mock"' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 默认仍为 mock repository"
+else
+  fail "provider.py 默认可能已切换"
+fi
+
 # ── 结果汇总 ─────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"
