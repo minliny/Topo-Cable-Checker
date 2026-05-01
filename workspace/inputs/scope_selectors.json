@@ -1,0 +1,8 @@
+[
+  {
+    "scope_id": "sc-001",
+    "name": "Full Topology",
+    "description": "Full network topology scope",
+    "selector_type": "topology"
+  }
+]

@@ -486,6 +486,71 @@ else
   fail "LOCAL_WORKSPACE_PERSISTENCE.md 未明确说明不使用数据库"
 fi
 
+# ── Section 10c: Workspace Fixture 检查 ───────────────────────────
+echo ""
+echo "── Section 10c：Workspace Fixture 检查 ──"
+
+check_file "export_mock_to_workspace.sh" "$PROJECT_ROOT/scripts/export_mock_to_workspace.sh"
+check_file "export_mock_to_workspace.py" "$PROJECT_ROOT/backend/scripts/export_mock_to_workspace.py"
+check_file "WORKSPACE_FIXTURES.md" "$PROJECT_ROOT/docs/dev/WORKSPACE_FIXTURES.md"
+
+EXPORT_PY="$PROJECT_ROOT/backend/scripts/export_mock_to_workspace.py"
+
+# Check export script has no database import references (exclude docstrings/comments)
+found_db=$(awk '
+  /^\s*"""/ { in_doc = !in_doc; next }
+  in_doc { next }
+  /^\s*#/ { next }
+  /sqlite|sqlalchemy|peewee|tortoise|pymongo/ { print "found"; exit }
+' "$EXPORT_PY" 2>/dev/null)
+if [ -n "$found_db" ]; then
+  fail "export_mock_to_workspace.py 包含数据库依赖"
+else
+  pass "export_mock_to_workspace.py 无数据库依赖"
+fi
+
+# Check export script uses json dump
+if grep -q "json.dump" "$EXPORT_PY" 2>/dev/null; then
+  pass "export_mock_to_workspace.py 使用 json.dump"
+else
+  fail "export_mock_to_workspace.py 未使用 json.dump"
+fi
+
+# Check export script references mock_data module
+if grep -q "mock_data" "$EXPORT_PY" 2>/dev/null; then
+  pass "export_mock_to_workspace.py 引用 mock_data"
+else
+  fail "export_mock_to_workspace.py 未引用 mock_data"
+fi
+
+# Check FileRepository reads from workspace inputs
+if grep -q "_load_json\|_load_json_list\|_load_json_dict" "$PROJECT_ROOT/backend/repositories/file_repository.py" 2>/dev/null; then
+  pass "FileRepository 实现 workspace JSON 读取 helper"
+else
+  fail "FileRepository 未实现 workspace JSON 读取 helper"
+fi
+
+# Check FileRepository has fallback to mock
+if grep -q "_mock\." "$PROJECT_ROOT/backend/repositories/file_repository.py" 2>/dev/null; then
+  pass "FileRepository 保留 mock fallback"
+else
+  fail "FileRepository 未保留 mock fallback"
+fi
+
+# Check WORKSPACE_FIXTURES.md explicitly says default is still mock
+if grep -qi "默认.*mock\|default.*MockRepository\|默认 repository" "$PROJECT_ROOT/docs/dev/WORKSPACE_FIXTURES.md" 2>/dev/null; then
+  pass "WORKSPACE_FIXTURES.md 说明默认仍为 mock"
+else
+  fail "WORKSPACE_FIXTURES.md 未说明默认 repository"
+fi
+
+# Check WORKSPACE_FIXTURES.md says no database
+if grep -qi "no database\|不接数据库\|禁止.*数据库\|禁止.*sqlite\|禁止.*orm" "$PROJECT_ROOT/docs/dev/WORKSPACE_FIXTURES.md" 2>/dev/null; then
+  pass "WORKSPACE_FIXTURES.md 明确不使用数据库"
+else
+  fail "WORKSPACE_FIXTURES.md 未明确说明不使用数据库"
+fi
+
 # ── Section 11: Engine Adapter 检查 ────────────────────────────────
 echo ""
 echo "── Section 11：Engine Adapter 检查 ──"

@@ -1,0 +1,10 @@
+{
+  "task_id": "task-run-002",
+  "baseline_id": "baseline-001",
+  "data_source_id": "ds-001",
+  "scope_id": "scope-full",
+  "parameter_profile_id": "pp-001",
+  "threshold_profile_id": "tp-001",
+  "created_at": "2024-01-15T09:00:00Z",
+  "updated_at": "2024-01-15T09:00:00Z"
+}

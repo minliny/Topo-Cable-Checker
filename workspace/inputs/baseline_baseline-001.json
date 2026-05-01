@@ -1,0 +1,13 @@
+{
+  "id": "baseline-001",
+  "name": "Production Baseline v1",
+  "description": "Main production baseline for network topology validation",
+  "version": "v1.0.0",
+  "status": "published",
+  "identification_strategy": {
+    "strategy": "topology_match"
+  },
+  "naming_template": null,
+  "created_at": null,
+  "updated_at": null
+}

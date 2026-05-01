@@ -1,0 +1,13 @@
+{
+  "id": "baseline-002",
+  "name": "Staging Baseline v1",
+  "description": "Staging baseline for testing",
+  "version": "v1.0.0",
+  "status": "draft",
+  "identification_strategy": {
+    "strategy": "topology_match"
+  },
+  "naming_template": null,
+  "created_at": null,
+  "updated_at": null
+}
