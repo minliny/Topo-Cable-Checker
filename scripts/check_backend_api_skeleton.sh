@@ -604,6 +604,55 @@ else
   pass "dev_start_backend.sh 未切换为 file 模式"
 fi
 
+# Check dev_check_all.sh contains check_file_repository_runtime.sh
+if grep -q "check_file_repository_runtime" "$PROJECT_ROOT/scripts/dev_check_all.sh" 2>/dev/null; then
+  pass "dev_check_all.sh 包含 FileRepository runtime 检查"
+else
+  fail "dev_check_all.sh 未包含 FileRepository runtime 检查"
+fi
+
+# Check dev_check_all.sh contains export_mock_to_workspace
+if grep -q "export_mock_to_workspace" "$PROJECT_ROOT/scripts/dev_check_all.sh" 2>/dev/null; then
+  pass "dev_check_all.sh 包含 workspace fixture 导出"
+else
+  fail "dev_check_all.sh 未包含 workspace fixture 导出"
+fi
+
+# Check CI workflow contains file-repository-runtime job
+if grep -q "file-repository-runtime" "$PROJECT_ROOT/.github/workflows/frontend-backend-ci.yml" 2>/dev/null; then
+  pass "CI workflow 包含 file-repository-runtime job"
+else
+  fail "CI workflow 未包含 file-repository-runtime job"
+fi
+
+# Check CI workflow does NOT change default repo to file in smoke job
+if grep -A20 "smoke-and-snapshots" "$PROJECT_ROOT/.github/workflows/frontend-backend-ci.yml" 2>/dev/null | grep -q "TOPOCHECKER_REPO=file"; then
+  fail "CI smoke job 不应设置 TOPOCHECKER_REPO=file"
+else
+  pass "CI smoke job 未切换为 file 模式"
+fi
+
+# Check CI workflow sets TOPOCHECKER_REPO=file in file-repository-runtime job
+if grep -A50 "file-repository-runtime:" "$PROJECT_ROOT/.github/workflows/frontend-backend-ci.yml" 2>/dev/null | grep -q "TOPOCHECKER_REPO=file"; then
+  pass "CI file-repository-runtime job 设置 TOPOCHECKER_REPO=file"
+else
+  fail "CI file-repository-runtime job 未设置 TOPOCHECKER_REPO=file"
+fi
+
+# Check LOCAL_DEV_WORKFLOW.md contains FileRepository section
+if grep -q "FileRepository" "$PROJECT_ROOT/docs/dev/LOCAL_DEV_WORKFLOW.md" 2>/dev/null; then
+  pass "LOCAL_DEV_WORKFLOW.md 包含 FileRepository 说明"
+else
+  fail "LOCAL_DEV_WORKFLOW.md 未包含 FileRepository 说明"
+fi
+
+# Check CI_BASELINE.md contains FileRepository runtime
+if grep -q "FileRepository" "$PROJECT_ROOT/docs/dev/CI_BASELINE.md" 2>/dev/null; then
+  pass "CI_BASELINE.md 包含 FileRepository runtime 说明"
+else
+  fail "CI_BASELINE.md 未包含 FileRepository runtime 说明"
+fi
+
 # ── Section 11: Engine Adapter 检查 ────────────────────────────────
 echo ""
 echo "── Section 11：Engine Adapter 检查 ──"

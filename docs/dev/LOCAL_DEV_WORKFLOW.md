@@ -76,7 +76,8 @@ npm run dev
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/dev_start_backend.sh` | Start backend server |
+| `scripts/dev_start_backend.sh` | Start backend server (MockRepository, default) |
+| `scripts/dev_start_backend_file_repo.sh` | Start backend server (FileRepository mode) |
 | `scripts/dev_stop_backend.sh` | Stop backend server |
 | `scripts/dev_check_all.sh` | Run all checks |
 
@@ -87,6 +88,7 @@ npm run dev
 | `scripts/smoke_frontend_backend_local.sh` | Smoke test backend API |
 | `scripts/update_backend_api_snapshots.sh` | Update API snapshots |
 | `scripts/check_backend_api_contract_snapshots.sh` | Verify API snapshots |
+| `scripts/check_file_repository_runtime.sh` | Verify FileRepository runtime |
 
 ### Frontend Scripts
 
@@ -102,15 +104,26 @@ npm run dev
 |--------|---------|
 | `scripts/check_backend_api_skeleton.sh` | Verify backend skeleton |
 
+### Workspace Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/export_mock_to_workspace.sh` | Export mock data to workspace fixtures |
+
 ## Running All Checks
 
 ### Full Check (Backend Required)
 
 ```bash
-bash scripts/dev_start_backend.sh
 bash scripts/dev_check_all.sh
-bash scripts/dev_stop_backend.sh
 ```
+
+This runs:
+1. Frontend checks (prototype freeze, componentization, typecheck)
+2. Backend API skeleton check
+3. Export workspace fixtures
+4. MockRepository mode smoke test + API snapshots
+5. FileRepository mode runtime verification
 
 ### Frontend Only (No Backend Required)
 
@@ -157,6 +170,53 @@ Expected output:
 API_CONTRACT_CHECK_PASS
 ```
 
+## FileRepository Mode
+
+### What is FileRepository Mode?
+
+FileRepository mode uses local workspace JSON files instead of in-memory mock data. It is useful for:
+- Testing local file persistence
+- Validating workspace fixture integrity
+- Preparing for future FileRepository migration
+
+### How to Start FileRepository Mode
+
+```bash
+# 1. Export mock data to workspace (if not already done)
+bash scripts/export_mock_to_workspace.sh
+
+# 2. Start backend in FileRepository mode
+bash scripts/dev_start_backend_file_repo.sh
+```
+
+### How to Verify FileRepository Mode
+
+```bash
+bash scripts/check_file_repository_runtime.sh
+```
+
+This verifies:
+- Backend is running with `TOPOCHECKER_REPO=file`
+- All API endpoints respond correctly
+- API responses match contract snapshots
+- No database references in responses
+
+### Switching Back to MockRepository
+
+```bash
+unset TOPOCHECKER_REPO
+# or
+export TOPOCHECKER_REPO=mock
+
+bash scripts/dev_start_backend.sh
+```
+
+### Important Notes
+
+- **Default repository is still MockRepository**. `TOPOCHECKER_REPO=file` is only for explicit verification.
+- FileRepository currently falls back to MockRepository if workspace files are missing.
+- Do NOT switch the default repository to FileRepository until it is fully implemented.
+
 ## Architecture
 
 ```
@@ -178,8 +238,15 @@ API_CONTRACT_CHECK_PASS
 │                 Backend (FastAPI)                        │
 │              backend/main.py                             │
 │              backend/routers/                           │
+│              backend/repositories/                      │
+│                 ┌────────┬────────┐                    │
+│                 │ Mock   │ File   │                    │
+│                 │Repo    │Repo    │                    │
+│                 └────┬───┴───┬────┘                    │
+│                      │       │                          │
+│                      ▼       ▼                          │
 │              backend/data/mock_data.py                   │
-│                    (mock data only)                     │
+│              workspace/ (JSON fixtures)                  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -199,6 +266,7 @@ API_CONTRACT_CHECK_PASS
 - ✅ API contract validation
 - ✅ TypeScript compilation
 - ✅ Frontend-backend connectivity
+- ✅ FileRepository runtime verification
 
 ## Stopping Backend
 
@@ -235,6 +303,23 @@ Verify backend is running:
 curl http://127.0.0.1:8000/health
 ```
 
+### FileRepository runtime fails
+
+1. Check workspace fixtures exist:
+```bash
+ls workspace/inputs/
+```
+
+2. Re-export fixtures:
+```bash
+bash scripts/export_mock_to_workspace.sh
+```
+
+3. Check backend log:
+```bash
+cat backend/dev_server_file_repo.log
+```
+
 ## Files Reference
 
 | Directory | Purpose |
@@ -245,3 +330,4 @@ curl http://127.0.0.1:8000/health
 | `tests/backend_api_contract/` | API snapshot files |
 | `docs/api/` | API documentation |
 | `docs/dev/` | Development workflow documentation |
+| `workspace/` | Local workspace JSON fixtures |

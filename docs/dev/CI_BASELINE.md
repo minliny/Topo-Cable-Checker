@@ -43,10 +43,23 @@ This document describes the CI (Continuous Integration) pipeline configuration f
 | Frontend Typecheck | `npm run typecheck` |
 | Setup Python | Install Python 3.11 with pip cache |
 | Install backend dependencies | `pip install -r requirements.txt` |
-| Start Backend | Start uvicorn on port 8000 |
+| Start Backend | Start uvicorn on port 8000 (MockRepository mode) |
 | Verify Backend | Health check |
 | Smoke Test | `bash scripts/smoke_frontend_backend_local.sh` |
 | API Contract Snapshots | `bash scripts/check_backend_api_contract_snapshots.sh` |
+| Stop Backend | Cleanup uvicorn process |
+
+### 4. FileRepository Runtime (`file-repository-runtime`)
+
+| Step | Description |
+|------|-------------|
+| Checkout | Clone repository |
+| Setup Python | Install Python 3.11 with pip cache |
+| Install backend dependencies | `pip install -r requirements.txt` |
+| Export workspace fixtures | `bash scripts/export_mock_to_workspace.sh` |
+| Start Backend | Start uvicorn with `TOPOCHECKER_REPO=file` |
+| Verify Backend | Health check |
+| FileRepository Runtime Check | `bash scripts/check_file_repository_runtime.sh` |
 | Stop Backend | Cleanup uvicorn process |
 
 ## Triggers
@@ -63,6 +76,7 @@ The following checks must pass before merging:
 - `frontend-checks` job must pass
 - `backend-checks` job must pass
 - `smoke-and-snapshots` job must pass
+- `file-repository-runtime` job must pass
 
 If any job fails, the PR cannot be merged.
 
@@ -82,6 +96,7 @@ If any job fails, the PR cannot be merged.
 - Router files
 - Mock data files
 - Documentation
+- FileRepository runtime verification
 
 ### Integration Coverage
 
@@ -89,12 +104,13 @@ If any job fails, the PR cannot be merged.
 - All API endpoints
 - API response structure
 - Snapshot validation
+- FileRepository mode API compatibility
 
 ## Current Constraints
 
-The CI validates a **mock-compatible stack**. It does NOT test:
+The CI validates a **mock-compatible stack** with **local file persistence scaffold**. It does NOT test:
 
-- ❌ Real database connections
+- ❌ Real database connections (no SQLite, no ORM)
 - ❌ Real check engine execution
 - ❌ Real external API calls
 - ❌ AI/LLM services
@@ -105,8 +121,11 @@ The CI validates a **mock-compatible stack**. It does NOT test:
 ### Local Development
 
 ```bash
-# Start backend
+# Start backend (MockRepository, default)
 bash scripts/dev_start_backend.sh
+
+# Or start backend (FileRepository mode)
+bash scripts/dev_start_backend_file_repo.sh
 
 # Run all checks
 bash scripts/dev_check_all.sh
@@ -145,6 +164,24 @@ bash scripts/update_backend_api_snapshots.sh
 git commit -am "chore: update API snapshots"
 ```
 
+### CI Fails on FileRepository Runtime
+
+1. Check workspace fixtures can be exported:
+```bash
+bash scripts/export_mock_to_workspace.sh
+```
+
+2. Check FileRepository mode starts:
+```bash
+bash scripts/dev_start_backend_file_repo.sh
+curl http://127.0.0.1:8000/health
+```
+
+3. Check runtime validation:
+```bash
+bash scripts/check_file_repository_runtime.sh
+```
+
 ## Files Reference
 
 | Directory | Purpose |
@@ -154,3 +191,4 @@ git commit -am "chore: update API snapshots"
 | `frontend/` | React/TypeScript frontend |
 | `backend/` | FastAPI backend |
 | `tests/backend_api_contract/` | API snapshot files |
+| `workspace/` | Local workspace JSON fixtures |

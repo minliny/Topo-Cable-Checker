@@ -124,3 +124,52 @@ jobs:
       - name: Stop Backend
         if: always()
         run: pkill -f "uvicorn.*backend.main:app" || true
+
+  file-repository-runtime:
+    name: FileRepository Runtime
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: cd backend && pip install -r requirements.txt
+
+      - name: Export workspace fixtures
+        run: bash scripts/export_mock_to_workspace.sh
+
+      - name: Start Backend (FileRepository mode)
+        run: |
+          export TOPOCHECKER_REPO=file
+          python3 -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 &
+          echo "Waiting for backend to start..."
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "Backend is ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend failed to start within 30s"
+          exit 1
+
+      - name: Verify Backend
+        run: curl -sf http://127.0.0.1:8000/health | python3 -m json.tool
+
+      - name: FileRepository Runtime Check
+        run: bash scripts/check_file_repository_runtime.sh
+
+      - name: Stop Backend
+        if: always()
+        run: pkill -f "uvicorn.*backend.main:app" || true
