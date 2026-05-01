@@ -76,8 +76,8 @@ npm run dev
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/dev_start_backend.sh` | Start backend server (MockRepository, default) |
-| `scripts/dev_start_backend_file_repo.sh` | Start backend server (FileRepository mode) |
+| `scripts/dev_start_backend.sh` | Start backend server (FileRepository, default) |
+| `scripts/dev_start_backend_file_repo.sh` | Start backend server (explicit FileRepository mode) |
 | `scripts/dev_stop_backend.sh` | Stop backend server |
 | `scripts/dev_check_all.sh` | Run all checks |
 
@@ -122,8 +122,9 @@ This runs:
 1. Frontend checks (prototype freeze, componentization, typecheck)
 2. Backend API skeleton check
 3. Export workspace fixtures
-4. MockRepository mode smoke test + API snapshots
-5. FileRepository mode runtime verification
+4. Default FileRepository mode smoke test + API snapshots
+5. MockRepository fallback mode smoke test + API snapshots
+6. Explicit FileRepository mode runtime verification
 
 ### Frontend Only (No Backend Required)
 
@@ -213,9 +214,10 @@ bash scripts/dev_start_backend.sh
 
 ### Important Notes
 
-- **Default repository is still MockRepository**. `TOPOCHECKER_REPO=file` is only for explicit verification.
+- **Default repository is FileRepository**. `dev_start_backend.sh` starts with FileRepository by default.
+- `TOPOCHECKER_REPO=mock` explicitly falls back to MockRepository.
+- `TOPOCHECKER_REPO=file` explicitly uses FileRepository (same as default).
 - FileRepository currently falls back to MockRepository if workspace files are missing.
-- Do NOT switch the default repository to FileRepository until it is fully implemented.
 
 ## Architecture
 

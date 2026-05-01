@@ -385,11 +385,11 @@ else
   fail "provider.py 不包含 MockRepository"
 fi
 
-# Check provider default is mock (not database)
-if grep -q 'default.*mock\|"mock"\|TOPOCHECKER_REPO.*mock' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
-  pass "provider.py 默认使用 mock repository"
+# Check provider default is file (not mock/database)
+if grep -q 'default.*file\|"file"\|TOPOCHECKER_REPO.*file' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 默认使用 file repository"
 else
-  fail "provider.py 默认可能不是 mock repository"
+  fail "provider.py 默认可能不是 file repository"
 fi
 
 # Check NO sqlite_repository.py exists
@@ -476,11 +476,11 @@ else
   fail "provider.py 默认可能已切换为 file repository"
 fi
 
-# Check provider does NOT default to file
+# Check provider defaults to file
 if grep -A2 -B2 'TOPOCHECKER_REPO' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null | grep -q 'file.*default\|default.*file'; then
-  fail "provider.py 默认可能已设为 file"
+  pass "provider.py 默认已设为 file"
 else
-  pass "provider.py 默认未设为 file"
+  fail "provider.py 默认未设为 file"
 fi
 
 # Check LOCAL_WORKSPACE_PERSISTENCE.md explicitly says no database
@@ -541,9 +541,9 @@ else
   fail "FileRepository 未保留 mock fallback"
 fi
 
-# Check WORKSPACE_FIXTURES.md explicitly says default is still mock
-if grep -qi "默认.*mock\|default.*MockRepository\|默认 repository" "$PROJECT_ROOT/docs/dev/WORKSPACE_FIXTURES.md" 2>/dev/null; then
-  pass "WORKSPACE_FIXTURES.md 说明默认仍为 mock"
+# Check WORKSPACE_FIXTURES.md explicitly says default is FileRepository
+if grep -qi "默认.*FileRepository\|default.*FileRepository\|默认 repository" "$PROJECT_ROOT/docs/dev/WORKSPACE_FIXTURES.md" 2>/dev/null; then
+  pass "WORKSPACE_FIXTURES.md 说明默认 repository"
 else
   fail "WORKSPACE_FIXTURES.md 未说明默认 repository"
 fi
@@ -597,11 +597,11 @@ else
   fail "WORKSPACE_FIXTURES.md 未包含 TOPOCHECKER_REPO=file 说明"
 fi
 
-# Check default dev_start_backend.sh does NOT set TOPOCHECKER_REPO=file
-if grep -q "TOPOCHECKER_REPO=file" "$PROJECT_ROOT/scripts/dev_start_backend.sh" 2>/dev/null; then
-  fail "dev_start_backend.sh 不应设置 TOPOCHECKER_REPO=file"
+# Check default dev_start_backend.sh does NOT set TOPOCHECKER_REPO=mock
+if grep -q "TOPOCHECKER_REPO=mock" "$PROJECT_ROOT/scripts/dev_start_backend.sh" 2>/dev/null; then
+  fail "dev_start_backend.sh 不应设置 TOPOCHECKER_REPO=mock"
 else
-  pass "dev_start_backend.sh 未切换为 file 模式"
+  pass "dev_start_backend.sh 未强制 mock 模式"
 fi
 
 # Check dev_check_all.sh contains check_file_repository_runtime.sh
@@ -625,11 +625,11 @@ else
   fail "CI workflow 未包含 file-repository-runtime job"
 fi
 
-# Check CI workflow does NOT change default repo to file in smoke job
-if grep -A20 "smoke-and-snapshots" "$PROJECT_ROOT/.github/workflows/frontend-backend-ci.yml" 2>/dev/null | grep -q "TOPOCHECKER_REPO=file"; then
-  fail "CI smoke job 不应设置 TOPOCHECKER_REPO=file"
+# Check CI workflow smoke job uses default (FileRepository) or does not force mock
+if grep -A20 "smoke-and-snapshots" "$PROJECT_ROOT/.github/workflows/frontend-backend-ci.yml" 2>/dev/null | grep -q "TOPOCHECKER_REPO=mock"; then
+  fail "CI smoke job 不应设置 TOPOCHECKER_REPO=mock"
 else
-  pass "CI smoke job 未切换为 file 模式"
+  pass "CI smoke job 未强制 mock 模式（默认 FileRepository）"
 fi
 
 # Check CI workflow sets TOPOCHECKER_REPO=file in file-repository-runtime job
@@ -790,9 +790,9 @@ else
   fail "audit_repository_response_parity.sh 未对比 mock 与 file"
 fi
 
-# Check FILE_REPOSITORY_SWITCH_READINESS.md says default is still mock
-if grep -qi "默认.*mock\|当前默认.*MockRepository\|Default.*MockRepository" "$PROJECT_ROOT/docs/dev/FILE_REPOSITORY_SWITCH_READINESS.md" 2>/dev/null; then
-  pass "FILE_REPOSITORY_SWITCH_READINESS.md 说明默认仍为 mock"
+# Check FILE_REPOSITORY_SWITCH_READINESS.md says default is FileRepository
+if grep -qi "默认.*FileRepository\|当前默认.*FileRepository\|Default.*FileRepository" "$PROJECT_ROOT/docs/dev/FILE_REPOSITORY_SWITCH_READINESS.md" 2>/dev/null; then
+  pass "FILE_REPOSITORY_SWITCH_READINESS.md 说明默认 repository"
 else
   fail "FILE_REPOSITORY_SWITCH_READINESS.md 未说明默认 repository"
 fi
@@ -804,11 +804,11 @@ else
   fail "FILE_REPOSITORY_SWITCH_READINESS.md 未明确说明不使用数据库"
 fi
 
-# Check provider.py default is still mock
-if grep -q 'TOPOCHECKER_REPO.*mock\|default.*mock\|"mock"' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
-  pass "provider.py 默认仍为 mock repository"
+# Check provider.py default is file
+if grep -q 'TOPOCHECKER_REPO.*file\|default.*file\|"file"' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 默认为 file repository"
 else
-  fail "provider.py 默认可能已切换"
+  fail "provider.py 默认可能不是 file"
 fi
 
 # ── 结果汇总 ─────────────────────────────────────────────────

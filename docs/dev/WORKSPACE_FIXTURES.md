@@ -1,6 +1,6 @@
 # Workspace Fixtures
 
-> **Status:** PHASE 2 — Mock data exported to workspace JSON fixtures  
+> **Status:** ACTIVE — Default repository is FileRepository  
 > **Scope:** Local file persistence only — no database, no SQLite, no ORM.  
 > **Last updated:** 2026-05-01
 
@@ -8,7 +8,10 @@
 
 ## 1. 概述
 
-Workspace fixtures 是将 `backend/data/mock_data.py` 中的 mock 数据导出为 `workspace/` 目录下 JSON 文件的过程。这是从 MockRepository 迁移到 FileRepository 的中间步骤。
+Workspace fixtures 是将 `backend/data/mock_data.py` 中的 mock 数据导出为 `workspace/` 目录下 JSON 文件的过程。FileRepository 默认读取这些 JSON 文件作为数据来源。
+
+**当前默认：FileRepository**
+**Legacy 回退：MockRepository（通过 `TOPOCHECKER_REPO=mock`）**
 
 ---
 
@@ -116,44 +119,35 @@ FileRepository 实现以下读取优先级：
 1. **优先读取 workspace JSON 文件** — 如果 `workspace/inputs/` 或 `workspace/tasks/` 等目录中存在对应的 JSON 文件，直接读取
 2. **Fallback 到 MockRepository** — 如果 workspace 文件不存在，返回 mock 数据
 
-### 4.2 当前仍是可选
+### 4.2 默认实现
 
-- **默认 repository**：仍是 `MockRepository`
-- **FileRepository**：可通过 `TOPOCHECKER_REPO=file` 环境变量激活
-- **不建议生产使用**：FileRepository 仍在完善中
+- **默认 repository**：`FileRepository`
+- **MockRepository**：可通过 `TOPOCHECKER_REPO=mock` 环境变量回退
+- **FileRepository**：可通过 `TOPOCHECKER_REPO=file` 显式指定
 
 ---
 
 ## 5. 如何用 FileRepository 模式启动
 
-### 5.1 快速启动（推荐）
+### 5.1 快速启动（默认，推荐）
 
 ```bash
 # 1. 导出 mock 数据到 workspace（如未导出）
 bash scripts/export_mock_to_workspace.sh
 
-# 2. 使用 FileRepository 模式启动后端
-bash scripts/dev_start_backend_file_repo.sh
+# 2. 启动后端（默认 FileRepository 模式）
+bash scripts/dev_start_backend.sh
 ```
 
-`dev_start_backend_file_repo.sh` 会自动：
+`dev_start_backend.sh` 会自动：
 - 检查并导出 workspace fixtures
-- 设置 `TOPOCHECKER_REPO=file`
-- 启动后端服务器
+- 启动后端服务器（默认 FileRepository）
 - 等待健康检查通过
 
-### 5.2 手动启动
+### 5.2 显式 FileRepository 模式
 
 ```bash
-# 1. 导出 mock 数据到 workspace
-bash scripts/export_mock_to_workspace.sh
-
-# 2. 设置环境变量
-export TOPOCHECKER_REPO=file
-
-# 3. 启动后端
-cd backend
-uvicorn main:app --host 127.0.0.1 --port 8000
+bash scripts/dev_start_backend_file_repo.sh
 ```
 
 ### 5.3 验证 FileRepository 是否生效
@@ -166,14 +160,11 @@ curl http://localhost:8000/api/baselines
 bash scripts/check_file_repository_runtime.sh
 ```
 
-### 5.4 切回 MockRepository
+### 5.4 回退到 MockRepository
 
 ```bash
-unset TOPOCHECKER_REPO
-# 或
+# 显式设置环境变量回退到 MockRepository
 export TOPOCHECKER_REPO=mock
-
-# 使用默认脚本启动
 bash scripts/dev_start_backend.sh
 ```
 
@@ -195,7 +186,19 @@ bash scripts/check_backend_api_skeleton.sh
 # 3. 导出 fixtures
 bash scripts/export_mock_to_workspace.sh
 
-# 4. FileRepository 运行时验证
+# 4. 默认 FileRepository 模式验证
+bash scripts/dev_start_backend.sh
+bash scripts/smoke_frontend_backend_local.sh
+bash scripts/check_backend_api_contract_snapshots.sh
+bash scripts/dev_stop_backend.sh
+
+# 5. MockRepository 回退验证
+TOPOCHECKER_REPO=mock bash scripts/dev_start_backend.sh
+bash scripts/smoke_frontend_backend_local.sh
+bash scripts/check_backend_api_contract_snapshots.sh
+bash scripts/dev_stop_backend.sh
+
+# 6. 显式 FileRepository 模式验证
 bash scripts/dev_start_backend_file_repo.sh
 bash scripts/check_file_repository_runtime.sh
 bash scripts/dev_stop_backend.sh
@@ -204,27 +207,24 @@ bash scripts/dev_stop_backend.sh
 ### 6.2 验证内容
 
 `check_file_repository_runtime.sh` 会验证：
-- 后端是否以 `TOPOCHECKER_REPO=file` 启动
+- 后端是否以 FileRepository 模式运行
 - Smoke test（18 个 API 端点）
 - API contract snapshot 校验（21 个快照）
-- 边界检查（无数据库引用、默认脚本未切换）
+- 边界检查（无数据库引用）
 
 ---
 
 ## 7. 后续计划
 
-### Phase 2（当前）
+### Phase 3（当前）
 - [x] 导出 mock 数据到 workspace JSON fixtures
 - [x] FileRepository 优先读取 workspace，fallback 到 mock
-- [x] 默认仍为 MockRepository
-- [x] FileRepository runtime 验证通过
-
-### Phase 3（未来）
-- [ ] 移除 FileRepository 中的 MockRepository fallback
-- [ ] FileRepository 成为默认实现
-- [ ] 支持直接编辑 workspace JSON 文件并实时生效
+- [x] FileRepository 成为默认实现
+- [x] MockRepository 可通过 `TOPOCHECKER_REPO=mock` 回退
 
 ### Phase 4（未来）
+- [ ] 移除 FileRepository 中的 MockRepository fallback
+- [ ] 支持直接编辑 workspace JSON 文件并实时生效
 - [ ] 支持 workspace 备份/恢复/导出
 - [ ] 支持从真实检查引擎输出写入 workspace
 
@@ -237,4 +237,3 @@ bash scripts/dev_stop_backend.sh
 - ❌ 禁止引入任何 ORM 框架
 - ❌ 禁止在 FileRepository 中写 SQL
 - ❌ 禁止修改 API response 结构
-- ❌ 禁止切换默认 repository 为 FileRepository（直到完全实现）

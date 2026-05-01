@@ -1,6 +1,6 @@
 # Local Workspace File Persistence
 
-> **Status:** SCAFFOLD (Phase 1)  
+> **Status:** ACTIVE — Default repository is FileRepository  
 > **Scope:** Local file persistence only — no database, no SQLite, no ORM.  
 > **Last updated:** 2026-05-01
 
@@ -145,9 +145,9 @@ backend/
 │   └── manager.py       # 文件读写操作
 ├── repositories/
 │   ├── interface.py     # Repository 抽象接口
-│   ├── mock_repository.py   # Mock 实现（默认）
-│   ├── file_repository.py   # 本地文件实现（scaffold）
-│   └── provider.py      # 仓库提供者（默认 mock）
+│   ├── mock_repository.py   # Mock 实现（legacy fallback）
+│   ├── file_repository.py   # 本地文件实现（默认）
+│   └── provider.py      # 仓库提供者（默认 file）
 ```
 
 ### 5.1 WorkspaceManager
@@ -169,11 +169,11 @@ backend/
 
 `FileRepository` 实现 `Repository` 接口，使用 `WorkspaceManager` 进行本地文件读写：
 
-- **已实现**：`save_task`, `save_run`, `save_snapshot`, `save_report`
-- **部分实现**：`get_all_runs`, `get_run_by_id`（优先读 workspace，fallback 到 mock）
-- **待迁移**：Baseline/Rule/Profile 等读取方法（当前 fallback 到 MockRepository）
+- **已实现**：所有读取方法优先读 workspace JSON，缺失时 fallback 到 MockRepository
+- **写入方法**：`save_task`, `save_run`, `save_snapshot`, `save_report`
+- **默认实现**：`provider.py` 默认返回 FileRepository
 
-> **注意**：FileRepository 当前为 **SCAFFOLD 状态**，默认仍使用 MockRepository。
+> **注意**：FileRepository 内部仍保留 MockRepository fallback，确保 workspace 文件缺失时系统仍可运行。
 
 ---
 
@@ -182,28 +182,32 @@ backend/
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `TOPOCHECKER_WORKSPACE` | `workspace` | workspace 根目录路径 |
-| `TOPOCHECKER_REPO` | `mock` | 仓库实现：`mock` 或 `file`（未来） |
+| `TOPOCHECKER_REPO` | `file` | 仓库实现：`file`（默认）或 `mock`（legacy fallback） |
 
 ---
 
 ## 7. 迁移计划
 
-### Phase 1（当前）
+### Phase 1（已完成）
 - [x] 创建 workspace 目录结构
 - [x] 创建 WorkspaceManager 文件读写 scaffold
 - [x] 创建 FileRepository scaffold（fallback 到 mock）
 - [x] 更新 provider.py 预留 FileRepository 分支
 - [x] 默认仍使用 MockRepository
 
-### Phase 2（未来）
-- [ ] 将 mock baselines/rules/profiles 导出为 workspace JSON 文件
-- [ ] 实现 FileRepository 完整的读取方法
-- [ ] 支持通过 `TOPOCHECKER_REPO=file` 切换实现
+### Phase 2（已完成）
+- [x] 将 mock baselines/rules/profiles 导出为 workspace JSON 文件
+- [x] 实现 FileRepository 完整的读取方法
+- [x] 支持通过 `TOPOCHECKER_REPO=file` 切换实现
 
-### Phase 3（未来）
-- [ ] 移除 MockRepository fallback
-- [ ] FileRepository 成为默认实现
+### Phase 3（已完成）
+- [x] FileRepository 成为默认实现
+- [x] MockRepository 仍可通过 `TOPOCHECKER_REPO=mock` 回退
+
+### Phase 4（未来）
+- [ ] 移除 FileRepository 中的 MockRepository fallback
 - [ ] 支持 workspace 备份/恢复/导出
+- [ ] 支持从真实检查引擎输出写入 workspace
 
 ---
 
@@ -227,4 +231,3 @@ backend/
 - ❌ 禁止引入任何 ORM 框架
 - ❌ 禁止在 FileRepository 中写 SQL
 - ❌ 禁止修改 API response 结构
-- ❌ 禁止切换默认 repository 为 FileRepository（直到完全实现）

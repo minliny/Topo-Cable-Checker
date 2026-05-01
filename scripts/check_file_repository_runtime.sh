@@ -75,22 +75,11 @@ if [ -n "$BACKEND_PID" ]; then
     if ps e -p "$BACKEND_PID" 2>/dev/null | grep -q "TOPOCHECKER_REPO=file"; then
         pass "后端进程环境变量 TOPOCHECKER_REPO=file"
     else
-        fail "后端进程未设置 TOPOCHECKER_REPO=file"
+        # Default is now FileRepository, so no env var also means FileRepository
+        info "后端进程未显式设置 TOPOCHECKER_REPO（默认 FileRepository）"
     fi
 else
     skip "无法获取后端 PID"
-fi
-
-# Also verify by checking the log file
-LOG_FILE="$PROJECT_ROOT/backend/dev_server_file_repo.log"
-if [ -f "$LOG_FILE" ]; then
-    if grep -q "TOPOCHECKER_REPO=file\|FileRepository" "$LOG_FILE" 2>/dev/null; then
-        pass "日志确认 FileRepository 模式"
-    else
-        info "日志未明确显示 FileRepository 模式（可能启动时尚未加载）"
-    fi
-else
-    skip "日志文件不存在"
 fi
 
 # ── Step 3: Smoke Test ────────────────────────────────────
@@ -229,13 +218,6 @@ if echo "$health_resp" | grep -qi "sqlite\|database\|orm"; then
     fail "Health 响应包含数据库相关字段"
 else
     pass "Health 响应无数据库相关字段"
-fi
-
-# Check default dev_start_backend.sh is NOT file repo mode
-if grep -q "TOPOCHECKER_REPO=file" "$PROJECT_ROOT/scripts/dev_start_backend.sh" 2>/dev/null; then
-    fail "dev_start_backend.sh 不应包含 TOPOCHECKER_REPO=file"
-else
-    pass "dev_start_backend.sh 未切换为 file 模式"
 fi
 
 echo ""

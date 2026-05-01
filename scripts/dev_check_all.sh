@@ -71,17 +71,35 @@ echo ""
 
 run_check "导出 mock 到 workspace" "bash $PROJECT_ROOT/scripts/export_mock_to_workspace.sh"
 
-# ── MockRepository 模式运行时检查 ─────────────────────────
+# ── 默认 FileRepository 模式运行时检查 ────────────────────
 echo ""
-echo "═══ MockRepository 模式运行时检查 ═══"
+echo "═══ 默认 FileRepository 模式运行时检查 ═══"
 echo ""
 
 # 确保后端已停止
 bash $PROJECT_ROOT/scripts/dev_stop_backend.sh 2>/dev/null || true
 
-# 启动默认后端（MockRepository 模式）
+# 启动默认后端（FileRepository 模式）
 echo ""
-echo "启动后端（MockRepository 模式）..."
+echo "启动后端（默认 FileRepository 模式）..."
+bash $PROJECT_ROOT/scripts/dev_start_backend.sh
+sleep 3
+
+run_check "Smoke Test (FileRepository)" "bash $PROJECT_ROOT/scripts/smoke_frontend_backend_local.sh"
+run_check "API Contract Snapshots (FileRepository)" "bash $PROJECT_ROOT/scripts/check_backend_api_contract_snapshots.sh"
+
+# 停止后端
+bash $PROJECT_ROOT/scripts/dev_stop_backend.sh
+
+# ── MockRepository 回退模式运行时检查 ─────────────────────
+echo ""
+echo "═══ MockRepository 回退模式运行时检查 ═══"
+echo ""
+
+# 启动 MockRepository 模式后端
+export TOPOCHECKER_REPO=mock
+echo ""
+echo "启动后端（MockRepository 回退模式）..."
 bash $PROJECT_ROOT/scripts/dev_start_backend.sh
 sleep 3
 
@@ -90,6 +108,7 @@ run_check "API Contract Snapshots (Mock)" "bash $PROJECT_ROOT/scripts/check_back
 
 # 停止后端
 bash $PROJECT_ROOT/scripts/dev_stop_backend.sh
+unset TOPOCHECKER_REPO
 
 # ── FileRepository 模式运行时检查 ─────────────────────────
 echo ""

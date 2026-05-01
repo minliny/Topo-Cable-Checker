@@ -1,12 +1,13 @@
 # backend/repositories/provider.py
 # Repository provider — controls which repository implementation is active.
-# Default: MockRepository (in-memory mock data)
-# Future: FileRepository (local JSON/workspace file persistence)
+# Default: FileRepository (local JSON/workspace file persistence)
+# Fallback: MockRepository (in-memory mock data, via TOPOCHECKER_REPO=mock)
 
 import os
 from typing import Optional
 
 from .interface import Repository
+from .file_repository import FileRepository
 from .mock_repository import MockRepository
 
 
@@ -17,24 +18,23 @@ def get_repository() -> Repository:
     """Get the active repository instance.
 
     Environment variable TOPOCHECKER_REPO controls the implementation:
-    - "mock" (default): MockRepository — in-memory, no persistence
-    - "file": FileRepository — local JSON/workspace file persistence (scaffold)
+    - "file" (default): FileRepository — local JSON/workspace file persistence
+    - "mock": MockRepository — in-memory, no persistence (legacy fallback)
 
-    WARNING: Do NOT switch to "file" until FileRepository is fully implemented.
+    FileRepository reads from workspace/ JSON files first, falls back to
+    MockRepository if files are missing.
     """
     global _DEFAULT_REPO
 
     if _DEFAULT_REPO is not None:
         return _DEFAULT_REPO
 
-    repo_type = os.environ.get("TOPOCHECKER_REPO", "mock").lower()
+    repo_type = os.environ.get("TOPOCHECKER_REPO", "file").lower()
 
-    if repo_type == "file":
-        # FileRepository is scaffold only — not ready for production use
-        from .file_repository import FileRepository
-        _DEFAULT_REPO = FileRepository()
-    else:
+    if repo_type == "mock":
         _DEFAULT_REPO = MockRepository()
+    else:
+        _DEFAULT_REPO = FileRepository()
 
     return _DEFAULT_REPO
 

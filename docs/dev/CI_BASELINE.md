@@ -43,7 +43,7 @@ This document describes the CI (Continuous Integration) pipeline configuration f
 | Frontend Typecheck | `npm run typecheck` |
 | Setup Python | Install Python 3.11 with pip cache |
 | Install backend dependencies | `pip install -r requirements.txt` |
-| Start Backend | Start uvicorn on port 8000 (MockRepository mode) |
+| Start Backend | Start uvicorn on port 8000 (default FileRepository mode) |
 | Verify Backend | Health check |
 | Smoke Test | `bash scripts/smoke_frontend_backend_local.sh` |
 | API Contract Snapshots | `bash scripts/check_backend_api_contract_snapshots.sh` |
@@ -121,11 +121,14 @@ The CI validates a **mock-compatible stack** with **local file persistence scaff
 ### Local Development
 
 ```bash
-# Start backend (MockRepository, default)
+# Start backend (FileRepository, default)
 bash scripts/dev_start_backend.sh
 
-# Or start backend (FileRepository mode)
+# Or start backend (explicit FileRepository mode)
 bash scripts/dev_start_backend_file_repo.sh
+
+# Or start backend (MockRepository fallback)
+TOPOCHECKER_REPO=mock bash scripts/dev_start_backend.sh
 
 # Run all checks
 bash scripts/dev_check_all.sh

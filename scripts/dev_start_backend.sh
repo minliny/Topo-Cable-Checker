@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
 # dev_start_backend.sh
-# TopoChecker — 启动后端开发服务器
-# 使用 mock-compatible 数据，不接真实数据库或检查引擎
+# TopoChecker — 启动后端开发服务器（默认 FileRepository 模式）
+# 使用本地 workspace JSON 文件，不接真实数据库或检查引擎
 # 用法：bash scripts/dev_start_backend.sh
 # ============================================================
 
 RED='\033[0;31m'
 GRN='\033[0;32m'
 YLW='\033[0;33m'
+BLU='\033[0;34m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -52,7 +53,20 @@ if lsof -i :$PORT &> /dev/null; then
     exit 1
 fi
 
-# Start backend
+# Ensure workspace fixtures exist
+if [ ! -d "$PROJECT_ROOT/workspace/inputs" ]; then
+    echo -e "${YLW}⚠${NC} workspace fixtures 不存在，先运行导出脚本..."
+    bash "$PROJECT_ROOT/scripts/export_mock_to_workspace.sh"
+    echo ""
+fi
+
+# Detect repository mode from environment
+REPO_MODE="${TOPOCHECKER_REPO:-file}"
+if [ "$REPO_MODE" = "mock" ]; then
+    echo -e "${BLU}ℹ${NC} Repository 模式: MockRepository (显式回退)"
+else
+    echo -e "${BLU}ℹ${NC} Repository 模式: FileRepository (默认)"
+fi
 echo "启动后端服务器..."
 echo "  目录: $PROJECT_ROOT"
 echo "  主机: $HOST"
@@ -61,6 +75,7 @@ echo "  日志: $LOG_FILE"
 echo ""
 
 cd "$PROJECT_ROOT"
+export TOPOCHECKER_REPO="$REPO_MODE"
 nohup python3 -m uvicorn backend.main:app --host "$HOST" --port "$PORT" --app-dir "$PROJECT_ROOT" > "$LOG_FILE" 2>&1 &
 BACKEND_PID=$!
 

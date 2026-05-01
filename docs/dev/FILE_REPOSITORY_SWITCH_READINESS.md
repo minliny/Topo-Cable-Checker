@@ -1,6 +1,6 @@
 # FileRepository Switch Readiness Audit
 
-> **Status:** AUDIT PHASE — Default repository is still MockRepository  
+> **Status:** COMPLETED — Default repository is FileRepository  
 > **Scope:** Local file persistence only — no database, no SQLite, no ORM.  
 > **Last updated:** 2026-05-01
 
@@ -8,10 +8,10 @@
 
 ## 1. 概述
 
-本文档记录从 MockRepository 切换到 FileRepository 作为默认 repository 的准备度审计结果。
+本文档记录从 MockRepository 切换到 FileRepository 作为默认 repository 的审计结果和切换历史。
 
-**当前默认：MockRepository**
-**目标：评估 FileRepository 是否可成为默认**
+**当前默认：FileRepository**
+**MockRepository 回退：`TOPOCHECKER_REPO=mock`**
 
 ---
 
@@ -32,7 +32,7 @@
 |------|------|------|
 | FileRepository 模式 smoke test 通过 | ✅ | 18/18 |
 | FileRepository 模式 API snapshot 匹配 | ✅ | 21/21 |
-| MockRepository 与 FileRepository 响应一致 | 待审计 | 运行 audit_repository_response_parity.sh |
+| MockRepository 与 FileRepository 响应一致 | ✅ | 19/19 匹配 |
 | Health 响应无数据库引用 | ✅ | 通过 |
 
 ### 2.3 运行时稳定性
@@ -55,27 +55,15 @@
 
 ---
 
-## 3. 当前审计结果
+## 3. 审计结果
 
-### 3.1 如何运行审计
+### 3.1 审计执行
 
 ```bash
 bash scripts/audit_repository_response_parity.sh
 ```
 
-### 3.2 审计内容
-
-审计脚本会：
-1. 导出 workspace fixtures
-2. 启动 MockRepository 模式后端
-3. 收集 20 个 API 端点的响应
-4. 停止 MockRepository 后端
-5. 启动 FileRepository 模式后端
-6. 收集同样的 20 个 API 端点的响应
-7. 逐条对比响应内容
-8. 输出差异摘要
-
-### 3.3 审计覆盖的端点
+### 3.2 审计覆盖的端点
 
 | 端点 | 说明 |
 |------|------|
@@ -99,10 +87,11 @@ bash scripts/audit_repository_response_parity.sh
 | `/api/issues/issue-001` | Issue Detail |
 | `/api/diff/recheck` | Recheck Diff |
 
-### 3.4 审计结果解读
+### 3.3 审计结果
 
-- **全部匹配**：MockRepository 和 FileRepository 返回完全相同的 JSON 响应，具备默认切换条件
-- **存在差异**：需要修复 FileRepository 的实现，直到响应完全一致
+- **19/19 端点完全匹配**
+- **0 差异**
+- **具备默认切换条件**
 
 ---
 
@@ -127,35 +116,33 @@ JSON 字段顺序不同不影响语义等价性。审计脚本使用字符串精
 | 条件 | 要求 | 当前状态 |
 |------|------|----------|
 | 功能完整性 | 100% | ✅ |
-| API 兼容性 | 100% | 待审计 |
+| API 兼容性 | 100% | ✅ |
 | 运行时稳定性 | 100% | ✅ |
 | 文档完整 | 100% | ✅ |
 | CI 覆盖 | 100% | ✅ |
-| **综合评估** | **全部满足** | **待审计后决定** |
+| **综合评估** | **全部满足** | **✅ 已切换** |
 
 ---
 
-## 6. 切换流程（未来执行）
+## 6. 切换历史
 
-当审计确认响应完全一致后，按以下步骤切换：
+Phase 1 已完成：
 
-1. 更新 `provider.py` 默认值为 `file`
-2. 更新 `dev_start_backend.sh` 不再显式设置 `TOPOCHECKER_REPO`
-3. 更新文档说明默认已是 FileRepository
-4. 运行全量检查验证
-5. 提交并推送
+1. ✅ 更新 `provider.py` 默认值为 `file`
+2. ✅ 更新 `dev_start_backend.sh` 默认 FileRepository 模式
+3. ✅ 更新文档说明默认已是 FileRepository
+4. ✅ 运行全量检查验证
+5. ✅ 提交并推送
 
 ---
 
 ## 7. 回滚方案
 
-如果切换后发现问题，可立即回滚：
+如需回退到 MockRepository：
 
 ```bash
 # 设置环境变量回退到 MockRepository
 export TOPOCHECKER_REPO=mock
-
-# 或使用旧脚本启动
 bash scripts/dev_start_backend.sh
 ```
 
@@ -163,8 +150,6 @@ bash scripts/dev_start_backend.sh
 
 ## 8. 禁止事项
 
-- ❌ 禁止在审计阶段切换默认 repository
 - ❌ 禁止移除 MockRepository fallback
 - ❌ 禁止引入数据库 / SQLite / ORM
 - ❌ 禁止修改 API response 结构
-- ❌ 禁止切换默认 repository 直到审计全部通过

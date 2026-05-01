@@ -98,7 +98,10 @@ jobs:
       - name: Install backend dependencies
         run: cd backend && pip install -r requirements.txt
 
-      - name: Start Backend
+      - name: Export workspace fixtures
+        run: bash scripts/export_mock_to_workspace.sh
+
+      - name: Start Backend (default FileRepository)
         run: |
           python3 -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 &
           echo "Waiting for backend to start..."
