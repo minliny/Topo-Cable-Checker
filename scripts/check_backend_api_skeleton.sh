@@ -303,9 +303,102 @@ for script in dev_start_backend.sh dev_stop_backend.sh dev_check_all.sh; do
   fi
 done
 
-# ── Section 10: CI Configuration 检查 ────────────────────────────────
+# ── Section 10: Service/Repository 分层检查 ────────────────────────────────
 echo ""
-echo "── Section 10：CI Configuration 检查 ──"
+echo "── Section 10：Service/Repository 分层检查 ──"
+
+check_dir "services/ 目录" "$PROJECT_ROOT/backend/services"
+check_dir "repositories/ 目录" "$PROJECT_ROOT/backend/repositories"
+check_file "mock_repository.py" "$PROJECT_ROOT/backend/repositories/mock_repository.py"
+
+# Check service files exist
+for svc in baseline rule version execution run diff profile; do
+  check_file "${svc}_service.py" "$PROJECT_ROOT/backend/services/${svc}_service.py"
+done
+
+# Check routers do NOT directly import mock_data
+ROUTER_MOCK_IMPORT_COUNT=0
+for router in baselines.py rules.py versions.py execution.py runs.py diff.py profiles.py; do
+  if grep -q "from \.\.data import\|from \.\.data\.mock_data import" "$PROJECT_ROOT/backend/routers/$router" 2>/dev/null; then
+    fail "router $router 直接 import mock_data（应通过 service 层）"
+    ROUTER_MOCK_IMPORT_COUNT=$((ROUTER_MOCK_IMPORT_COUNT + 1))
+  fi
+done
+if [ $ROUTER_MOCK_IMPORT_COUNT -eq 0 ]; then
+  pass "所有 routers 不直接 import mock_data"
+fi
+
+# Check services import repository
+SERVICE_REPO_IMPORT_COUNT=0
+for svc in baseline rule version execution run diff profile; do
+  if grep -q "MockRepository" "$PROJECT_ROOT/backend/services/${svc}_service.py" 2>/dev/null; then
+    pass "${svc}_service.py 使用 MockRepository"
+  else
+    fail "${svc}_service.py 未使用 MockRepository"
+    SERVICE_REPO_IMPORT_COUNT=$((SERVICE_REPO_IMPORT_COUNT + 1))
+  fi
+done
+
+# Check repository imports mock_data
+if grep -q "from \.\.data import" "$PROJECT_ROOT/backend/repositories/mock_repository.py" 2>/dev/null; then
+  pass "mock_repository.py 正确 import mock_data"
+else
+  fail "mock_repository.py 未 import mock_data"
+fi
+
+# ── Section 11: Engine Adapter 检查 ────────────────────────────────
+echo ""
+echo "── Section 11：Engine Adapter 检查 ──"
+
+check_dir "engine/ 目录" "$PROJECT_ROOT/backend/engine"
+check_file "engine/interface.py" "$PROJECT_ROOT/backend/engine/interface.py"
+check_file "engine/mock_engine.py" "$PROJECT_ROOT/backend/engine/mock_engine.py"
+
+# Check EngineAdapter class exists
+if grep -q "class EngineAdapter" "$PROJECT_ROOT/backend/engine/interface.py" 2>/dev/null; then
+  pass "EngineAdapter 抽象类存在"
+else
+  fail "EngineAdapter 抽象类不存在"
+fi
+
+# Check MockEngineAdapter implements EngineAdapter
+if grep -q "class MockEngineAdapter(EngineAdapter)" "$PROJECT_ROOT/backend/engine/mock_engine.py" 2>/dev/null; then
+  pass "MockEngineAdapter 实现 EngineAdapter"
+else
+  fail "MockEngineAdapter 未实现 EngineAdapter"
+fi
+
+# Check engine has no real external service calls
+if grep -rqi "requests\|httpx\|urllib" "$PROJECT_ROOT/backend/engine" 2>/dev/null; then
+  fail "engine 目录包含真实 HTTP 调用"
+else
+  pass "engine 无真实 HTTP 调用"
+fi
+
+# Check execution_service uses engine adapter
+if grep -q "MockEngineAdapter" "$PROJECT_ROOT/backend/services/execution_service.py" 2>/dev/null; then
+  pass "execution_service.py 使用 MockEngineAdapter"
+else
+  fail "execution_service.py 未使用 MockEngineAdapter"
+fi
+
+# Check run_service uses engine adapter
+if grep -q "MockEngineAdapter" "$PROJECT_ROOT/backend/services/run_service.py" 2>/dev/null; then
+  pass "run_service.py 使用 MockEngineAdapter"
+else
+  fail "run_service.py 未使用 MockEngineAdapter"
+fi
+
+# Check diff_service uses engine adapter
+if grep -q "MockEngineAdapter" "$PROJECT_ROOT/backend/services/diff_service.py" 2>/dev/null; then
+  pass "diff_service.py 使用 MockEngineAdapter"
+else
+  fail "diff_service.py 未使用 MockEngineAdapter"
+fi
+
+# ── Section 12: CI Configuration 检查 ────────────────────────────────
+echo ""
+echo "── Section 12：CI Configuration 检查 ──"
 
 check_file "CI workflow" "$PROJECT_ROOT/.github/workflows/frontend-backend-ci.yml"
 check_file "CI 文档" "$PROJECT_ROOT/docs/dev/CI_BASELINE.md"
