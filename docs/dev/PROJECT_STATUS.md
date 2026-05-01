@@ -23,21 +23,30 @@ Date: 2026-05-01
 - Local smoke test (28 checks)
 - API contract snapshot test (21 snapshots)
 - GitHub Actions CI baseline
+- Service/repository layer separation
+- Engine adapter scaffold
 
 ## Incomplete Scope
 
-- No database integration
-- No real check engine integration
-- Frontend still defaults to `mockClient`
-- `realClient` only has local localhost guard for safety
+- ❌ Local file workspace persistence (NOT database)
+- ❌ Real local check engine integration
+- ❌ Frontend default still mockClient
+- ❌ realClient only has local localhost guard for safety
+
+## What We Do NOT Plan
+
+- ❌ Database integration (SQLite, PostgreSQL, etc.)
+- ❌ ORM / SQL
+- ❌ Server-side persistence
+- ❌ Cloud APIs
+- ❌ AI/LLM
 
 ## Next Stage Recommendations
 
-1. **Database Integration Phase 1**
-   - Choose database (SQLite recommended for development)
-   - Implement backend DB layer
-   - Connect baselines/rules APIs to DB
-   - Keep mock data fallback
+1. **Local File Persistence Phase 1**
+   - Implement `FileRepository` for JSON file read/write
+   - Workspace directory structure
+   - Save tasks, runs, snapshots as local JSON files
 
 2. **Check Engine Integration Phase 1**
    - Define check engine interface
@@ -49,15 +58,9 @@ Date: 2026-05-01
    - Support environment-based client mode switching
    - Add staging mode with proper safety
 
-4. **User Identity & Permissions (Future)**
-   - Implement user auth (lightweight)
-   - Add basic permission model
-   - Preserve existing stateless API design
-
 ## Commit Log
 
 | Hash | Message |
 |------|---------|
 | `4df22afe` | fix(ci): correct backend startup path and add health-check retry loop |
 | `dc214cd1` | feat: establish TopoChecker mock-compatible full-stack baseline |
-

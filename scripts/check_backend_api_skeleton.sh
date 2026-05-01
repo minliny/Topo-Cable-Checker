@@ -118,23 +118,34 @@ fi
 echo ""
 echo "── Section 5：禁止内容检查 ──"
 
-# Check for database connection configuration
-# Exclude sqlite_repository.py scaffold (filename only, not actual connection)
+# Check for database / ORM / SQLite dependencies
 DB_CONN_FOUND=0
-for pyfile in $(find "$PROJECT_ROOT/backend" -name "*.py" -not -name "sqlite_repository.py"); do
-  if grep -qi "sqlite3\|psycopg\|pymysql\|sqlalchemy.*create_engine\|mongodb\|pymongo" "$pyfile" 2>/dev/null; then
+for pyfile in $(find "$PROJECT_ROOT/backend" -name "*.py"); do
+  if grep -qi "sqlite3\|psycopg\|pymysql\|sqlalchemy\|mongodb\|pymongo\|peewee\|tortoise" "$pyfile" 2>/dev/null; then
     DB_CONN_FOUND=1
     break
   fi
 done
 if [ $DB_CONN_FOUND -eq 1 ]; then
-  fail "backend 包含数据库连接配置（禁止使用真实数据库）"
+  fail "backend 包含数据库/ORM/SQLite 依赖（禁止）"
 else
-  pass "backend 无数据库连接配置"
+  pass "backend 无数据库/ORM/SQLite 依赖"
 fi
 
-# Check for production URLs (exclude localhost)
-if grep -rE "^[^#]*(production|api\.|cloud\.|aws\.|azure\.|gcp\.|https?://[^l]" "$PROJECT_ROOT/backend" 2>/dev/null | grep -vi "localhost\|127.0.0.1" > /dev/null; then
+# Check for production URLs (exclude localhost, exclude FastAPI CORS import)
+PROD_URL_FOUND=0
+for pyfile in $(find "$PROJECT_ROOT/backend" -name "*.py"); do
+  # Skip mock_data.py which may contain "production" in descriptions
+  if [ "$(basename "$pyfile")" = "mock_data.py" ]; then
+    continue
+  fi
+  # Check for actual production URLs or API endpoints, not import statements
+  if grep -E "^[^#]*(cloud\.|aws\.|azure\.|gcp\.|https?://[^l])" "$pyfile" 2>/dev/null | grep -vi "localhost\|127.0.0.1" > /dev/null; then
+    PROD_URL_FOUND=1
+    break
+  fi
+done
+if [ $PROD_URL_FOUND -eq 1 ]; then
   fail "backend 包含生产 URL"
 else
   pass "backend 无生产 URL"
@@ -320,7 +331,6 @@ check_dir "repositories/ 目录" "$PROJECT_ROOT/backend/repositories"
 check_file "repositories/interface.py" "$PROJECT_ROOT/backend/repositories/interface.py"
 check_file "repositories/provider.py" "$PROJECT_ROOT/backend/repositories/provider.py"
 check_file "mock_repository.py" "$PROJECT_ROOT/backend/repositories/mock_repository.py"
-check_file "sqlite_repository.py" "$PROJECT_ROOT/backend/repositories/sqlite_repository.py"
 
 # Check service files exist
 for svc in baseline rule version execution run diff profile; do
@@ -371,24 +381,25 @@ else
   fail "provider.py 不包含 MockRepository"
 fi
 
-if grep -q "SQLiteRepository" "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
-  pass "provider.py 预留 SQLiteRepository 分支"
-else
-  fail "provider.py 未预留 SQLiteRepository 分支"
-fi
-
-# Check default repository is mock (not sqlite)
+# Check provider default is mock (not database)
 if grep -q 'default.*mock\|"mock"\|TOPOCHECKER_REPO.*mock' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
   pass "provider.py 默认使用 mock repository"
 else
   fail "provider.py 默认可能不是 mock repository"
 fi
 
-# Check sqlite_repository is scaffold (NotImplementedError)
-if grep -q "NotImplementedError" "$PROJECT_ROOT/backend/repositories/sqlite_repository.py" 2>/dev/null; then
-  pass "sqlite_repository.py 是 scaffold（未启用）"
+# Check NO sqlite_repository.py exists
+if [ -f "$PROJECT_ROOT/backend/repositories/sqlite_repository.py" ]; then
+  fail "sqlite_repository.py 不应存在（禁止数据库）"
 else
-  fail "sqlite_repository.py 可能已部分实现"
+  pass "sqlite_repository.py 不存在"
+fi
+
+# Check NO DATABASE_INTEGRATION_PLAN.md exists
+if [ -f "$PROJECT_ROOT/docs/api/DATABASE_INTEGRATION_PLAN.md" ]; then
+  fail "DATABASE_INTEGRATION_PLAN.md 不应存在（禁止数据库计划）"
+else
+  pass "DATABASE_INTEGRATION_PLAN.md 不存在"
 fi
 
 # ── Section 11: Engine Adapter 检查 ────────────────────────────────

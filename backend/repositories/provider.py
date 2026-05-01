@@ -1,13 +1,12 @@
 # backend/repositories/provider.py
 # Repository provider — controls which repository implementation is active.
 # Default: MockRepository (in-memory mock data)
-# Future: SQLiteRepository (persistent database)
+# Future: FileRepository (local JSON/workspace file persistence)
 
 import os
 from typing import Optional
 from .interface import Repository
 from .mock_repository import MockRepository
-from .sqlite_repository import SQLiteRepository
 
 
 _DEFAULT_REPO: Optional[Repository] = None
@@ -18,9 +17,9 @@ def get_repository() -> Repository:
 
     Environment variable TOPOCHECKER_REPO controls the implementation:
     - "mock" (default): MockRepository — in-memory, no persistence
-    - "sqlite": SQLiteRepository — persistent SQLite database
+    - "file": FileRepository — local JSON/workspace file persistence (future)
 
-    WARNING: Do NOT switch to "sqlite" until SQLiteRepository is fully implemented.
+    WARNING: Do NOT switch to "file" until FileRepository is fully implemented.
     """
     global _DEFAULT_REPO
 
@@ -29,8 +28,11 @@ def get_repository() -> Repository:
 
     repo_type = os.environ.get("TOPOCHECKER_REPO", "mock").lower()
 
-    if repo_type == "sqlite":
-        _DEFAULT_REPO = SQLiteRepository()
+    if repo_type == "file":
+        raise NotImplementedError(
+            "FileRepository is not yet implemented. "
+            "Use TOPOCHECKER_REPO=mock (default)."
+        )
     else:
         _DEFAULT_REPO = MockRepository()
 

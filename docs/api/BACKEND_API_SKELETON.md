@@ -113,10 +113,12 @@ The Analysis Workbench only consumes `CheckResultBundle` and issue details. It c
 
 When integrating with real backend services:
 
-1. **Database Connection**: Replace `data/mock_data.py` with database queries
-2. **Check Engine**: Replace mock check execution with real engine calls
+1. **Local File Persistence**: Replace `data/mock_data.py` with local workspace JSON file reads/writes
+2. **Check Engine**: Replace mock check execution with real local engine calls
 3. **Diff Computation**: Implement real diff computation in `/api/diff/recheck`
 4. **Recognition**: Replace mock recognition with real topology analysis
+
+**IMPORTANT**: This project is a local lightweight tool. It does NOT use database, ORM, or server-side persistence. Data is stored in local JSON/HTML/CSV/Excel files.
 
 ## Running the Backend
 
