@@ -402,6 +402,90 @@ else
   pass "DATABASE_INTEGRATION_PLAN.md 不存在"
 fi
 
+# ── Section 10b: Local Workspace Persistence 检查 ─────────────────
+echo ""
+echo "── Section 10b：Local Workspace Persistence 检查 ──"
+
+check_dir "workspace/ 目录" "$PROJECT_ROOT/backend/workspace"
+check_file "workspace/__init__.py" "$PROJECT_ROOT/backend/workspace/__init__.py"
+check_file "workspace/paths.py" "$PROJECT_ROOT/backend/workspace/paths.py"
+check_file "workspace/schema.py" "$PROJECT_ROOT/backend/workspace/schema.py"
+check_file "workspace/manager.py" "$PROJECT_ROOT/backend/workspace/manager.py"
+check_file "file_repository.py" "$PROJECT_ROOT/backend/repositories/file_repository.py"
+check_file "LOCAL_WORKSPACE_PERSISTENCE.md" "$PROJECT_ROOT/docs/dev/LOCAL_WORKSPACE_PERSISTENCE.md"
+
+# Check workspace __init__ exports WorkspacePaths and WorkspaceManager
+if grep -q "WorkspacePaths" "$PROJECT_ROOT/backend/workspace/__init__.py" 2>/dev/null; then
+  pass "workspace/__init__.py 导出 WorkspacePaths"
+else
+  fail "workspace/__init__.py 未导出 WorkspacePaths"
+fi
+
+if grep -q "WorkspaceManager" "$PROJECT_ROOT/backend/workspace/__init__.py" 2>/dev/null; then
+  pass "workspace/__init__.py 导出 WorkspaceManager"
+else
+  fail "workspace/__init__.py 未导出 WorkspaceManager"
+fi
+
+# Check workspace paths defines all 6 directories
+for dir_name in inputs tasks runs snapshots reports exports; do
+  if grep -q "def ${dir_name}\|${dir_name}" "$PROJECT_ROOT/backend/workspace/paths.py" 2>/dev/null; then
+    pass "paths.py 定义 ${dir_name} 目录"
+  else
+    fail "paths.py 未定义 ${dir_name} 目录"
+  fi
+done
+
+# Check workspace manager has save/load methods
+for method in save_task load_task list_tasks save_run load_run list_runs save_snapshot load_snapshot list_snapshots save_report list_reports save_export load_export; do
+  if grep -q "def ${method}" "$PROJECT_ROOT/backend/workspace/manager.py" 2>/dev/null; then
+    pass "manager.py 实现 ${method}"
+  else
+    fail "manager.py 未实现 ${method}"
+  fi
+done
+
+# Check file_repository.py implements Repository and uses WorkspaceManager
+if grep -q "class FileRepository(Repository)" "$PROJECT_ROOT/backend/repositories/file_repository.py" 2>/dev/null; then
+  pass "FileRepository 显式实现 Repository 接口"
+else
+  fail "FileRepository 未显式实现 Repository 接口"
+fi
+
+if grep -q "WorkspaceManager" "$PROJECT_ROOT/backend/repositories/file_repository.py" 2>/dev/null; then
+  pass "FileRepository 使用 WorkspaceManager"
+else
+  fail "FileRepository 未使用 WorkspaceManager"
+fi
+
+# Check provider.py has FileRepository branch
+if grep -q "FileRepository" "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 预留 FileRepository 分支"
+else
+  fail "provider.py 未预留 FileRepository 分支"
+fi
+
+# Check default is still mock (not file)
+if grep -q 'TOPOCHECKER_REPO.*mock\|default.*mock\|"mock"' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 默认仍为 mock repository"
+else
+  fail "provider.py 默认可能已切换为 file repository"
+fi
+
+# Check provider does NOT default to file
+if grep -A2 -B2 'TOPOCHECKER_REPO' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null | grep -q 'file.*default\|default.*file'; then
+  fail "provider.py 默认可能已设为 file"
+else
+  pass "provider.py 默认未设为 file"
+fi
+
+# Check LOCAL_WORKSPACE_PERSISTENCE.md explicitly says no database
+if grep -qi "no database\|不接数据库\|禁止.*数据库\|禁止.*sqlite\|禁止.*orm" "$PROJECT_ROOT/docs/dev/LOCAL_WORKSPACE_PERSISTENCE.md" 2>/dev/null; then
+  pass "LOCAL_WORKSPACE_PERSISTENCE.md 明确不使用数据库"
+else
+  fail "LOCAL_WORKSPACE_PERSISTENCE.md 未明确说明不使用数据库"
+fi
+
 # ── Section 11: Engine Adapter 检查 ────────────────────────────────
 echo ""
 echo "── Section 11：Engine Adapter 检查 ──"

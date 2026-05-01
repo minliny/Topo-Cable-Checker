@@ -5,6 +5,7 @@
 
 import os
 from typing import Optional
+
 from .interface import Repository
 from .mock_repository import MockRepository
 
@@ -17,7 +18,7 @@ def get_repository() -> Repository:
 
     Environment variable TOPOCHECKER_REPO controls the implementation:
     - "mock" (default): MockRepository — in-memory, no persistence
-    - "file": FileRepository — local JSON/workspace file persistence (future)
+    - "file": FileRepository — local JSON/workspace file persistence (scaffold)
 
     WARNING: Do NOT switch to "file" until FileRepository is fully implemented.
     """
@@ -29,10 +30,9 @@ def get_repository() -> Repository:
     repo_type = os.environ.get("TOPOCHECKER_REPO", "mock").lower()
 
     if repo_type == "file":
-        raise NotImplementedError(
-            "FileRepository is not yet implemented. "
-            "Use TOPOCHECKER_REPO=mock (default)."
-        )
+        # FileRepository is scaffold only — not ready for production use
+        from .file_repository import FileRepository
+        _DEFAULT_REPO = FileRepository()
     else:
         _DEFAULT_REPO = MockRepository()
 
