@@ -27,6 +27,10 @@ fail() {
   FAIL=$((FAIL + 1))
 }
 
+info() {
+  echo -e "  ${YLW}ℹ${NC} $1"
+}
+
 echo "══════════════════════════════════════════════════════"
 echo "  TopoChecker 后端 API Skeleton 护栏"
 echo "══════════════════════════════════════════════════════"
@@ -549,6 +553,55 @@ if grep -qi "no database\|不接数据库\|禁止.*数据库\|禁止.*sqlite\|�
   pass "WORKSPACE_FIXTURES.md 明确不使用数据库"
 else
   fail "WORKSPACE_FIXTURES.md 未明确说明不使用数据库"
+fi
+
+# ── Section 10d: FileRepository Runtime 检查 ──────────────────────
+echo ""
+echo "── Section 10d：FileRepository Runtime 检查 ──"
+
+check_file "dev_start_backend_file_repo.sh" "$PROJECT_ROOT/scripts/dev_start_backend_file_repo.sh"
+check_file "check_file_repository_runtime.sh" "$PROJECT_ROOT/scripts/check_file_repository_runtime.sh"
+
+# Check dev_start_backend_file_repo.sh sets TOPOCHECKER_REPO=file
+if grep -q "TOPOCHECKER_REPO=file" "$PROJECT_ROOT/scripts/dev_start_backend_file_repo.sh" 2>/dev/null; then
+  pass "dev_start_backend_file_repo.sh 设置 TOPOCHECKER_REPO=file"
+else
+  fail "dev_start_backend_file_repo.sh 未设置 TOPOCHECKER_REPO=file"
+fi
+
+# Check dev_start_backend_file_repo.sh does NOT change default script
+if grep -q "dev_start_backend.sh" "$PROJECT_ROOT/scripts/dev_start_backend_file_repo.sh" 2>/dev/null; then
+  pass "dev_start_backend_file_repo.sh 引用默认启动脚本"
+else
+  info "dev_start_backend_file_repo.sh 未引用默认启动脚本"
+fi
+
+# Check check_file_repository_runtime.sh runs smoke test
+if grep -q "check_http\|smoke\|Smoke" "$PROJECT_ROOT/scripts/check_file_repository_runtime.sh" 2>/dev/null; then
+  pass "check_file_repository_runtime.sh 包含 smoke test"
+else
+  fail "check_file_repository_runtime.sh 未包含 smoke test"
+fi
+
+# Check check_file_repository_runtime.sh compares snapshots
+if grep -q "compare_snapshot\|snapshot" "$PROJECT_ROOT/scripts/check_file_repository_runtime.sh" 2>/dev/null; then
+  pass "check_file_repository_runtime.sh 包含 snapshot 校验"
+else
+  fail "check_file_repository_runtime.sh 未包含 snapshot 校验"
+fi
+
+# Check WORKSPACE_FIXTURES.md contains TOPOCHECKER_REPO=file
+if grep -q "TOPOCHECKER_REPO=file" "$PROJECT_ROOT/docs/dev/WORKSPACE_FIXTURES.md" 2>/dev/null; then
+  pass "WORKSPACE_FIXTURES.md 包含 TOPOCHECKER_REPO=file 说明"
+else
+  fail "WORKSPACE_FIXTURES.md 未包含 TOPOCHECKER_REPO=file 说明"
+fi
+
+# Check default dev_start_backend.sh does NOT set TOPOCHECKER_REPO=file
+if grep -q "TOPOCHECKER_REPO=file" "$PROJECT_ROOT/scripts/dev_start_backend.sh" 2>/dev/null; then
+  fail "dev_start_backend.sh 不应设置 TOPOCHECKER_REPO=file"
+else
+  pass "dev_start_backend.sh 未切换为 file 模式"
 fi
 
 # ── Section 11: Engine Adapter 检查 ────────────────────────────────

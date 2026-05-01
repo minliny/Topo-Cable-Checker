@@ -80,9 +80,12 @@ class FileRepository(Repository):
         data = self._load_json_list("baselines.json")
         if data:
             return [Baseline(**item) for item in data]
-        # Fallback: try individual baseline files
+        # Fallback: try individual baseline files (exclude non-baseline files like baseline_profile_map.json)
         baselines = []
         for path in self.workspace.paths.inputs.glob("baseline_*.json"):
+            # Skip files that are not individual baseline records
+            if "profile_map" in path.name or "version_snapshot" in path.name:
+                continue
             with open(path, "r", encoding="utf-8") as f:
                 baselines.append(Baseline(**json.load(f)))
         if baselines:
@@ -204,7 +207,9 @@ class FileRepository(Repository):
     def get_all_versions(self) -> List[VersionSnapshot]:
         snapshots = self.workspace.list_snapshots()
         if snapshots:
-            return [VersionSnapshot(**s) for s in snapshots]
+            # Sort by version to match snapshot order (v1.0.0 before v1.1.0)
+            snapshots_sorted = sorted(snapshots, key=lambda s: s.get("version", ""))
+            return [VersionSnapshot(**s) for s in snapshots_sorted]
         return self._mock.get_all_versions()
 
     def get_versions_by_baseline_id(self, baseline_id: str) -> List[VersionSnapshot]:
@@ -214,7 +219,9 @@ class FileRepository(Repository):
             if snap.get("baseline_id") == baseline_id:
                 result.append(VersionSnapshot(**snap))
         if result:
-            return result
+            # Sort by version to match snapshot order (v1.0.0 before v1.1.0)
+            result_sorted = sorted(result, key=lambda v: v.version or "")
+            return result_sorted
         return self._mock.get_versions_by_baseline_id(baseline_id)
 
     def get_version_by_id(self, version_id: str) -> Optional[VersionSnapshot]:
