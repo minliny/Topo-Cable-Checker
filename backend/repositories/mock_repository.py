@@ -4,6 +4,7 @@
 
 from typing import Optional
 
+from .interface import Repository
 from ..data import (
     MOCK_BASELINES,
     MOCK_RULESETS,
@@ -41,7 +42,7 @@ from ..models.version import VersionSnapshot, VersionDiffSnapshot
 from ..models.diff import RecheckDiffSnapshot
 
 
-class MockRepository:
+class MockRepository(Repository):
     """Repository layer that wraps mock_data.
     All data access goes through this class.
     Future database migration only needs to replace this class.

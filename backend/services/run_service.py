@@ -1,14 +1,14 @@
 # backend/services/run_service.py
 from typing import Optional
 
-from ..repositories.mock_repository import MockRepository
+from ..repositories.provider import get_repository
 from ..engine.mock_engine import MockEngineAdapter
 from ..models.execution import RunHistoryEntry, CheckResultBundle, IssueItem
 
 
 class RunService:
     def __init__(self):
-        self.repo = MockRepository()
+        self.repo = get_repository()
         self.engine = MockEngineAdapter()
 
     def get_all_runs(self) -> list[RunHistoryEntry]:
@@ -22,17 +22,13 @@ class RunService:
         return {"run": run, "bundle": bundle}
 
     async def get_bundle(self, bundle_id: str) -> Optional[CheckResultBundle]:
-        # Prefer engine adapter for bundle retrieval
         bundle = await self.engine.get_bundle(bundle_id)
         if bundle:
             return bundle
-        # Fallback to repository
         return self.repo.get_bundle_by_id(bundle_id)
 
     async def get_issue(self, issue_id: str) -> Optional[IssueItem]:
-        # Prefer engine adapter for issue retrieval
         issue = await self.engine.get_issue(issue_id)
         if issue:
             return issue
-        # Fallback to repository
         return self.repo.get_issue_by_id(issue_id)

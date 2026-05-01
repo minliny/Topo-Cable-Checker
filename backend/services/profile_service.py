@@ -1,11 +1,11 @@
 # backend/services/profile_service.py
-from ..repositories.mock_repository import MockRepository
+from ..repositories.provider import get_repository
 from ..models.baseline import ParameterProfile, ThresholdProfile, ScopeSelector
 
 
 class ProfileService:
     def __init__(self):
-        self.repo = MockRepository()
+        self.repo = get_repository()
 
     def get_parameter_profiles(self) -> list[ParameterProfile]:
         return self.repo.get_all_parameter_profiles()

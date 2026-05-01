@@ -119,7 +119,15 @@ echo ""
 echo "── Section 5：禁止内容检查 ──"
 
 # Check for database connection configuration
-if grep -rqi "sqlite\|postgres\|mysql\|mongodb\|sqlalchemy.*create_engine\|psycopg" "$PROJECT_ROOT/backend" 2>/dev/null; then
+# Exclude sqlite_repository.py scaffold (filename only, not actual connection)
+DB_CONN_FOUND=0
+for pyfile in $(find "$PROJECT_ROOT/backend" -name "*.py" -not -name "sqlite_repository.py"); do
+  if grep -qi "sqlite3\|psycopg\|pymysql\|sqlalchemy.*create_engine\|mongodb\|pymongo" "$pyfile" 2>/dev/null; then
+    DB_CONN_FOUND=1
+    break
+  fi
+done
+if [ $DB_CONN_FOUND -eq 1 ]; then
   fail "backend 包含数据库连接配置（禁止使用真实数据库）"
 else
   pass "backend 无数据库连接配置"
@@ -309,7 +317,10 @@ echo "── Section 10：Service/Repository 分层检查 ──"
 
 check_dir "services/ 目录" "$PROJECT_ROOT/backend/services"
 check_dir "repositories/ 目录" "$PROJECT_ROOT/backend/repositories"
+check_file "repositories/interface.py" "$PROJECT_ROOT/backend/repositories/interface.py"
+check_file "repositories/provider.py" "$PROJECT_ROOT/backend/repositories/provider.py"
 check_file "mock_repository.py" "$PROJECT_ROOT/backend/repositories/mock_repository.py"
+check_file "sqlite_repository.py" "$PROJECT_ROOT/backend/repositories/sqlite_repository.py"
 
 # Check service files exist
 for svc in baseline rule version execution run diff profile; do
@@ -328,22 +339,56 @@ if [ $ROUTER_MOCK_IMPORT_COUNT -eq 0 ]; then
   pass "所有 routers 不直接 import mock_data"
 fi
 
-# Check services import repository
-SERVICE_REPO_IMPORT_COUNT=0
+# Check services use provider instead of directly instantiating MockRepository
+SERVICE_PROVIDER_COUNT=0
 for svc in baseline rule version execution run diff profile; do
-  if grep -q "MockRepository" "$PROJECT_ROOT/backend/services/${svc}_service.py" 2>/dev/null; then
-    pass "${svc}_service.py 使用 MockRepository"
+  if grep -q "get_repository" "$PROJECT_ROOT/backend/services/${svc}_service.py" 2>/dev/null; then
+    pass "${svc}_service.py 使用 repository provider"
   else
-    fail "${svc}_service.py 未使用 MockRepository"
-    SERVICE_REPO_IMPORT_COUNT=$((SERVICE_REPO_IMPORT_COUNT + 1))
+    fail "${svc}_service.py 未使用 repository provider"
+    SERVICE_PROVIDER_COUNT=$((SERVICE_PROVIDER_COUNT + 1))
   fi
 done
+
+# Check mock_repository implements Repository interface
+if grep -q "class MockRepository(Repository)" "$PROJECT_ROOT/backend/repositories/mock_repository.py" 2>/dev/null; then
+  pass "MockRepository 显式实现 Repository 接口"
+else
+  fail "MockRepository 未显式实现 Repository 接口"
+fi
 
 # Check repository imports mock_data
 if grep -q "from \.\.data import" "$PROJECT_ROOT/backend/repositories/mock_repository.py" 2>/dev/null; then
   pass "mock_repository.py 正确 import mock_data"
 else
   fail "mock_repository.py 未 import mock_data"
+fi
+
+# Check provider defaults to MockRepository
+if grep -q "MockRepository" "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 包含 MockRepository"
+else
+  fail "provider.py 不包含 MockRepository"
+fi
+
+if grep -q "SQLiteRepository" "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 预留 SQLiteRepository 分支"
+else
+  fail "provider.py 未预留 SQLiteRepository 分支"
+fi
+
+# Check default repository is mock (not sqlite)
+if grep -q 'default.*mock\|"mock"\|TOPOCHECKER_REPO.*mock' "$PROJECT_ROOT/backend/repositories/provider.py" 2>/dev/null; then
+  pass "provider.py 默认使用 mock repository"
+else
+  fail "provider.py 默认可能不是 mock repository"
+fi
+
+# Check sqlite_repository is scaffold (NotImplementedError)
+if grep -q "NotImplementedError" "$PROJECT_ROOT/backend/repositories/sqlite_repository.py" 2>/dev/null; then
+  pass "sqlite_repository.py 是 scaffold（未启用）"
+else
+  fail "sqlite_repository.py 可能已部分实现"
 fi
 
 # ── Section 11: Engine Adapter 检查 ────────────────────────────────

@@ -1,13 +1,13 @@
 # backend/services/version_service.py
 from typing import Optional
 
-from ..repositories.mock_repository import MockRepository
+from ..repositories.provider import get_repository
 from ..models.version import VersionSnapshot, VersionDiffSnapshot
 
 
 class VersionService:
     def __init__(self):
-        self.repo = MockRepository()
+        self.repo = get_repository()
 
     def get_versions_by_baseline(self, baseline_id: str) -> list[VersionSnapshot]:
         return self.repo.get_versions_by_baseline_id(baseline_id)

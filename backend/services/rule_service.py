@@ -1,13 +1,13 @@
 # backend/services/rule_service.py
 from typing import Optional
 
-from ..repositories.mock_repository import MockRepository
+from ..repositories.provider import get_repository
 from ..models.baseline import RuleDefinition, RuleSet
 
 
 class RuleService:
     def __init__(self):
-        self.repo = MockRepository()
+        self.repo = get_repository()
 
     def get_all_rules(self) -> list[RuleDefinition]:
         return self.repo.get_all_rules()

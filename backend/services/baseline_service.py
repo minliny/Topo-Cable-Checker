@@ -1,13 +1,13 @@
 # backend/services/baseline_service.py
 from typing import Optional
 
-from ..repositories.mock_repository import MockRepository
+from ..repositories.provider import get_repository
 from ..models.baseline import Baseline
 
 
 class BaselineService:
     def __init__(self):
-        self.repo = MockRepository()
+        self.repo = get_repository()
 
     def get_all_baselines(self) -> list[Baseline]:
         return self.repo.get_all_baselines()

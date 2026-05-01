@@ -5,7 +5,7 @@
 from typing import Optional
 
 from .interface import EngineAdapter
-from ..repositories.mock_repository import MockRepository
+from ..repositories.provider import get_repository
 from ..models.execution import (
     CheckResultBundle,
     DataSource,
@@ -18,12 +18,12 @@ from ..models.diff import RecheckDiffSnapshot
 
 
 class MockEngineAdapter(EngineAdapter):
-    """Mock engine adapter that delegates to MockRepository.
+    """Mock engine adapter that delegates to repository via provider.
     All responses are pre-computed mock data.
     """
 
     def __init__(self):
-        self.repo = MockRepository()
+        self.repo = get_repository()
 
     # ── Recognition ──────────────────────────────────────────────
 
@@ -62,11 +62,9 @@ class MockEngineAdapter(EngineAdapter):
     # ── Results ──────────────────────────────────────────────────
 
     async def get_bundle(self, run_id: str) -> Optional[CheckResultBundle]:
-        # Find the run and return its bundle
         run = self.repo.get_run_by_id(run_id)
         if run and run.bundle_id:
             return self.repo.get_bundle_by_id(run.bundle_id)
-        # Fallback: try direct bundle lookup
         return self.repo.get_bundle_by_id(run_id)
 
     async def get_issue(self, issue_id: str) -> Optional[IssueItem]:

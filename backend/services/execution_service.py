@@ -1,14 +1,14 @@
 # backend/services/execution_service.py
 from typing import Optional
 
-from ..repositories.mock_repository import MockRepository
+from ..repositories.provider import get_repository
 from ..engine.mock_engine import MockEngineAdapter
 from ..models.execution import DataSource, ExecutionScope
 
 
 class ExecutionService:
     def __init__(self):
-        self.repo = MockRepository()
+        self.repo = get_repository()
         self.engine = MockEngineAdapter()
 
     def get_data_sources(self) -> list[DataSource]:
