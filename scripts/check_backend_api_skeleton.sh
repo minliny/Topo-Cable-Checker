@@ -1085,6 +1085,83 @@ else
   fail "recognizer.py 不应生成 IssueItem"
 fi
 
+# ── Section 19: Device Type Inference Scaffold 检查 ───────
+echo ""
+echo "── Section 19：Device Type Inference Scaffold 检查 ──"
+
+check_file "type_inference.py" "$PROJECT_ROOT/backend/recognition/type_inference.py"
+check_file "DEVICE_TYPE_INFERENCE.md" "$PROJECT_ROOT/docs/dev/DEVICE_TYPE_INFERENCE.md"
+check_file "check_device_type_inference.sh" "$PROJECT_ROOT/scripts/check_device_type_inference.sh"
+
+# Check DeviceType enum exists
+if grep -q "class DeviceType" "$PROJECT_ROOT/backend/recognition/models.py" 2>/dev/null; then
+  pass "DeviceType 枚举存在"
+else
+  fail "DeviceType 枚举不存在"
+fi
+
+# Check infer_and_summarize_tables function exists
+if grep -q "def infer_and_summarize_tables" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "infer_and_summarize_tables 函数存在"
+else
+  fail "infer_and_summarize_tables 函数不存在"
+fi
+
+# Check CE/XH rules exist
+if grep -qi "ce\|Catalyst" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "CE 规则已定义"
+else
+  fail "CE 规则未定义"
+fi
+
+if grep -qi "xh\|S5735" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "XH 规则已定义"
+else
+  fail "XH 规则未定义"
+fi
+
+# Check LINGQU rule exists
+if grep -qi "lingqu\|灵衢\|lq_l2" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "LINGQU/灵衢/LQ_L2 规则已定义"
+else
+  fail "LINGQU/灵衢/LQ_L2 规则未定义"
+fi
+
+# Check optical resource rule exists
+if grep -qi "optical\|光资源\|链路光" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "Optical Resource 规则已定义"
+else
+  fail "Optical Resource 规则未定义"
+fi
+
+# Check network resource rule exists
+if grep -qi "network_resource\|网络资源" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "Network Resource 规则已定义"
+else
+  fail "Network Resource 规则未定义"
+fi
+
+# Check real_engine.py uses type_inference
+if grep -q "infer_and_summarize_tables" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 调用 infer_and_summarize_tables"
+else
+  fail "real_engine.py 未调用 infer_and_summarize_tables"
+fi
+
+# Check type_inference does not generate IssueItem
+if ! grep -qi "IssueItem" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "type_inference.py 不生成 IssueItem"
+else
+  fail "type_inference.py 不应生成 IssueItem"
+fi
+
+# Check type_inference module does not have AI/LLM or database
+if ! grep -qiE "(sqlite3|sqlalchemy|\bopenai\b|\banthropic\b)" "$PROJECT_ROOT/backend/recognition/type_inference.py" 2>/dev/null; then
+  pass "type_inference.py 不接数据库/AI/LLM"
+else
+  fail "type_inference.py 可能接入了数据库或 AI/LLM"
+fi
+
 # ── 结果汇总 ─────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"

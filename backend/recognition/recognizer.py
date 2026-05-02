@@ -167,6 +167,7 @@ class DatasetRecognizer:
             table_name=name,
             table_kind=kind,
             headers=headers,
+            rows=rows,
             row_count=len(rows),
             recognized_fields=recognized_fields,
             confidence=confidence,

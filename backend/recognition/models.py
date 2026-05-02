@@ -15,6 +15,18 @@ class RecognizedTableKind(str, Enum):
     UNKNOWN = "unknown"    # Unknown or unrecognized table
 
 
+class DeviceType(str, Enum):
+    """Device type enumeration based on project rules."""
+    SWITCH = "switch"
+    ROUTER = "router"
+    FIREWALL = "firewall"
+    SERVER = "server"
+    OPTICAL_RESOURCE = "optical_resource"  # 链路光资源模块
+    NETWORK_RESOURCE = "network_resource"   # 网络资源模块
+    AI_NETWORK = "ai_network"              # LINGQU / 灵衢 / LQ_L2
+    UNKNOWN = "unknown"
+
+
 class RecognizedField(BaseModel):
     """A recognized field in a table."""
     field_name: str                    # Original field name from header
@@ -27,9 +39,26 @@ class RecognizedTable(BaseModel):
     table_name: str
     table_kind: RecognizedTableKind
     headers: list[str]
+    rows: list[list[str]] = Field(default_factory=list)  # Actual row data for type inference
     row_count: int
     recognized_fields: list[RecognizedField] = Field(default_factory=list)
     confidence: float = 0.0  # 0.0-1.0, how confident we are about the table kind
+
+
+class InferredDeviceType(BaseModel):
+    """Inferred device type for a single device row."""
+    device_type: DeviceType
+    confidence: float = 0.0  # 0.0-1.0
+    evidence_fields: list[str] = Field(default_factory=list)  # Which fields contributed
+    raw_value: Optional[str] = None  # Raw value from data
+
+
+class DeviceTypeSummary(BaseModel):
+    """Summary of device types in the dataset."""
+    device_type: DeviceType
+    count: int
+    confidence: float = 0.0
+    evidence_fields: list[str] = Field(default_factory=list)
 
 
 class DatasetRecognitionSummary(BaseModel):
@@ -52,6 +81,9 @@ class DatasetRecognitionSummary(BaseModel):
     total_device_count: int = 0
     total_link_count: int = 0
     unrecognized_table_count: int = 0
+
+    # Device type inference results
+    device_type_summaries: list[DeviceTypeSummary] = Field(default_factory=list)
 
     # Warnings
     warnings: list[str] = Field(default_factory=list)

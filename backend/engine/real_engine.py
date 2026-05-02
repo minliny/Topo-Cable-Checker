@@ -11,7 +11,7 @@ from typing import Optional
 from .interface import EngineAdapter
 from ..repositories.provider import get_repository
 from ..input import LocalInputReader, normalize_raw_dataset
-from ..recognition import DatasetRecognizer
+from ..recognition import DatasetRecognizer, infer_and_summarize_tables
 from ..workspace.manager import WorkspaceManager
 from ..models.execution import (
     CheckResultBundle,
@@ -72,6 +72,9 @@ class RealEngineAdapter(EngineAdapter):
 
             # Recognize tables using DatasetRecognizer
             recognition_summary = self.recognizer.recognize(normalized)
+
+            # Infer device types
+            recognition_summary = infer_and_summarize_tables(recognition_summary)
 
             # Save recognition metadata to workspace/snapshots/
             recognition_data = {
