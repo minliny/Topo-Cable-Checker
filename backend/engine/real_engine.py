@@ -1,6 +1,8 @@
 # backend/engine/real_engine.py
 # RealEngineAdapter scaffold: implements EngineAdapter interface.
-# Current implementation: recognition scaffold using LocalInputReader + DatasetRecognizer.
+# Current implementation:
+#   - Recognition: reads local Excel/CSV via LocalInputReader + DatasetRecognizer
+#   - Execution: generates empty CheckResultBundle scaffold
 # No real check engine integration, no database, no external AI.
 
 import os
@@ -28,8 +30,9 @@ class RealEngineAdapter(EngineAdapter):
     """Real engine adapter scaffold.
 
     Current implementation:
-    - Recognition: reads local Excel/CSV via LocalInputReader
-    - Recognition: recognizes device/link tables via DatasetRecognizer
+    - Recognition: reads local Excel/CSV via LocalInputReader + DatasetRecognizer
+    - Recognition: infers device types via infer_and_summarize_tables
+    - Execution: generates empty CheckResultBundle scaffold (no real rules)
     - Other methods: scaffold (NotImplementedError)
 
     To activate: set TOPOCHECKER_ENGINE=real
@@ -164,21 +167,96 @@ class RealEngineAdapter(EngineAdapter):
         parameter_profile_id: Optional[str] = None,
         threshold_profile_id: Optional[str] = None,
     ) -> str:
-        raise NotImplementedError(
-            "RealEngineAdapter: start_check not implemented (scaffold only)"
-        )
+        """Start check execution (scaffold: generates empty CheckResultBundle).
+
+        This is a scaffold implementation. It generates an empty CheckResultBundle
+        without executing any real rules.
+
+        Returns:
+            run_id: The ID of the generated check run.
+        """
+        from datetime import datetime
+
+        run_id = f"run-{uuid.uuid4().hex[:8]}"
+
+        # Find recognition_id for the data source
+        recognition_id = self._find_recognition_id(data_source_id)
+
+        # Get baseline info from repository
+        baseline_name = baseline_id
+        scenario_id = "scenario-default"
+        try:
+            baseline = self.repo.get_baseline_by_id(baseline_id)
+            if baseline:
+                baseline_name = baseline.name if hasattr(baseline, 'name') else baseline_id
+        except Exception:
+            pass
+
+        # Build workspace run data with all RunHistoryEntry required fields
+        run_data = {
+            "run_id": run_id,
+            "baseline_id": baseline_id,
+            "baseline_name": baseline_name,
+            "scenario_id": scenario_id,
+            "status": "scaffold_completed",
+            "severity_summary": {
+                "critical": 0,
+                "high": 0,
+                "medium": 0,
+                "low": 0,
+                "info": 0,
+            },
+            "device_count": 0,
+            "issue_count": 0,
+            "data_source_id": data_source_id,
+            "scope_id": scope_id,
+            "recognition_id": recognition_id,
+            "parameter_profile_id": parameter_profile_id,
+            "threshold_profile_id": threshold_profile_id,
+            "bundle_id": f"bundle-{uuid.uuid4().hex[:8]}",
+            "created_at": datetime.now().isoformat(),
+            "completed_at": datetime.now().isoformat(),
+        }
+
+        # Save run metadata to workspace/runs/
+        self._save_run_data(run_id, run_data)
+
+        return run_id
 
     async def get_run_status(self, run_id: str) -> str:
-        raise NotImplementedError(
-            "RealEngineAdapter: get_run_status not implemented (scaffold only)"
-        )
+        """Get run status from workspace run data.
+
+        Returns 'scaffold_completed' for scaffold runs.
+        """
+        run_data = self._load_run_data(run_id)
+        if run_data:
+            return run_data.get("status", "completed")
+        return "completed"
 
     # ── Results ──────────────────────────────────────────────────
 
     async def get_bundle(self, run_id: str) -> Optional[CheckResultBundle]:
-        raise NotImplementedError(
-            "RealEngineAdapter: get_bundle not implemented (scaffold only)"
-        )
+        """Get CheckResultBundle for a run from workspace.
+
+        Generates an empty CheckResultBundle for scaffold runs.
+        """
+        from ..models.execution import SeveritySummary
+
+        run_data = self._load_run_data(run_id)
+
+        if run_data:
+            bundle_id = run_data.get("bundle_id", f"bundle-{uuid.uuid4().hex[:8]}")
+            return CheckResultBundle(
+                bundle_id=bundle_id,
+                run_id=run_id,
+                baseline_id=run_data.get("baseline_id", "baseline-001"),
+                severity_summary=SeveritySummary(),
+                issue_count=0,
+                issues=[],
+                created_at=run_data.get("completed_at"),
+            )
+
+        return None
 
     async def get_issue(self, issue_id: str) -> Optional[IssueItem]:
         raise NotImplementedError(
@@ -249,6 +327,42 @@ class RealEngineAdapter(EngineAdapter):
     def _load_recognition_snapshot(self, recognition_id: str) -> Optional[dict]:
         """Load recognition snapshot from workspace/snapshots/recognition/."""
         file_path = self.workspace.paths.snapshots / "recognition" / f"{recognition_id}.json"
+        if not file_path.exists():
+            return None
+
+        import json
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _find_recognition_id(self, data_source_id: str) -> Optional[str]:
+        """Find recognition_id for a data source from recent snapshots."""
+        recognition_dir = self.workspace.paths.snapshots / "recognition"
+        if not recognition_dir.exists():
+            return None
+
+        # Find the most recent recognition snapshot matching data_source_id
+        import json
+        for snapshot_file in sorted(recognition_dir.glob("rec-*.json"), reverse=True):
+            with open(snapshot_file, "r", encoding="utf-8") as f:
+                snapshot = json.load(f)
+                if snapshot.get("data_source_id") == data_source_id:
+                    return snapshot.get("recognition_id")
+        return None
+
+    def _save_run_data(self, run_id: str, data: dict) -> Path:
+        """Save run data to workspace/runs/."""
+        runs_dir = self.workspace.paths.runs
+        runs_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = runs_dir / f"{run_id}.json"
+        import json
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return file_path
+
+    def _load_run_data(self, run_id: str) -> Optional[dict]:
+        """Load run data from workspace/runs/."""
+        file_path = self.workspace.paths.runs / f"{run_id}.json"
         if not file_path.exists():
             return None
 

@@ -1211,6 +1211,62 @@ else
   fail "文档未明确说明不使用 AI/LLM"
 fi
 
+# ── Section 21: Real Engine Check Execution Scaffold 检查 ──
+echo ""
+echo "── Section 21：Real Engine Check Execution Scaffold 检查 ──"
+
+check_file "REAL_ENGINE_CHECK_EXECUTION_SCAFFOLD.md" "$PROJECT_ROOT/docs/dev/REAL_ENGINE_CHECK_EXECUTION_SCAFFOLD.md"
+check_file "check_real_engine_check_execution_scaffold.sh" "$PROJECT_ROOT/scripts/check_real_engine_check_execution_scaffold.sh"
+
+# Check real_engine.py implements start_check
+if grep -qE "async def start_check" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 实现 start_check"
+else
+  fail "real_engine.py 未实现 start_check"
+fi
+
+# Check real_engine.py implements get_run_status
+if grep -qE "async def get_run_status" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 实现 get_run_status"
+else
+  fail "real_engine.py 未实现 get_run_status"
+fi
+
+# Check real_engine.py implements get_bundle
+if grep -qE "async def get_bundle" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 实现 get_bundle"
+else
+  fail "real_engine.py 未实现 get_bundle"
+fi
+
+# Check document explicitly says no real rules
+if grep -qi "不执行真实规则\|不执行.*规则检查\|no real rule" "$PROJECT_ROOT/docs/dev/REAL_ENGINE_CHECK_EXECUTION_SCAFFOLD.md" 2>/dev/null; then
+  pass "文档明确不执行真实规则检查"
+else
+  fail "文档未明确说明不执行真实规则检查"
+fi
+
+# Check document explicitly says no IssueItem
+if grep -qi "不生成 IssueItem\|no IssueItem\|issues.*=\s*\[\]" "$PROJECT_ROOT/docs/dev/REAL_ENGINE_CHECK_EXECUTION_SCAFFOLD.md" 2>/dev/null; then
+  pass "文档明确不生成 IssueItem"
+else
+  fail "文档未明确说明不生成 IssueItem"
+fi
+
+# Check document explicitly says no database
+if grep -qi "不使用数据库\|不使用.*database\|no database" "$PROJECT_ROOT/docs/dev/REAL_ENGINE_CHECK_EXECUTION_SCAFFOLD.md" 2>/dev/null; then
+  pass "文档明确不使用数据库"
+else
+  fail "文档未明确说明不使用数据库"
+fi
+
+# Check document explicitly says no AI/LLM
+if grep -qi "不使用 AI\|不使用.*LLM\|no AI\|no LLM" "$PROJECT_ROOT/docs/dev/REAL_ENGINE_CHECK_EXECUTION_SCAFFOLD.md" 2>/dev/null; then
+  pass "文档明确不使用 AI/LLM"
+else
+  fail "文档未明确说明不使用 AI/LLM"
+fi
+
 # ── 结果汇总 ─────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"
