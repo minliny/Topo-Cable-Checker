@@ -989,6 +989,50 @@ else
   fail "requirements.txt 缺少 openpyxl"
 fi
 
+# ── Section 17: Real Engine Recognition Scaffold 检查 ────────
+echo ""
+echo "── Section 17：Real Engine Recognition Scaffold 检查 ──"
+
+check_file "REAL_ENGINE_RECOGNITION_SCAFFOLD.md" "$PROJECT_ROOT/docs/dev/REAL_ENGINE_RECOGNITION_SCAFFOLD.md"
+check_file "check_real_engine_recognition_scaffold.sh" "$PROJECT_ROOT/scripts/check_real_engine_recognition_scaffold.sh"
+
+# Check real_engine.py uses LocalInputReader
+if grep -q "LocalInputReader" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 使用 LocalInputReader"
+else
+  fail "real_engine.py 未使用 LocalInputReader"
+fi
+
+# Check real_engine.py uses normalize_raw_dataset
+if grep -q "normalize_raw_dataset" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 使用 normalize_raw_dataset"
+else
+  fail "real_engine.py 未使用 normalize_raw_dataset"
+fi
+
+# Check real_engine.py implements recognition methods
+if grep -q "async def start_recognition" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 实现 start_recognition"
+else
+  fail "real_engine.py 未实现 start_recognition"
+fi
+
+if grep -q "async def get_recognition_result" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 实现 get_recognition_result"
+else
+  fail "real_engine.py 未实现 get_recognition_result"
+fi
+
+# Check sample_topology.csv exists
+check_file "sample_topology.csv" "$PROJECT_ROOT/workspace/inputs/sample_topology.csv"
+
+# Check default engine is still mock (provider defaults to mock)
+if grep -q 'get("TOPOCHECKER_ENGINE", "mock")' "$PROJECT_ROOT/backend/engine/provider.py" 2>/dev/null; then
+  pass "provider.py 默认 engine 为 mock"
+else
+  fail "provider.py 默认 engine 不是 mock"
+fi
+
 # ── 结果汇总 ─────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"

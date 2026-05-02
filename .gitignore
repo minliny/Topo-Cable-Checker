@@ -83,3 +83,6 @@ start_frontend.sh
 
 # Audit parity temp output (runtime comparison outputs)
 .audit_parity/
+
+# Recognition snapshots (runtime output from RealEngineAdapter)
+workspace/snapshots/recognition/
