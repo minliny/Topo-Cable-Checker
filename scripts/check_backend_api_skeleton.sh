@@ -1033,6 +1033,58 @@ else
   fail "provider.py 默认 engine 不是 mock"
 fi
 
+# ── Section 18: Device Recognition Rules Scaffold 检查 ─────
+echo ""
+echo "── Section 18：Device Recognition Rules Scaffold 检查 ──"
+
+check_dir "recognition/ 目录" "$PROJECT_ROOT/backend/recognition"
+check_file "recognition/models.py" "$PROJECT_ROOT/backend/recognition/models.py"
+check_file "recognition/recognizer.py" "$PROJECT_ROOT/backend/recognition/recognizer.py"
+check_file "DEVICE_RECOGNITION_RULES.md" "$PROJECT_ROOT/docs/dev/DEVICE_RECOGNITION_RULES.md"
+check_file "check_device_recognition_rules.sh" "$PROJECT_ROOT/scripts/check_device_recognition_rules.sh"
+
+# Check DatasetRecognizer exists
+if grep -q "class DatasetRecognizer" "$PROJECT_ROOT/backend/recognition/recognizer.py" 2>/dev/null; then
+  pass "DatasetRecognizer 类存在"
+else
+  fail "DatasetRecognizer 类不存在"
+fi
+
+# Check RecognizedTableKind exists
+if grep -q "class RecognizedTableKind" "$PROJECT_ROOT/backend/recognition/models.py" 2>/dev/null; then
+  pass "RecognizedTableKind 枚举存在"
+else
+  fail "RecognizedTableKind 枚举不存在"
+fi
+
+# Check recognition module uses keyword matching
+if grep -q "DEVICE_KEYWORDS\|LINK_KEYWORDS" "$PROJECT_ROOT/backend/recognition/recognizer.py" 2>/dev/null; then
+  pass "识别关键词已定义"
+else
+  fail "识别关键词未定义"
+fi
+
+# Check real_engine.py uses DatasetRecognizer
+if grep -q "from ..recognition import DatasetRecognizer" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 导入 DatasetRecognizer"
+else
+  fail "real_engine.py 未导入 DatasetRecognizer"
+fi
+
+# Check recognition module does not have AI/LLM or database (excluding comments)
+if ! grep -qiE "(sqlite3|sqlalchemy|\bopenai\b|\banthropic\b)" "$PROJECT_ROOT/backend/recognition"/*.py 2>/dev/null; then
+  pass "recognition/ 模块不接数据库/AI/LLM"
+else
+  fail "recognition/ 模块可能接入了数据库或 AI/LLM"
+fi
+
+# Check recognizer does not generate IssueItem
+if ! grep -qi "IssueItem" "$PROJECT_ROOT/backend/recognition/recognizer.py" 2>/dev/null; then
+  pass "recognizer.py 不生成 IssueItem"
+else
+  fail "recognizer.py 不应生成 IssueItem"
+fi
+
 # ── 结果汇总 ─────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"

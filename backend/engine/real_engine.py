@@ -1,6 +1,6 @@
 # backend/engine/real_engine.py
 # RealEngineAdapter scaffold: implements EngineAdapter interface.
-# Current implementation: recognition scaffold using LocalInputReader.
+# Current implementation: recognition scaffold using LocalInputReader + DatasetRecognizer.
 # No real check engine integration, no database, no external AI.
 
 import os
@@ -11,6 +11,7 @@ from typing import Optional
 from .interface import EngineAdapter
 from ..repositories.provider import get_repository
 from ..input import LocalInputReader, normalize_raw_dataset
+from ..recognition import DatasetRecognizer
 from ..workspace.manager import WorkspaceManager
 from ..models.execution import (
     CheckResultBundle,
@@ -28,6 +29,7 @@ class RealEngineAdapter(EngineAdapter):
 
     Current implementation:
     - Recognition: reads local Excel/CSV via LocalInputReader
+    - Recognition: recognizes device/link tables via DatasetRecognizer
     - Other methods: scaffold (NotImplementedError)
 
     To activate: set TOPOCHECKER_ENGINE=real
@@ -38,6 +40,7 @@ class RealEngineAdapter(EngineAdapter):
         self.repo = get_repository()
         self.workspace = WorkspaceManager()
         self.reader = LocalInputReader()
+        self.recognizer = DatasetRecognizer()
 
     # ── Recognition ──────────────────────────────────────────────
 
@@ -67,6 +70,9 @@ class RealEngineAdapter(EngineAdapter):
             raw = self.reader.read_file(str(input_file))
             normalized = normalize_raw_dataset(raw)
 
+            # Recognize tables using DatasetRecognizer
+            recognition_summary = self.recognizer.recognize(normalized)
+
             # Save recognition metadata to workspace/snapshots/
             recognition_data = {
                 "recognition_id": recognition_id,
@@ -79,6 +85,7 @@ class RealEngineAdapter(EngineAdapter):
                 "sheet_count": normalized.sheet_count,
                 "total_row_count": normalized.total_row_count,
                 "tables": normalized.tables,
+                "recognition_summary": recognition_summary.model_dump(mode="json"),
             }
 
             # Save to snapshots as recognition/{recognition_id}.json
@@ -98,27 +105,38 @@ class RealEngineAdapter(EngineAdapter):
                 "sheet_count": 0,
                 "total_row_count": 0,
                 "tables": [],
+                "recognition_summary": None,
             }
             self._save_recognition_snapshot(recognition_id, recognition_data)
             return recognition_id
 
     async def get_recognition_result(self, recognition_id: str) -> Optional[RecognitionResult]:
-        """Get recognition result from saved snapshot."""
+        """Get recognition result from saved snapshot.
+
+        Uses recognition_summary to generate RecognitionResult.
+        """
         snapshot = self._load_recognition_snapshot(recognition_id)
 
         if not snapshot:
             return None
 
-        # Extract counts from normalized dataset
-        row_count = snapshot.get("total_row_count", 0)
-        tables = snapshot.get("tables", [])
+        # Get recognition summary from snapshot
+        summary = snapshot.get("recognition_summary")
 
-        # Simple heuristic: row_count = devices, unmatched = 0, out_of_scope = 0
+        if summary:
+            # Use recognition summary counts
+            device_count = summary.get("total_device_count", 0)
+            warnings = summary.get("warnings", [])
+        else:
+            # Fallback to raw counts
+            device_count = snapshot.get("total_row_count", 0)
+            warnings = []
+
         return RecognitionResult(
-            recognized_device_count=row_count,
+            recognized_device_count=device_count,
             unmatched_device_count=0,
             out_of_scope_device_count=0,
-            warnings=[],
+            warnings=warnings,
         )
 
     async def confirm_recognition(self, recognition_id: str) -> bool:
