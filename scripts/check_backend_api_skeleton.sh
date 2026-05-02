@@ -1162,6 +1162,55 @@ else
   fail "type_inference.py 可能接入了数据库或 AI/LLM"
 fi
 
+# ── Section 20: Recognition Result Model Alignment 检查 ──────
+echo ""
+echo "── Section 20：Recognition Result Model Alignment 检查 ──"
+
+check_file "RECOGNITION_RESULT_MODEL_ALIGNMENT.md" "$PROJECT_ROOT/docs/dev/RECOGNITION_RESULT_MODEL_ALIGNMENT.md"
+check_file "check_recognition_result_model_alignment.sh" "$PROJECT_ROOT/scripts/check_recognition_result_model_alignment.sh"
+
+# Check document contains RecognitionResult
+if grep -q "RecognitionResult" "$PROJECT_ROOT/docs/dev/RECOGNITION_RESULT_MODEL_ALIGNMENT.md" 2>/dev/null; then
+  pass "文档包含 RecognitionResult"
+else
+  fail "文档未包含 RecognitionResult"
+fi
+
+# Check document contains recognition_summary
+if grep -q "recognition_summary" "$PROJECT_ROOT/docs/dev/RECOGNITION_RESULT_MODEL_ALIGNMENT.md" 2>/dev/null; then
+  pass "文档包含 recognition_summary"
+else
+  fail "文档未包含 recognition_summary"
+fi
+
+# Check document contains inferred_device_types
+if grep -qi "inferred.*device.*type\|device_type_summaries" "$PROJECT_ROOT/docs/dev/RECOGNITION_RESULT_MODEL_ALIGNMENT.md" 2>/dev/null; then
+  pass "文档包含 inferred_device_types"
+else
+  fail "文档未包含 inferred_device_types"
+fi
+
+# Check document explicitly says frontend does not do inference
+if grep -qi "前端不做\|frontend.*不推断\|前端不推断\|frontend does not infer" "$PROJECT_ROOT/docs/dev/RECOGNITION_RESULT_MODEL_ALIGNMENT.md" 2>/dev/null; then
+  pass "文档明确前端不做识别推断"
+else
+  fail "文档未明确说明前端不做识别推断"
+fi
+
+# Check document explicitly says no database
+if grep -qi "不使用数据库\|不使用.*database\|禁止.*数据库\|禁止.*sqlite\|no database" "$PROJECT_ROOT/docs/dev/RECOGNITION_RESULT_MODEL_ALIGNMENT.md" 2>/dev/null; then
+  pass "文档明确不使用数据库"
+else
+  fail "文档未明确说明不使用数据库"
+fi
+
+# Check document explicitly says no AI/LLM
+if grep -qi "不使用 AI\|不使用.*LLM\|禁止.*AI\|禁止.*LLM\|no AI\|no LLM" "$PROJECT_ROOT/docs/dev/RECOGNITION_RESULT_MODEL_ALIGNMENT.md" 2>/dev/null; then
+  pass "文档明确不使用 AI/LLM"
+else
+  fail "文档未明确说明不使用 AI/LLM"
+fi
+
 # ── 结果汇总 ─────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"
