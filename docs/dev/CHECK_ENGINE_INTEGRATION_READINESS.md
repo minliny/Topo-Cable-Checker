@@ -1,7 +1,7 @@
 # Check Engine Integration Readiness Audit
 
-> **Status:** SCAFFOLD PHASE — RealEngineAdapter scaffold ready, default is MockEngineAdapter
-> **Scope:** RealEngineAdapter is scaffold only (NotImplementedError). Do NOT use in production.
+> **Status:** SCAFFOLD PHASE — RealEngineAdapter scaffold + LocalInputReader scaffold ready
+> **Scope:** RealEngineAdapter is scaffold only. LocalInputReader scaffold ready for input file reading.
 > **Last updated:** 2026-05-02
 
 ---
@@ -16,6 +16,7 @@
 | `MockEngineAdapter` | ✅ 当前默认 | 返回 mock 数据，无真实计算 |
 | `RealEngineAdapter` | 🚧 Scaffold | 所有方法 raise NotImplementedError |
 | `engine/provider.py` | ✅ 已实现 | 支持 TOPOCHECKER_ENGINE=mock\|real 环境变量 |
+| `LocalInputReader` | 🚧 Scaffold | 读取本地 Excel/CSV 文件 |
 
 ### 1.2 EngineProvider 切换机制
 
@@ -38,7 +39,15 @@ engine = get_engine()
 
 **警告**：`TOPOCHECKER_ENGINE=real` 仅用于开发测试。RealEngineAdapter 是 scaffold，所有方法抛出 NotImplementedError。
 
-### 1.2 EngineAdapter 方法清单
+### 1.3 输入文件读取
+
+`backend/input/` 模块提供本地输入文件读取能力（详见 `LOCAL_INPUT_FILE_READER.md`）：
+
+- `LocalInputReader`: 读取 .xlsx/.xls/.csv 文件
+- `normalize_raw_dataset()`: 转换为中间标准化表示
+- 后续将接入 RealEngineAdapter.start_recognition()
+
+### 1.4 EngineAdapter 方法清单
 
 `backend/engine/interface.py` 定义以下抽象方法：
 

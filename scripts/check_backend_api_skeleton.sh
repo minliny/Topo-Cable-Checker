@@ -155,8 +155,8 @@ else
   pass "backend 无生产 URL"
 fi
 
-# Check for AI/LLM dependencies (only if explicit AI/LLM library)
-if grep -rqi "openai\|anthropic\|llm\|gemini\|claude" "$PROJECT_ROOT/backend" 2>/dev/null; then
+# Check for AI/LLM dependencies (only if explicit AI/LLM library, excluding comments)
+if grep -rqiE "(openai|anthropic|gemini|claude)" "$PROJECT_ROOT/backend" 2>/dev/null; then
   fail "backend 包含 AI/LLM 依赖（禁止使用 AI/LLM）"
 else
   pass "backend 无 AI/LLM 依赖"
@@ -933,6 +933,60 @@ if ! grep -qi "mock_data\|MOCK_BASELINES\|MOCK_RUNS" "$PROJECT_ROOT/backend/engi
   pass "real_engine.py 不直接导入 mock_data"
 else
   fail "real_engine.py 不应导入 mock_data"
+fi
+
+# ── Section 16: Local Input File Reader Scaffold 检查 ────────────
+echo ""
+echo "── Section 16：Local Input File Reader Scaffold 检查 ──"
+
+check_dir "input/ 目录" "$PROJECT_ROOT/backend/input"
+check_file "input/models.py" "$PROJECT_ROOT/backend/input/models.py"
+check_file "input/reader.py" "$PROJECT_ROOT/backend/input/reader.py"
+check_file "input/normalizer.py" "$PROJECT_ROOT/backend/input/normalizer.py"
+
+# Check LocalInputReader class exists
+if grep -q "class LocalInputReader" "$PROJECT_ROOT/backend/input/reader.py" 2>/dev/null; then
+  pass "LocalInputReader 类存在"
+else
+  fail "LocalInputReader 类不存在"
+fi
+
+# Check NormalizedDataset exists
+if grep -q "class NormalizedDataset" "$PROJECT_ROOT/backend/input/models.py" 2>/dev/null; then
+  pass "NormalizedDataset 模型存在"
+else
+  fail "NormalizedDataset 模型不存在"
+fi
+
+# Check normalize_raw_dataset function exists
+if grep -q "def normalize_raw_dataset" "$PROJECT_ROOT/backend/input/normalizer.py" 2>/dev/null; then
+  pass "normalize_raw_dataset 函数存在"
+else
+  fail "normalize_raw_dataset 函数不存在"
+fi
+
+# Check documentation exists
+check_file "LOCAL_INPUT_FILE_READER.md" "$PROJECT_ROOT/docs/dev/LOCAL_INPUT_FILE_READER.md"
+
+# Check input module does not have database/AI/LLM (excluding comments)
+if ! grep -qiE "(sqlite3|sqlalchemy|\bopenai\b|\banthropic\b)" "$PROJECT_ROOT/backend/input"/*.py 2>/dev/null; then
+  pass "input/ 模块不接数据库/AI/LLM"
+else
+  fail "input/ 模块可能接入了数据库或 AI/LLM"
+fi
+
+# Check input module uses openpyxl for Excel (not forbidden)
+if grep -q "openpyxl" "$PROJECT_ROOT/backend/input/reader.py" 2>/dev/null; then
+  pass "reader.py 使用 openpyxl 读取 Excel"
+else
+  fail "reader.py 未使用 openpyxl"
+fi
+
+# Check requirements.txt includes openpyxl
+if grep -q "openpyxl" "$PROJECT_ROOT/backend/requirements.txt" 2>/dev/null; then
+  pass "requirements.txt 包含 openpyxl"
+else
+  fail "requirements.txt 缺少 openpyxl"
 fi
 
 # ── 结果汇总 ─────────────────────────────────────────────────
