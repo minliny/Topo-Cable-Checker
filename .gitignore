@@ -80,3 +80,6 @@ user_input.json
 # Legacy startup scripts (replaced by scripts/dev_start_backend.sh etc.)
 start_api.sh
 start_frontend.sh
+
+# Audit parity temp output (runtime comparison outputs)
+.audit_parity/
