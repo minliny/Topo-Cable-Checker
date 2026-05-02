@@ -60,6 +60,13 @@ if [ ! -d "$PROJECT_ROOT/workspace/inputs" ]; then
     echo ""
 fi
 
+# Default to mock engine if TOPOCHECKER_ENGINE is not already set
+# This ensures dev_start_backend.sh defaults to safe MockEngineAdapter
+# while preserving explicit TOPOCHECKER_ENGINE=real when set externally
+if [ -z "$TOPOCHECKER_ENGINE" ]; then
+    export TOPOCHECKER_ENGINE=mock
+fi
+
 # Detect repository mode from environment
 REPO_MODE="${TOPOCHECKER_REPO:-file}"
 if [ "$REPO_MODE" = "mock" ]; then

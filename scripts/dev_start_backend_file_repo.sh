@@ -60,6 +60,11 @@ if [ ! -d "$PROJECT_ROOT/workspace/inputs" ]; then
     echo ""
 fi
 
+# Force mock engine (safe for local dev)
+# Real engine scaffold is for dedicated testing only
+unset TOPOCHECKER_ENGINE
+export TOPOCHECKER_ENGINE=mock
+
 # Start backend with FileRepository
 export TOPOCHECKER_REPO=file
 

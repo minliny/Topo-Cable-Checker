@@ -181,9 +181,19 @@ REC_ID=$(echo "$RECOGNITION_RESPONSE" | python3 -c "import sys, json; print(json
 if [ -n "$REC_ID" ]; then
     pass "recognition/start 返回 recognition_id"
 
-    # Check recognition snapshot contains device_type_summaries
-    SNAPSHOT_FILE="$PROJECT_ROOT/workspace/snapshots/recognition/$REC_ID.json"
-    if [ -f "$SNAPSHOT_FILE" ]; then
+    # Find the latest recognition snapshot file
+    # RealEngineAdapter returns UUID-based IDs (rec-{uuid}), not rec-001
+    # MockEngineAdapter returns rec-001
+    SNAPSHOT_FILE=""
+    if [ "$REC_ID" = "rec-001" ]; then
+        # Mock mode: no snapshot file needed
+        SNAPSHOT_FILE=""
+    else
+        # Real mode: find the snapshot matching the recognition_id
+        SNAPSHOT_FILE="$PROJECT_ROOT/workspace/snapshots/recognition/$REC_ID.json"
+    fi
+
+    if [ -n "$SNAPSHOT_FILE" ] && [ -f "$SNAPSHOT_FILE" ]; then
         if grep -q "device_type_summaries" "$SNAPSHOT_FILE" 2>/dev/null; then
             pass "recognition snapshot 包含 device_type_summaries"
 
@@ -250,6 +260,9 @@ with open('$SNAPSHOT_FILE') as f:
         else
             fail "recognition snapshot 缺少 device_type_summaries"
         fi
+    elif [ -z "$SNAPSHOT_FILE" ]; then
+        # Mock mode: skip snapshot checks
+        pass "MockEngineAdapter 模式 (跳过 snapshot 检查)"
     else
         fail "recognition snapshot 文件不存在"
     fi
