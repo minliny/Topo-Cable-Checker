@@ -1,8 +1,8 @@
 # Check Engine Integration Readiness Audit
 
-> **Status:** AUDIT PHASE — MockEngineAdapter is current implementation  
-> **Scope:** Document-only audit. No real engine integration yet.  
-> **Last updated:** 2026-05-01
+> **Status:** SCAFFOLD PHASE — RealEngineAdapter scaffold ready, default is MockEngineAdapter
+> **Scope:** RealEngineAdapter is scaffold only (NotImplementedError). Do NOT use in production.
+> **Last updated:** 2026-05-02
 
 ---
 
@@ -13,8 +13,30 @@
 | 组件 | 状态 | 说明 |
 |------|------|------|
 | `EngineAdapter` (interface) | ✅ 已定义 | 抽象接口，定义 engine 契约 |
-| `MockEngineAdapter` | ✅ 当前实现 | 返回 mock 数据，无真实计算 |
-| `RealEngineAdapter` | ❌ 未实现 | 未来接入真实本地检查引擎 |
+| `MockEngineAdapter` | ✅ 当前默认 | 返回 mock 数据，无真实计算 |
+| `RealEngineAdapter` | 🚧 Scaffold | 所有方法 raise NotImplementedError |
+| `engine/provider.py` | ✅ 已实现 | 支持 TOPOCHECKER_ENGINE=mock\|real 环境变量 |
+
+### 1.2 EngineProvider 切换机制
+
+`backend/engine/provider.py` 提供 engine 切换能力：
+
+```python
+from backend.engine import get_engine
+
+# 默认返回 MockEngineAdapter（安全）
+engine = get_engine()
+
+# 设置 TOPOCHECKER_ENGINE=real 可切换到 RealEngineAdapter（scaffold）
+# 警告：RealEngineAdapter 所有方法 raise NotImplementedError
+```
+
+| 环境变量 | 值 | 返回 | 用途 |
+|----------|-----|------|------|
+| `TOPOCHECKER_ENGINE` | `mock` (默认) | `MockEngineAdapter` | 开发/测试/生产 |
+| `TOPOCHECKER_ENGINE` | `real` | `RealEngineAdapter` | 仅开发测试 scaffold |
+
+**警告**：`TOPOCHECKER_ENGINE=real` 仅用于开发测试。RealEngineAdapter 是 scaffold，所有方法抛出 NotImplementedError。
 
 ### 1.2 EngineAdapter 方法清单
 
@@ -367,7 +389,7 @@ POST /recognition/confirm ──▶ RealEngineAdapter.confirm_recognition()
 - [x] `EngineAdapter` 抽象接口已定义
 - [x] 所有方法签名已确定
 - [x] 输入/输出模型已定义（Pydantic）
-- [ ] `RealEngineAdapter` 实现（未来）
+- [x] `RealEngineAdapter` scaffold 已实现
 
 ### 9.2 数据准备
 
@@ -380,9 +402,10 @@ POST /recognition/confirm ──▶ RealEngineAdapter.confirm_recognition()
 
 ### 9.3 服务层准备
 
-- [x] `ExecutionService` 调用 engine
-- [x] `RunService` 调用 engine + repository
-- [x] `DiffService` 调用 engine + repository
+- [x] `ExecutionService` 调用 engine via provider
+- [x] `RunService` 调用 engine via provider
+- [x] `DiffService` 调用 engine via provider
+- [ ] 实现真实 engine 方法（进行中）
 - [ ] 写入 workspace 逻辑（未来）
 
 ### 9.4 路由层准备
@@ -399,36 +422,36 @@ POST /recognition/confirm ──▶ RealEngineAdapter.confirm_recognition()
 
 ## 10. 禁止事项
 
-- ❌ **不实现真实检查引擎** — 本轮仅审计和文档
+- ❌ **不实现真实检查引擎** — RealEngineAdapter 仅 scaffold（raise NotImplementedError）
 - ❌ **不接数据库** — 不使用 SQLite / PostgreSQL / ORM
 - ❌ **不引入 AI/LLM** — 检查引擎基于规则，不依赖 AI
 - ❌ **不修改 API response** — 保持现有 API 契约
 - ❌ **不修改前端业务页面** — 前端不感知 engine 变化
 - ❌ **不移除 MockEngineAdapter** — 保留 mock 实现用于测试
-- ❌ **不移除 MockRepository fallback** — 保留数据 fallback
 - ❌ **不恢复 UI diff 计算** — diff 继续由 backend 生成
+- ❌ **不使用 TOPOCHECKER_ENGINE=real 生产** — scaffold 仅开发测试用
 
 ---
 
 ## 11. 下一步建议
 
-1. **实现 RealEngineAdapter scaffold**
-   - 创建 `backend/engine/real_engine.py`
-   - 实现 `EngineAdapter` 接口
-   - 初始版本可返回空结果或委托 mock
+1. **实现 RealEngineAdapter 方法**
+   - 当前所有方法 raise NotImplementedError
+   - 逐步实现从 Excel 读取输入
+   - 实现 normalized dataset 生成
+   - 实现规则引擎
+   - 保持 mock fallback
 
-2. **接入文件解析**
-   - 实现 Excel/CSV 读取（`pandas` 或 `openpyxl`）
-   - 生成 normalized dataset
+2. **保留 mock 兼容性**
+   - `TOPOCHECKER_ENGINE=mock`（默认）继续工作
+   - `TOPOCHECKER_ENGINE=real` 用于开发测试 scaffold
+   - CI 继续运行 mock 模式
 
-3. **实现规则引擎**
-   - 基于 baseline rules 逐条检查
-   - 生成 `IssueItem` 列表
-
-4. **完善 workspace 写入**
+3. **完善 workspace 写入**
    - check 完成后自动写入 `workspace/runs/`
    - 支持版本快照保存到 `workspace/snapshots/`
 
-5. **保留 mock 兼容性**
-   - 通过环境变量切换 mock/real engine
-   - CI 继续运行 mock 模式
+4. **安全护栏**
+   - `real_engine.py` 不读写真实 Excel
+   - `real_engine.py` 不接数据库
+   - API snapshot 保持通过

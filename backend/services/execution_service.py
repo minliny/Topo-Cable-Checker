@@ -2,14 +2,14 @@
 from typing import Optional
 
 from ..repositories.provider import get_repository
-from ..engine.mock_engine import MockEngineAdapter
+from ..engine.provider import get_engine
 from ..models.execution import DataSource, ExecutionScope
 
 
 class ExecutionService:
     def __init__(self):
         self.repo = get_repository()
-        self.engine = MockEngineAdapter()
+        self.engine = get_engine()
 
     def get_data_sources(self) -> list[DataSource]:
         return self.repo.get_all_data_sources()

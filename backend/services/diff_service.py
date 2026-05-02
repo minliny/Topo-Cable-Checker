@@ -2,14 +2,14 @@
 from typing import Optional
 
 from ..repositories.provider import get_repository
-from ..engine.mock_engine import MockEngineAdapter
+from ..engine.provider import get_engine
 from ..models.diff import RecheckDiffSnapshot
 
 
 class DiffService:
     def __init__(self):
         self.repo = get_repository()
-        self.engine = MockEngineAdapter()
+        self.engine = get_engine()
 
     async def get_recheck_diff(self, base_run_id: str, target_run_id: str) -> Optional[RecheckDiffSnapshot]:
         diff = await self.engine.get_recheck_diff(base_run_id, target_run_id)

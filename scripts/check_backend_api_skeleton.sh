@@ -682,25 +682,25 @@ else
   pass "engine 无真实 HTTP 调用"
 fi
 
-# Check execution_service uses engine adapter
-if grep -q "MockEngineAdapter" "$PROJECT_ROOT/backend/services/execution_service.py" 2>/dev/null; then
-  pass "execution_service.py 使用 MockEngineAdapter"
+# Check execution_service uses engine via provider
+if grep -q "from ..engine.provider import get_engine" "$PROJECT_ROOT/backend/services/execution_service.py" 2>/dev/null; then
+  pass "execution_service.py 使用 engine via provider"
 else
-  fail "execution_service.py 未使用 MockEngineAdapter"
+  fail "execution_service.py 未使用 engine via provider"
 fi
 
-# Check run_service uses engine adapter
-if grep -q "MockEngineAdapter" "$PROJECT_ROOT/backend/services/run_service.py" 2>/dev/null; then
-  pass "run_service.py 使用 MockEngineAdapter"
+# Check run_service uses engine via provider
+if grep -q "from ..engine.provider import get_engine" "$PROJECT_ROOT/backend/services/run_service.py" 2>/dev/null; then
+  pass "run_service.py 使用 engine via provider"
 else
-  fail "run_service.py 未使用 MockEngineAdapter"
+  fail "run_service.py 未使用 engine via provider"
 fi
 
-# Check diff_service uses engine adapter
-if grep -q "MockEngineAdapter" "$PROJECT_ROOT/backend/services/diff_service.py" 2>/dev/null; then
-  pass "diff_service.py 使用 MockEngineAdapter"
+# Check diff_service uses engine via provider
+if grep -q "from ..engine.provider import get_engine" "$PROJECT_ROOT/backend/services/diff_service.py" 2>/dev/null; then
+  pass "diff_service.py 使用 engine via provider"
 else
-  fail "diff_service.py 未使用 MockEngineAdapter"
+  fail "diff_service.py 未使用 engine via provider"
 fi
 
 # ── Section 12: CI Configuration 检查 ────────────────────────────────
@@ -871,6 +871,68 @@ if grep -qi "前端不计算 diff\|frontend 不计算\|前端不生成.*diff\|en
   pass "文档明确前端不计算 diff"
 else
   fail "文档未明确说明前端不计算 diff"
+fi
+
+# ── Section 15: RealEngineAdapter Scaffold 检查 ──────────────────
+echo ""
+echo "── Section 15：RealEngineAdapter Scaffold 检查 ──"
+
+check_file "RealEngineAdapter scaffold" "$PROJECT_ROOT/backend/engine/real_engine.py"
+check_file "Engine provider" "$PROJECT_ROOT/backend/engine/provider.py"
+
+# Check real_engine.py has NotImplementedError (scaffold guard)
+if grep -q "NotImplementedError" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 所有方法 raise NotImplementedError (scaffold)"
+else
+  fail "real_engine.py 缺少 NotImplementedError scaffold guard"
+fi
+
+# Check real_engine.py does not have real engine calls
+# Use word boundaries to avoid false positives (e.g., "wait" contains "ai")
+if ! grep -qiE "(openpyxl|pandas|sqlalchemy|\bsqlite\b|openai|anthropic|requests)" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 不接数据库/AI/LLM"
+else
+  fail "real_engine.py 可能接入了数据库或 AI/LLM"
+fi
+
+# Check provider.py supports TOPOCHECKER_ENGINE env var
+if grep -q "TOPOCHECKER_ENGINE" "$PROJECT_ROOT/backend/engine/provider.py" 2>/dev/null; then
+  pass "provider.py 支持 TOPOCHECKER_ENGINE 环境变量"
+else
+  fail "provider.py 不支持 TOPOCHECKER_ENGINE 环境变量"
+fi
+
+# Check provider.py defaults to mock
+if grep -qi 'default.*mock\|os.environ.get.*mock' "$PROJECT_ROOT/backend/engine/provider.py" 2>/dev/null; then
+  pass "provider.py 默认 engine 为 mock"
+else
+  fail "provider.py 默认 engine 不是 mock"
+fi
+
+# Check services use engine provider
+if grep -q "from ..engine.provider import get_engine" "$PROJECT_ROOT/backend/services/execution_service.py" 2>/dev/null; then
+  pass "execution_service.py 使用 engine provider"
+else
+  fail "execution_service.py 未使用 engine provider"
+fi
+
+if grep -q "from ..engine.provider import get_engine" "$PROJECT_ROOT/backend/services/run_service.py" 2>/dev/null; then
+  pass "run_service.py 使用 engine provider"
+else
+  fail "run_service.py 未使用 engine provider"
+fi
+
+if grep -q "from ..engine.provider import get_engine" "$PROJECT_ROOT/backend/services/diff_service.py" 2>/dev/null; then
+  pass "diff_service.py 使用 engine provider"
+else
+  fail "diff_service.py 未使用 engine provider"
+fi
+
+# Check real_engine.py does not directly import mock_data
+if ! grep -qi "mock_data\|MOCK_BASELINES\|MOCK_RUNS" "$PROJECT_ROOT/backend/engine/real_engine.py" 2>/dev/null; then
+  pass "real_engine.py 不直接导入 mock_data"
+else
+  fail "real_engine.py 不应导入 mock_data"
 fi
 
 # ── 结果汇总 ─────────────────────────────────────────────────

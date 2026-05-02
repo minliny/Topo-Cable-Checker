@@ -2,14 +2,14 @@
 from typing import Optional
 
 from ..repositories.provider import get_repository
-from ..engine.mock_engine import MockEngineAdapter
+from ..engine.provider import get_engine
 from ..models.execution import RunHistoryEntry, CheckResultBundle, IssueItem
 
 
 class RunService:
     def __init__(self):
         self.repo = get_repository()
-        self.engine = MockEngineAdapter()
+        self.engine = get_engine()
 
     def get_all_runs(self) -> list[RunHistoryEntry]:
         return self.repo.get_all_runs()
