@@ -811,6 +811,68 @@ else
   fail "provider.py 默认可能不是 file"
 fi
 
+# ── Section 14: Check Engine Integration Readiness Audit 检查 ──────────
+echo ""
+echo "── Section 14：Check Engine Integration Readiness Audit 检查 ──"
+
+check_file "CHECK_ENGINE_INTEGRATION_READINESS.md" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md"
+
+# Check document contains MockEngineAdapter
+if grep -qi "MockEngineAdapter" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档包含 MockEngineAdapter"
+else
+  fail "文档未包含 MockEngineAdapter"
+fi
+
+# Check document contains recognition result
+if grep -qi "RecognitionResult\|recognition result" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档包含 recognition result"
+else
+  fail "文档未包含 recognition result"
+fi
+
+# Check document contains normalized dataset
+if grep -qi "normalized dataset\|Normalized Dataset" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档包含 normalized dataset"
+else
+  fail "文档未包含 normalized dataset"
+fi
+
+# Check document contains CheckResultBundle
+if grep -qi "CheckResultBundle" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档包含 CheckResultBundle"
+else
+  fail "文档未包含 CheckResultBundle"
+fi
+
+# Check document contains RecheckDiffSnapshot
+if grep -qi "RecheckDiffSnapshot" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档包含 RecheckDiffSnapshot"
+else
+  fail "文档未包含 RecheckDiffSnapshot"
+fi
+
+# Check document explicitly says no database
+if grep -qi "no database\|不接数据库\|禁止.*数据库\|禁止.*sqlite\|禁止.*orm" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档明确不使用数据库"
+else
+  fail "文档未明确说明不使用数据库"
+fi
+
+# Check document explicitly says no AI/LLM
+if grep -qi "no AI\|不引入 AI\|禁止.*AI\|禁止.*LLM\|不依赖 AI" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档明确不使用 AI/LLM"
+else
+  fail "文档未明确说明不使用 AI/LLM"
+fi
+
+# Check document explicitly says frontend does not compute diff
+if grep -qi "前端不计算 diff\|frontend 不计算\|前端不生成.*diff\|engine/backend 生成\|backend 生成" "$PROJECT_ROOT/docs/dev/CHECK_ENGINE_INTEGRATION_READINESS.md" 2>/dev/null; then
+  pass "文档明确前端不计算 diff"
+else
+  fail "文档未明确说明前端不计算 diff"
+fi
+
 # ── 结果汇总 ─────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════════════"
